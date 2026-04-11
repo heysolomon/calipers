@@ -1,0 +1,39 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build outputs
+dist
+build
+.next
+out
+
+# Turbo
+.turbo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/settings.json
+.idea
+*.swp
+*.swo
+
+# Testing
+coverage
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Chrome extension specific
+*.crx
+*.pem
