@@ -12,7 +12,7 @@ const LABEL_STYLE = `
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
   color: rgba(255, 255, 255, 0.9);
-  font-family: 'Inter var', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Neue Plak Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 12px;
   font-weight: 450;
   letter-spacing: 0.01em;
@@ -38,7 +38,7 @@ const TOAST_STYLE = `
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
   color: rgba(255, 255, 255, 0.95);
-  font-family: 'Inter var', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Neue Plak Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.01em;

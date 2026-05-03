@@ -61,13 +61,13 @@ function Divider() {
 const MODES: { id: Mode; label: string }[] = [
   { id: 'inspect', label: 'Inspect' },
   { id: 'measure', label: 'Measure' },
-  { id: 'guides',  label: 'Guides'  },
+  { id: 'guides', label: 'Guides' },
 ];
 
 export default function App() {
   const [extState, setExtState] = useState<ExtensionState>({ ...DEFAULT_STATE });
-  const [loading, setLoading]   = useState(true);
-  const [busy, setBusy]         = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     chrome.runtime.sendMessage({ type: 'GET_STATE' }, (res: ExtensionState) => {
@@ -143,9 +143,9 @@ export default function App() {
   }
 
   const settings: { label: string; checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }[] = [
-    { label: 'Box model',         checked: extState.showBoxModel,    onChange: handleBoxModel, disabled: extState.mode !== 'inspect' },
-    { label: 'Show guides',       checked: extState.showGuides,      onChange: handleGuides },
-    { label: 'Snap to elements',  checked: extState.snapToElements,  onChange: handleSnap },
+    { label: 'Box model', checked: extState.showBoxModel, onChange: handleBoxModel, disabled: extState.mode !== 'inspect' },
+    { label: 'Show guides', checked: extState.showGuides, onChange: handleGuides },
+    { label: 'Snap to elements', checked: extState.snapToElements, onChange: handleSnap },
   ];
 
   return (

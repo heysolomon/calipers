@@ -16,7 +16,7 @@ const PANEL_CSS = `
   border-radius: 10px;
   padding: 10px 12px 8px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 1px rgba(0,0,0,0.3);
-  font-family: 'Inter var', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Neue Plak Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 11px;
   color: rgba(255,255,255,0.85);
   pointer-events: all;

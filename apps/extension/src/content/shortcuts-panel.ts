@@ -27,7 +27,7 @@ const PANEL_CSS = `
   border-radius: 14px;
   padding: 20px 22px 18px;
   box-shadow: 0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.03);
-  font-family: 'Inter var', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Neue Plak Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   color: rgba(255,255,255,0.85);
   width: 380px;
   max-width: calc(100vw - 32px);

@@ -46,6 +46,45 @@ export function createOverlay(): OverlayElements {
 
   root.appendChild(canvas);
   root.appendChild(labelContainer);
+
+  // Inject @font-face for Neue Plak Text so all Calipers UI uses the brand font
+  if (!document.getElementById('calipers-fonts')) {
+    const fontStyle = document.createElement('style');
+    fontStyle.id = 'calipers-fonts';
+    const fontBase = chrome.runtime.getURL('assets/fonts');
+    fontStyle.textContent = `
+      @font-face {
+        font-family: 'Neue Plak Text';
+        src: url('${fontBase}/Neue Plak Text Light.ttf') format('truetype');
+        font-weight: 300;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Neue Plak Text';
+        src: url('${fontBase}/Neue Plak Regular.ttf') format('truetype');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Neue Plak Text';
+        src: url('${fontBase}/Neue Plak Text SemiBold.ttf') format('truetype');
+        font-weight: 600;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Neue Plak Text';
+        src: url('${fontBase}/Neue Plak Text Bold.ttf') format('truetype');
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+      }
+    `;
+    document.head.appendChild(fontStyle);
+  }
+
   document.documentElement.appendChild(root);
 
   // Size canvas to match viewport with device pixel ratio
