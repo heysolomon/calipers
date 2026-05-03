@@ -26,17 +26,17 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
   return (
     <>
       <Navbar />
-      <div className="pt-14 min-h-screen flex">
+      <div style={{ paddingTop: '80px' }} className="min-h-screen flex">
         {/* Sidebar */}
         <aside
-          className="hidden md:block w-56 shrink-0 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto py-8 px-4"
-          style={{ borderRight: '1px solid rgba(255,255,255,0.06)' }}
+          className="hidden md:block w-56 shrink-0 sticky top-20 h-[calc(100vh-5rem)] overflow-y-auto py-8 px-4"
+          style={{ borderRight: '1px solid rgba(0,0,0,0.06)' }}
         >
           {navItems.map((group) => (
             <div key={group.section} className="mb-6">
               <div
                 className="text-xs font-semibold uppercase tracking-wider mb-2 px-2"
-                style={{ color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em' }}
+                style={{ color: '#D4D4D4', letterSpacing: '0.08em' }}
               >
                 {group.section}
               </div>
@@ -46,7 +46,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
                     <Link
                       href={item.href}
                       className="block px-2 py-1.5 rounded-md text-sm transition-colors"
-                      style={{ color: 'rgba(255,255,255,0.5)' }}
+                      style={{ color: '#737373' }}
                     >
                       {item.label}
                     </Link>

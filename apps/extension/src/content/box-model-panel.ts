@@ -28,7 +28,7 @@ const COLORS = {
   margin:  'rgba(255,130,80,0.9)',
   border:  'rgba(255,200,80,0.9)',
   padding: 'rgba(80,200,140,0.9)',
-  content: 'rgba(74,158,255,0.9)',
+  content: 'rgba(255,69,0,0.9)',
 };
 
 function fmt(v: number): string {
