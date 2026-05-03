@@ -1,6 +1,72 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
 
 @import "tailwindcss";
+
+/* ─── Custom fonts ───────────────────────────────────────────────────────────── */
+
+@font-face {
+  font-family: 'Ashbury';
+  src: url('/fonts/Ashbury-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Ashbury';
+  src: url('/fonts/Ashbury-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Ashbury';
+  src: url('/fonts/Ashbury-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Neue Plak Text';
+  src: url('/fonts/Neue Plak Text Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Neue Plak Text';
+  src: url('/fonts/Neue Plak Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Neue Plak Text';
+  src: url('/fonts/Neue Plak Text Italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Neue Plak Text';
+  src: url('/fonts/Neue Plak Text SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Neue Plak Text';
+  src: url('/fonts/Neue Plak Text Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 /* ─── Theme tokens ───────────────────────────────────────────────────────────── */
 
@@ -15,7 +81,7 @@
   --color-brand:            #4A9EFF;
   --color-success:          #50C88C;
 
-  --font-sans: 'Inter var', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-sans: 'Neue Plak Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
 
   --animate-fade-up:   fadeUp   0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
@@ -40,7 +106,7 @@ html { scroll-behavior: smooth; }
 body {
   background: #0f0f0f;
   color: #000;
-  font-family: 'Inter var', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Neue Plak Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

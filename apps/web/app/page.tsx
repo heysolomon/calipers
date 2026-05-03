@@ -40,7 +40,7 @@ export default function HomePage() {
           style={{
             fontSize: 'clamp(3.5rem, 11vw, 10rem)',
             fontWeight: 600,
-            fontFamily: '"Playfair Display", "Georgia", "Times New Roman", serif',
+            fontFamily: '"Ashbury", "Georgia", "Times New Roman", serif',
             letterSpacing: '-0.04em',
             lineHeight: 0.95,
             color: '#000',
