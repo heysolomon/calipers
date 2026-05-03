@@ -7,17 +7,17 @@ import type { Rect, BoxModel } from '@calipers/shared';
 // ─── Design tokens (mirrors popup / branding) ─────────────────────────────────
 
 const C = {
-  primary: '#4A9EFF',
-  primaryAlpha08: 'rgba(74, 158, 255, 0.08)',
-  primaryAlpha12: 'rgba(74, 158, 255, 0.12)',
-  primaryAlpha60: 'rgba(74, 158, 255, 0.6)',
-  primaryAlpha80: 'rgba(74, 158, 255, 0.8)',
-  primaryAlpha50: 'rgba(74, 158, 255, 0.5)',
-  boxContent: 'rgba(74, 158, 255, 0.15)',
+  primary: '#FF4500',
+  primaryAlpha08: 'rgba(255, 69, 0, 0.08)',
+  primaryAlpha12: 'rgba(255, 69, 0, 0.12)',
+  primaryAlpha60: 'rgba(255, 69, 0, 0.6)',
+  primaryAlpha80: 'rgba(255, 69, 0, 0.8)',
+  primaryAlpha50: 'rgba(255, 69, 0, 0.5)',
+  boxContent: 'rgba(255, 69, 0, 0.15)',
   boxPadding: 'rgba(80, 200, 140, 0.15)',
   boxBorder: 'rgba(255, 200, 80, 0.15)',
   boxMargin: 'rgba(255, 130, 80, 0.15)',
-  boxContentBorder: 'rgba(74, 158, 255, 0.4)',
+  boxContentBorder: 'rgba(255, 69, 0, 0.4)',
   boxPaddingBorder: 'rgba(80, 200, 140, 0.4)',
   boxBorderBorder: 'rgba(255, 200, 80, 0.4)',
   boxMarginBorder: 'rgba(255, 130, 80, 0.4)',
@@ -101,7 +101,7 @@ export function drawMeasurementLine(
   const isHorizontal = Math.abs(ay2 - ay1) < 2;
   const capSize = 4;
 
-  ctx.strokeStyle = `rgba(74, 158, 255, ${0.8 * progress})`;
+  ctx.strokeStyle = `rgba(255, 69, 0, ${0.8 * progress})`;
   ctx.lineWidth = 1.5;
   ctx.lineCap = 'round';
 
@@ -144,7 +144,7 @@ export function drawAlignmentGuideline(
   y2: number,
 ): void {
   scale(ctx);
-  ctx.strokeStyle = 'rgba(74, 158, 255, 0.25)';
+  ctx.strokeStyle = 'rgba(255, 69, 0, 0.25)';
   ctx.lineWidth = 1;
   ctx.setLineDash([4, 4]);
   ctx.beginPath();
@@ -192,8 +192,8 @@ export function drawGuideHandle(
   ctx.beginPath();
   ctx.arc(x, y, r, 0, Math.PI * 2);
   ctx.fillStyle = hovered
-    ? 'rgba(74, 158, 255, 0.9)'
-    : 'rgba(74, 158, 255, 0.6)';
+    ? 'rgba(255, 69, 0, 0.9)'
+    : 'rgba(255, 69, 0, 0.6)';
   ctx.fill();
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
   ctx.lineWidth = 1;

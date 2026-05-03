@@ -1,44 +1,40 @@
+import Link from 'next/link';
+
 export function Footer() {
   return (
     <footer
-      className="border-t py-10 px-6"
-      style={{ borderColor: 'rgba(255,255,255,0.06)' }}
+      style={{
+        borderTop: '1px solid rgba(0,0,0,0.06)',
+        padding: '12px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        fontSize: '11px',
+        color: '#D4D4D4',
+        letterSpacing: '-0.01em',
+      }}
     >
-      <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <span
-            className="w-2 h-2 rounded-full"
-            style={{ background: '#4A9EFF', boxShadow: '0 0 6px rgba(74,158,255,0.5)' }}
-          />
-          <span className="font-medium text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>
-            Calipers
-          </span>
-          <span className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
-            MIT License
-          </span>
-        </div>
+      <span>MIT License</span>
 
-        <nav className="flex items-center gap-6 flex-wrap justify-center">
-          {[
-            { label: 'Docs', href: '/docs' },
-            { label: 'Changelog', href: '/changelog' },
-            { label: 'GitHub', href: 'https://github.com/calipers/calipers' },
-            { label: 'Issues', href: 'https://github.com/calipers/calipers/issues' },
-            { label: 'Code of Conduct', href: 'https://github.com/calipers/calipers/blob/main/CODE_OF_CONDUCT.md' },
-          ].map(({ label, href }) => (
-            <a
-              key={label}
-              href={href}
-              className="text-sm transition-colors"
-              style={{ color: 'rgba(255,255,255,0.35)' }}
-              target={href.startsWith('http') ? '_blank' : undefined}
-              rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
-            >
-              {label}
-            </a>
-          ))}
-        </nav>
-      </div>
+      <nav style={{ display: 'flex', gap: '16px' }}>
+        {[
+          { label: 'Docs',      href: '/docs' },
+          { label: 'Changelog', href: '/changelog' },
+          { label: 'GitHub',    href: 'https://github.com/calipers/calipers' },
+        ].map(({ label, href }) => (
+          <Link
+            key={label}
+            href={href}
+            style={{ color: '#737373', textDecoration: 'none' }}
+            target={href.startsWith('http') ? '_blank' : undefined}
+            rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
+          >
+            {label}
+          </Link>
+        ))}
+      </nav>
+
+      <span>v0.1.0</span>
     </footer>
   );
 }

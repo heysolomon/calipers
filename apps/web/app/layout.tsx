@@ -1,10 +1,16 @@
 import type { Metadata } from 'next';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { DemoProvider } from '../components/demo-provider';
+import { DemoToolbar } from '../components/demo-toolbar';
+import { DemoOverlay } from '../components/demo-overlay';
+import { DemoPageWrapper } from '../components/demo-page-wrapper';
+import { CustomCursor } from '../components/custom-cursor';
+import { AgentationWidget } from '../components/agentation-widget';
 import './globals.css';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://calipers.dev'),
+  metadataBase: new URL('https://calipers.solomonakuson.com'),
   title: {
     default: 'Calipers — Precision measurement for the web',
     template: '%s | Calipers',
@@ -17,7 +23,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://calipers.dev',
+    url: 'https://calipers.solomonakuson.com',
     title: 'Calipers — Precision measurement for the web',
     description:
       'Free, open-source Chrome extension for measuring distances, inspecting dimensions, and checking alignment on any webpage.',
@@ -54,11 +60,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body>
-        {children}
+        <DemoProvider>
+          <CustomCursor />
+          <DemoToolbar />
+          <DemoOverlay />
+          <DemoPageWrapper>{children}</DemoPageWrapper>
+        </DemoProvider>
         <Analytics />
         <SpeedInsights />
+        {process.env.NODE_ENV === 'development' && <AgentationWidget />}
       </body>
     </html>
   );

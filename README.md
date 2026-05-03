@@ -134,7 +134,7 @@ See [ROADMAP.md](ROADMAP.md) for planned features, or track progress on the [Git
 
 - **Bugs & features:** [GitHub Issues](https://github.com/calipers/calipers/issues)
 - **Discussion:** [GitHub Discussions](https://github.com/calipers/calipers/discussions)
-- **Website & docs:** [calipers.dev](https://calipers.dev)
+- **Website & docs:** [calipers.solomonakuson.com](https://calipers.solomonakuson.com)
 
 ---
 
