@@ -1,36 +1,43 @@
 {
-  "manifest_version": 3,
+  "manifest_version": 2,
   "name": "Calipers",
   "version": "0.1.0",
   "description": "Precision measurement for the web — inspect dimensions, measure distances, and check alignment on any webpage.",
   "author": "Calipers Contributors",
 
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "calipers@calipers.dev",
+      "strict_min_version": "109.0"
+    }
+  },
+
   "icons": {
-    "16": "assets/icons/icon-16.png",
-    "32": "assets/icons/icon-32.png",
-    "48": "assets/icons/icon-48.png",
+    "16":  "assets/icons/icon-16.png",
+    "32":  "assets/icons/icon-32.png",
+    "48":  "assets/icons/icon-48.png",
     "128": "assets/icons/icon-128.png"
   },
 
-  "action": {
+  "browser_action": {
     "default_icon": {
-      "16": "assets/icons/icon-16.png",
-      "32": "assets/icons/icon-32.png",
-      "48": "assets/icons/icon-48.png",
+      "16":  "assets/icons/icon-16.png",
+      "32":  "assets/icons/icon-32.png",
+      "48":  "assets/icons/icon-48.png",
       "128": "assets/icons/icon-128.png"
     },
     "default_title": "Calipers"
   },
 
   "background": {
-    "service_worker": "src/background/index.ts",
+    "scripts": ["dist-ff/background.js"],
     "type": "module"
   },
 
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["src/content/index.ts"],
+      "js": ["dist-ff/content.js"],
       "run_at": "document_idle",
       "all_frames": false
     }
@@ -40,10 +47,9 @@
     "activeTab",
     "scripting",
     "storage",
-    "tabs"
+    "tabs",
+    "<all_urls>"
   ],
-
-  "host_permissions": ["<all_urls>"],
 
   "commands": {
     "toggle-calipers": {
@@ -56,9 +62,7 @@
   },
 
   "web_accessible_resources": [
-    {
-      "resources": ["assets/*", "assets/fonts/*"],
-      "matches": ["<all_urls>"]
-    }
+    "assets/*",
+    "assets/fonts/*"
   ]
 }

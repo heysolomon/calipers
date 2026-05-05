@@ -3,7 +3,7 @@
  */
 
 /** Active measurement mode */
-export type Mode = 'inspect' | 'measure' | 'guides';
+export type Mode = 'inspect' | 'measure' | 'guides' | 'colorpicker' | 'spacing';
 
 /** Extension activation state */
 export interface ExtensionState {
@@ -83,11 +83,15 @@ export const DEFAULT_STATE: ExtensionState = {
 };
 
 export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
-  { key: '1', description: 'Switch to Inspect mode', action: 'SWITCH_MODE_INSPECT' },
-  { key: '2', description: 'Switch to Measure mode', action: 'SWITCH_MODE_MEASURE' },
-  { key: '3', description: 'Switch to Guides mode', action: 'SWITCH_MODE_GUIDES' },
-  { key: 'b', description: 'Toggle box model overlay', action: 'TOGGLE_BOX_MODEL' },
-  { key: 'c', description: 'Copy current measurement', action: 'COPY_MEASUREMENT' },
-  { key: 's', description: 'Take screenshot', action: 'CAPTURE_SCREENSHOT' },
-  { key: 'Escape', description: 'Deactivate / cancel', action: 'DEACTIVATE' },
+  { key: '1', description: 'Switch to Inspect mode',       action: 'SWITCH_MODE_INSPECT' },
+  { key: '2', description: 'Switch to Measure mode',       action: 'SWITCH_MODE_MEASURE' },
+  { key: '3', description: 'Switch to Guides mode',        action: 'SWITCH_MODE_GUIDES' },
+  { key: '4', description: 'Switch to Colour Picker mode', action: 'SWITCH_MODE_COLORPICKER' },
+  { key: '5', description: 'Switch to Spacing Grid mode',  action: 'SWITCH_MODE_SPACING' },
+  { key: 'b', description: 'Toggle box model overlay',     action: 'TOGGLE_BOX_MODEL' },
+  { key: 'd', description: 'Open design token panel',      action: 'TOGGLE_TOKEN_PANEL' },
+  { key: 'c', description: 'Copy current measurement',     action: 'COPY_MEASUREMENT' },
+  { key: 's', description: 'Take screenshot',              action: 'CAPTURE_SCREENSHOT' },
+  { key: '?', description: 'Show all shortcuts',           action: 'TOGGLE_SHORTCUTS_PANEL' },
+  { key: 'Escape', description: 'Deactivate / cancel',     action: 'DEACTIVATE' },
 ];

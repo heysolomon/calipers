@@ -3,21 +3,58 @@ import { DemoTrigger } from '../components/demo-trigger';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
-const FEATURES = [
-  { name: 'Inspect mode',      desc: 'Hover any element to read its dimensions'     },
-  { name: 'Measure distances', desc: 'Click two elements to measure the gap'         },
-  { name: 'Alignment guides',  desc: 'Pin crosshair guides anywhere on the page'     },
-  { name: 'Box model overlay', desc: 'Visualise margin, border, padding and content' },
-  { name: 'Screenshot export', desc: 'Capture a pixel-perfect snapshot'              },
+const MODES = [
+  { key: '1', name: 'Inspect',       desc: 'Dimensions, box model, CSS path, typography & viewport distances' },
+  { key: '2', name: 'Measure',       desc: 'Click up to 5 elements — all gaps measured simultaneously'         },
+  { key: '3', name: 'Guides',        desc: 'Draggable guides with snap-to-element edges, persisted across sessions' },
+  { key: '4', name: 'Colour Picker', desc: 'Sample element colours and copy as HEX, RGB, or HSL'               },
+  { key: '5', name: 'Spacing Grid',  desc: 'Show all gaps between sibling elements at once'                     },
+];
+
+const TOOLS = [
+  { name: 'Box model overlay',    desc: 'Colour-coded margin / border / padding / content rings on any element' },
+  { name: 'Ruler overlay',        desc: 'Pixel rulers along the viewport edges with cursor crosshair'           },
+  { name: 'Design tokens',        desc: 'Extract all CSS custom properties; export as JSON with one click'      },
+  { name: 'Screenshot export',    desc: 'Capture the visible viewport with measurements baked in'               },
+  { name: 'Typography inspector', desc: 'Font family, size, weight, line-height, and letter-spacing for text nodes' },
+  { name: 'Viewport distances',   desc: 'Dashed lines from element edges to viewport edges with px labels'      },
+  { name: 'Element path',         desc: 'CSS selector breadcrumb of the hovered element shown inline'           },
+  { name: 'Multi-element measure','desc': 'Pin multiple elements; every consecutive pair is measured at once'   },
 ];
 
 const SHORTCUTS = [
-  ['1 / 2 / 3', 'Switch mode'],
-  ['B',          'Toggle box model'],
-  ['S',          'Screenshot'],
-  ['?',          'Show shortcuts'],
-  ['Esc',        'Close'],
+  ['1 – 5',   'Switch mode'],
+  ['B',        'Toggle box model overlay'],
+  ['D',        'Open design token panel'],
+  ['S',        'Capture screenshot'],
+  ['?',        'Show all shortcuts'],
+  ['Del / ⌫', 'Clear guides'],
+  ['Esc',      'Deactivate'],
 ];
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function SectionLabel({ label }: { label: string }) {
+  return (
+    <p
+      style={{
+        fontSize: '10px',
+        fontWeight: 600,
+        letterSpacing: '0.1em',
+        textTransform: 'uppercase',
+        color: '#C4C4C4',
+        marginBottom: '8px',
+        marginTop: '28px',
+      }}
+    >
+      {label}
+    </p>
+  );
+}
+
+function Divider() {
+  return <div style={{ height: '1px', background: 'rgba(0,0,0,0.06)' }} />;
+}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -53,7 +90,7 @@ export default function HomePage() {
         {/* Tagline */}
         <p
           style={{
-            maxWidth: '400px',
+            maxWidth: '420px',
             fontSize: '13px',
             lineHeight: 1.75,
             color: '#737373',
@@ -61,9 +98,9 @@ export default function HomePage() {
             letterSpacing: '-0.01em',
           }}
         >
-          Precision measurement for the web. A free, open-source Chrome extension
-          for measuring distances, inspecting dimensions, and checking alignment —
-          with pixel-perfect accuracy.
+          Precision measurement for the web. A free, open-source browser extension
+          with five measurement modes, a colour picker, design token extraction,
+          typography inspection, and more — with pixel-perfect accuracy.
         </p>
 
         {/* CTA */}
@@ -117,40 +154,85 @@ export default function HomePage() {
           padding: '0 24px 80px',
         }}
       >
-        <p
-          style={{
-            fontSize: '11px',
-            fontWeight: 600,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            color: '#999',
-            marginBottom: '12px',
-          }}
-        >
-          Features
-        </p>
-
+        {/* Modes */}
+        <SectionLabel label="Modes" />
         <ul style={{ listStyle: 'none', padding: 0 }}>
-          {FEATURES.map(({ name, desc }, i) => (
-            <li
-              key={name}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'baseline',
-                gap: '16px',
-                padding: '8px 0',
-                borderBottom: i < FEATURES.length - 1
-                  ? '1px solid rgba(0,0,0,0.06)'
-                  : 'none',
-              }}
-            >
-              <span style={{ fontSize: '13px', color: '#000', letterSpacing: '-0.01em' }}>
-                {name}
-              </span>
-              <span style={{ fontSize: '11.5px', color: '#999', whiteSpace: 'nowrap', textAlign: 'right' }}>
-                {desc}
-              </span>
+          {MODES.map(({ key, name, desc }, i) => (
+            <li key={name}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'baseline',
+                  gap: '16px',
+                  padding: '9px 0',
+                }}
+              >
+                <span
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '13px',
+                    color: '#000',
+                    letterSpacing: '-0.01em',
+                    flexShrink: 0,
+                  }}
+                >
+                  <kbd
+                    style={{
+                      fontSize: '9px',
+                      fontFamily: '"JetBrains Mono", monospace',
+                      color: '#737373',
+                      background: '#fff',
+                      border: '1px solid rgba(0,0,0,0.12)',
+                      borderBottomWidth: '2px',
+                      borderRadius: '3px',
+                      padding: '1px 5px',
+                    }}
+                  >
+                    {key}
+                  </kbd>
+                  {name}
+                </span>
+                <span
+                  style={{
+                    fontSize: '11.5px',
+                    color: '#999',
+                    textAlign: 'right',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {desc}
+                </span>
+              </div>
+              {i < MODES.length - 1 && <Divider />}
+            </li>
+          ))}
+        </ul>
+
+        {/* Tools */}
+        <SectionLabel label="Tools &amp; Overlays" />
+        <ul style={{ listStyle: 'none', padding: 0 }}>
+          {TOOLS.map(({ name, desc }, i) => (
+            <li key={name}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'baseline',
+                  gap: '16px',
+                  padding: '9px 0',
+                }}
+              >
+                <span style={{ fontSize: '13px', color: '#000', letterSpacing: '-0.01em', flexShrink: 0 }}>
+                  {name}
+                </span>
+                <span style={{ fontSize: '11.5px', color: '#999', textAlign: 'right', lineHeight: 1.5 }}>
+                  {desc}
+                </span>
+              </div>
+              {i < TOOLS.length - 1 && <Divider />}
             </li>
           ))}
         </ul>
@@ -165,52 +247,83 @@ export default function HomePage() {
           padding: '0 24px 80px',
         }}
       >
-        <p
-          style={{
-            fontSize: '11px',
-            fontWeight: 600,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            color: '#999',
-            marginBottom: '12px',
-          }}
-        >
-          Shortcuts
-        </p>
-
+        <SectionLabel label="Shortcuts" />
         <ul style={{ listStyle: 'none', padding: 0 }}>
           {SHORTCUTS.map(([key, label], i) => (
-            <li
-              key={key}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '6px 0',
-                borderBottom: i < SHORTCUTS.length - 1
-                  ? '1px solid rgba(0,0,0,0.06)'
-                  : 'none',
-              }}
-            >
-              <span style={{ fontSize: '13px', color: '#737373', letterSpacing: '-0.01em' }}>{label}</span>
-              <kbd
+            <li key={key}>
+              <div
                 style={{
-                  fontSize: '10px',
-                  fontFamily: '"JetBrains Mono", monospace',
-                  color: '#000',
-                  background: '#fff',
-                  border: '1px solid rgba(0,0,0,0.12)',
-                  borderBottomWidth: '2px',
-                  borderRadius: '4px',
-                  padding: '1px 7px',
-                  letterSpacing: '0.02em',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '7px 0',
                 }}
               >
-                {key}
-              </kbd>
+                <span style={{ fontSize: '13px', color: '#737373', letterSpacing: '-0.01em' }}>{label}</span>
+                <kbd
+                  style={{
+                    fontSize: '10px',
+                    fontFamily: '"JetBrains Mono", monospace',
+                    color: '#000',
+                    background: '#fff',
+                    border: '1px solid rgba(0,0,0,0.12)',
+                    borderBottomWidth: '2px',
+                    borderRadius: '4px',
+                    padding: '1px 7px',
+                    letterSpacing: '0.02em',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {key}
+                </kbd>
+              </div>
+              {i < SHORTCUTS.length - 1 && <Divider />}
             </li>
           ))}
         </ul>
+      </section>
+
+      {/* ── Browser support ─────────────────────────────────────────────────── */}
+      <section
+        style={{
+          width: '100%',
+          maxWidth: '640px',
+          margin: '0 auto',
+          padding: '0 24px 80px',
+        }}
+      >
+        <SectionLabel label="Browser Support" />
+        <div
+          style={{
+            display: 'flex',
+            gap: '8px',
+            flexWrap: 'wrap',
+          }}
+        >
+          {[
+            { name: 'Chrome',  note: 'Manifest V3' },
+            { name: 'Firefox', note: 'Manifest V2' },
+          ].map(({ name, note }) => (
+            <div
+              key={name}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '4px 10px',
+                background: '#fff',
+                border: '1px solid rgba(0,0,0,0.1)',
+                borderRadius: '6px',
+                fontSize: '12px',
+                color: '#000',
+                letterSpacing: '-0.01em',
+              }}
+            >
+              <span>{name}</span>
+              <span style={{ fontSize: '10px', color: '#999' }}>{note}</span>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* ── Open source ─────────────────────────────────────────────────────── */}
@@ -222,9 +335,7 @@ export default function HomePage() {
           padding: '0 24px 120px',
         }}
       >
-        <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#999', marginBottom: '12px' }}>
-          Open Source
-        </p>
+        <SectionLabel label="Open Source" />
         <p style={{ fontSize: '13px', color: '#737373', lineHeight: 1.75, letterSpacing: '-0.01em', maxWidth: '380px' }}>
           Calipers is free and open source under the MIT License. Contributions,
           bug reports, and feature requests are welcome on{' '}

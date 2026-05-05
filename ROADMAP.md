@@ -26,12 +26,12 @@ Richer measurement tools and export capabilities.
 - ✅ Box model overlay (margin, padding, border, content)
 - ✅ Alignment guides (draggable, persistent, right-click to remove)
 - ✅ Screenshot export with measurements overlaid
-- [ ] Snap-to-element-edges in guides mode
-- [ ] Distance measurement from element to viewport edges
-- [ ] Multi-element selection (measure spacing across 3+ elements)
-- [ ] Ruler overlay along viewport edges (pixel rulers like in design tools)
-- [ ] Element path display (show the CSS selector of the inspected element)
-- [ ] Persist guides and settings across sessions via `chrome.storage`
+- ✅ Snap-to-element-edges in guides mode
+- ✅ Distance measurement from element to viewport edges
+- ✅ Multi-element selection (measure spacing across 3+ elements)
+- ✅ Ruler overlay along viewport edges (pixel rulers like in design tools)
+- ✅ Element path display (show the CSS selector of the inspected element)
+- ✅ Persist guides and settings across sessions via `chrome.storage`
 
 ---
 
@@ -39,12 +39,12 @@ Richer measurement tools and export capabilities.
 
 Expanding beyond Chrome and adding design tool integrations.
 
-- [ ] Firefox extension (WebExtensions API parity)
+- ✅ Firefox extension (WebExtensions API parity — MV2 manifest + dedicated Vite config)
 - [ ] Figma plugin — import Calipers measurements directly into a Figma file
-- [ ] Design token extraction — read CSS custom properties from the inspected page and export as JSON/CSS/Figma tokens
-- [ ] Element spacing grid view — show all gaps between sibling elements at once
-- [ ] Colour picker mode — sample any pixel's colour and copy as HEX/RGB/HSL
-- [ ] Typography inspector — show font family, size, weight, line-height, letter-spacing for text nodes
+- ✅ Design token extraction — read CSS custom properties from the inspected page and export as JSON/CSS/Figma tokens
+- ✅ Element spacing grid view — show all gaps between sibling elements at once
+- ✅ Colour picker mode — sample any pixel's colour and copy as HEX/RGB/HSL
+- ✅ Typography inspector — show font family, size, weight, line-height, letter-spacing for text nodes
 
 ---
 
