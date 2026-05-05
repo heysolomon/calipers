@@ -19,6 +19,28 @@ function getTarget(x: number, y: number): Element | null {
   return el;
 }
 
+// ─── Shared styles ────────────────────────────────────────────────────────────
+
+// Dark glassmorphic pill — matches extension label system
+const PILL: React.CSSProperties = {
+  background: 'rgba(20,20,28,0.88)',
+  backdropFilter: 'blur(16px) saturate(150%)',
+  WebkitBackdropFilter: 'blur(16px) saturate(150%)',
+  border: '1px solid rgba(255,255,255,0.08)',
+  color: 'rgba(255,255,255,0.9)',
+  fontSize: '11px',
+  fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+  fontWeight: 500,
+  letterSpacing: '0.025em',
+  padding: '3px 10px',
+  borderRadius: '100px',
+  whiteSpace: 'nowrap',
+  boxShadow: '0 2px 10px rgba(0,0,0,0.4)',
+  pointerEvents: 'none',
+  zIndex: 8901,
+  position: 'fixed',
+};
+
 // ─── 1. Inspect mode ──────────────────────────────────────────────────────────
 
 function InspectOverlay() {
@@ -32,8 +54,8 @@ function InspectOverlay() {
       if (!el) { setRect(null); return; }
       const r = el.getBoundingClientRect();
       setRect(r);
-      setLabel(`${Math.round(r.width)} × ${Math.round(r.height)}`);
-      setLpos({ x: r.left, y: r.top > 60 ? r.top - 26 : r.bottom + 6 });
+      setLabel(`${Math.round(r.width)} × ${Math.round(r.height)} px`);
+      setLpos({ x: r.left, y: r.top > 60 ? r.top - 30 : r.bottom + 8 });
     }
     window.addEventListener('mousemove', onMove, { passive: true });
     return () => window.removeEventListener('mousemove', onMove);
@@ -42,29 +64,24 @@ function InspectOverlay() {
   if (!rect) return null;
   return (
     <>
-      {/* Highlight */}
+      {/* Outline highlight — very light fill */}
       <div data-demo-ui="true" style={{
         position: 'fixed', left: rect.left, top: rect.top,
         width: rect.width, height: rect.height,
-        border: '1.5px solid #FF4500', background: 'rgba(255,69,0,0.07)',
+        border: '1px solid rgba(255,69,0,0.75)',
+        background: 'rgba(255,69,0,0.04)',
         pointerEvents: 'none', zIndex: 8900, boxSizing: 'border-box',
       }} />
-      {/* Edge lines */}
-      {[
-        { left: rect.left, top: rect.top,          width: rect.width,  height: 1 },
-        { left: rect.left, top: rect.bottom - 1,   width: rect.width,  height: 1 },
-        { left: rect.left, top: rect.top,          width: 1,           height: rect.height },
-        { left: rect.right - 1, top: rect.top,     width: 1,           height: rect.height },
-      ].map((s, i) => (
-        <div key={i} data-demo-ui="true" style={{ position: 'fixed', background: 'rgba(255,69,0,0.35)', pointerEvents: 'none', zIndex: 8899, ...s }} />
-      ))}
-      {/* Label */}
+      {/* Dimension pill — accent color */}
       <div data-demo-ui="true" style={{
-        position: 'fixed', left: lpos.x, top: lpos.y,
-        background: '#FF4500', color: '#fff', fontSize: '10px',
-        fontFamily: '"JetBrains Mono", monospace', fontWeight: 500,
-        padding: '2px 6px', borderRadius: '3px',
-        pointerEvents: 'none', zIndex: 8901, whiteSpace: 'nowrap', letterSpacing: '0.04em',
+        ...PILL,
+        left: lpos.x, top: lpos.y,
+        background: '#FF4500',
+        border: 'none',
+        color: '#fff',
+        backdropFilter: 'none',
+        WebkitBackdropFilter: 'none',
+        boxShadow: '0 2px 10px rgba(255,69,0,0.35)',
       }}>
         {label}
       </div>
@@ -96,9 +113,9 @@ function BoxModelOverlay() {
 
       setRect(r);
       setBox({
-        margin:  { l: n(css.marginLeft),        t: n(css.marginTop),        r: n(css.marginRight),        b: n(css.marginBottom) },
-        border:  { l: n(css.borderLeftWidth),   t: n(css.borderTopWidth),   r: n(css.borderRightWidth),   b: n(css.borderBottomWidth) },
-        padding: { l: n(css.paddingLeft),       t: n(css.paddingTop),       r: n(css.paddingRight),       b: n(css.paddingBottom) },
+        margin:  { l: n(css.marginLeft),      t: n(css.marginTop),      r: n(css.marginRight),      b: n(css.marginBottom) },
+        border:  { l: n(css.borderLeftWidth), t: n(css.borderTopWidth), r: n(css.borderRightWidth), b: n(css.borderBottomWidth) },
+        padding: { l: n(css.paddingLeft),     t: n(css.paddingTop),     r: n(css.paddingRight),     b: n(css.paddingBottom) },
         borderRect: r,
       });
     }
@@ -111,27 +128,25 @@ function BoxModelOverlay() {
   const br = box.borderRect;
   const { margin: m, border: b, padding: p } = box;
 
-  // Each layer rect (viewport-relative)
-  const marginR  = { l: br.left - m.l,           t: br.top - m.t,           w: br.width  + m.l + m.r,       h: br.height + m.t + m.b };
-  const borderR  = { l: br.left,                  t: br.top,                  w: br.width,                     h: br.height };
-  const paddingR = { l: br.left + b.l,             t: br.top + b.t,            w: br.width  - b.l - b.r,        h: br.height - b.t - b.b };
-  const contentR = { l: br.left + b.l + p.l,       t: br.top + b.t + p.t,     w: br.width  - b.l - b.r - p.l - p.r, h: br.height - b.t - b.b - p.t - p.b };
+  const marginR  = { l: br.left - m.l,         t: br.top - m.t,         w: br.width + m.l + m.r,                  h: br.height + m.t + m.b };
+  const borderR  = { l: br.left,                t: br.top,               w: br.width,                               h: br.height };
+  const paddingR = { l: br.left + b.l,          t: br.top + b.t,         w: br.width - b.l - b.r,                  h: br.height - b.t - b.b };
+  const contentR = { l: br.left + b.l + p.l,    t: br.top + b.t + p.t,  w: br.width - b.l - b.r - p.l - p.r,     h: br.height - b.t - b.b - p.t - p.b };
 
-  const layers: { r: typeof marginR; bg: string; stroke: string; label: string }[] = [
-    { r: marginR,  bg: 'rgba(255,130,80,0.12)',  stroke: 'rgba(255,130,80,0.5)',  label: 'margin'  },
-    { r: borderR,  bg: 'rgba(255,200,80,0.12)',  stroke: 'rgba(255,200,80,0.5)',  label: 'border'  },
-    { r: paddingR, bg: 'rgba(80,200,140,0.12)',  stroke: 'rgba(80,200,140,0.5)', label: 'padding' },
-    { r: contentR, bg: 'rgba(255,69,0,0.15)',  stroke: 'rgba(255,69,0,0.5)', label: 'content' },
+  const layers = [
+    { r: marginR,  bg: 'rgba(255,130,80,0.1)',  stroke: 'rgba(255,130,80,0.45)',  label: 'margin'  },
+    { r: borderR,  bg: 'rgba(255,200,80,0.1)',  stroke: 'rgba(255,200,80,0.45)',  label: 'border'  },
+    { r: paddingR, bg: 'rgba(80,200,140,0.1)',  stroke: 'rgba(80,200,140,0.45)', label: 'padding' },
+    { r: contentR, bg: 'rgba(100,160,255,0.1)', stroke: 'rgba(100,160,255,0.45)', label: 'content' },
   ];
 
-  // Labels for each value (top / right / bottom / left)
   const labelRows = [
-    { name: 'margin',  vals: m, color: 'rgba(255,130,80,1)' },
-    { name: 'border',  vals: b, color: 'rgba(255,200,80,1)' },
-    { name: 'padding', vals: p, color: 'rgba(80,200,140,1)' },
+    { name: 'margin',  vals: m, color: 'rgba(255,130,80,0.9)' },
+    { name: 'border',  vals: b, color: 'rgba(255,200,80,0.9)' },
+    { name: 'padding', vals: p, color: 'rgba(80,200,140,0.9)' },
   ];
 
-  const panelX = br.right + 8 > window.innerWidth - 160 ? br.left - 160 : br.right + 8;
+  const panelX = br.right + 8 > window.innerWidth - 170 ? br.left - 165 : br.right + 8;
   const panelY = Math.max(40, Math.min(br.top, window.innerHeight - 130));
 
   return (
@@ -143,26 +158,23 @@ function BoxModelOverlay() {
           pointerEvents: 'none', zIndex: 8850, boxSizing: 'border-box',
         }} />
       ))}
-
-      {/* Mini info panel */}
+      {/* Info panel */}
       <div data-demo-ui="true" style={{
         position: 'fixed', left: panelX, top: panelY,
-        background: 'rgba(17,17,17,0.95)', backdropFilter: 'blur(8px)',
-        border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px',
-        padding: '8px 10px', pointerEvents: 'none', zIndex: 8901,
-        fontSize: '10px', fontFamily: '"JetBrains Mono", monospace',
-        color: 'rgba(255,255,255,0.5)', minWidth: '148px',
-        boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+        background: 'rgba(12,12,14,0.95)',
+        border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px',
+        padding: '10px 12px', pointerEvents: 'none', zIndex: 8901,
+        fontSize: '10px', fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+        minWidth: '155px', boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
       }}>
-        {/* Content size */}
-        <div style={{ color: 'rgba(255,255,255,0.8)', marginBottom: '6px', fontSize: '11px' }}>
-          {Math.round(contentR.w)} × {Math.round(contentR.h)}
+        <div style={{ color: 'rgba(255,255,255,0.85)', marginBottom: '8px', fontSize: '11px', fontWeight: 500 }}>
+          {Math.round(contentR.w)} × {Math.round(contentR.h)} px
         </div>
         {labelRows.map(({ name, vals, color }) => (
-          <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+          <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
             <span style={{ width: '6px', height: '6px', borderRadius: '2px', background: color, flexShrink: 0 }} />
-            <span style={{ minWidth: '48px', color: 'rgba(255,255,255,0.35)' }}>{name}</span>
-            <span style={{ color: 'rgba(255,255,255,0.6)', letterSpacing: '0.02em' }}>
+            <span style={{ minWidth: '46px', color: 'rgba(255,255,255,0.3)' }}>{name}</span>
+            <span style={{ color: 'rgba(255,255,255,0.6)' }}>
               {vals.t} {vals.r} {vals.b} {vals.l}
             </span>
           </div>
@@ -181,10 +193,10 @@ type MeasurePhase =
 
 function calcGap(a: DOMRect, b: DOMRect) {
   let hGap = 0, vGap = 0;
-  if (b.left >= a.right)  hGap = b.left - a.right;
-  else if (a.left >= b.right) hGap = a.left - b.right;
-  if (b.top >= a.bottom)  vGap = b.top - a.bottom;
-  else if (a.top >= b.bottom) vGap = a.top - b.bottom;
+  if (b.left >= a.right)       hGap = b.left - a.right;
+  else if (a.left >= b.right)  hGap = a.left - b.right;
+  if (b.top >= a.bottom)       vGap = b.top - a.bottom;
+  else if (a.top >= b.bottom)  vGap = a.top - b.bottom;
 
   if (hGap > 0 && (vGap === 0 || hGap <= vGap)) {
     const x1 = b.left >= a.right ? a.right : b.right;
@@ -198,6 +210,19 @@ function calcGap(a: DOMRect, b: DOMRect) {
   const ox = (Math.max(a.left, b.left) + Math.min(a.right, b.right)) / 2;
   const x  = isFinite(ox) ? ox : (a.left + a.right) / 2;
   return { gap: vGap, axis: 'v' as const, line: { x1: x, y1, x2: x, y2 } };
+}
+
+function ElementOutline({ rect, locked = false }: { rect: DOMRect; locked?: boolean }) {
+  return (
+    <div data-demo-ui="true" style={{
+      position: 'fixed',
+      left: rect.left, top: rect.top,
+      width: rect.width, height: rect.height,
+      border: `${locked ? 1.5 : 1}px solid rgba(255,69,0,${locked ? 0.9 : 0.5})`,
+      background: `rgba(255,69,0,${locked ? 0.05 : 0.02})`,
+      pointerEvents: 'none', zIndex: 8900, boxSizing: 'border-box',
+    }} />
+  );
 }
 
 function MeasureOverlay() {
@@ -215,11 +240,8 @@ function MeasureOverlay() {
       if (!el) return;
       e.preventDefault(); e.stopPropagation();
       const rect = el.getBoundingClientRect();
-
       setPhase(prev => {
-        if (prev.step === 'idle' || prev.step === 'done') {
-          return { step: 'first', rect };
-        }
+        if (prev.step === 'idle' || prev.step === 'done') return { step: 'first', rect };
         const { gap, axis, line } = calcGap(prev.rect, rect);
         return { step: 'done', from: prev.rect, to: rect, gap, axis, line };
       });
@@ -232,32 +254,27 @@ function MeasureOverlay() {
     };
   }, []);
 
-  const highlightStyle = (r: DOMRect, strong = false): React.CSSProperties => ({
-    position: 'fixed', left: r.left, top: r.top, width: r.width, height: r.height,
-    border: `${strong ? 2 : 1.5}px solid #FF4500`,
-    background: `rgba(255,69,0,${strong ? 0.12 : 0.05})`,
-    pointerEvents: 'none', zIndex: 8900, boxSizing: 'border-box',
-  });
-
   return (
     <>
-      {/* Hover highlight (idle / first step) */}
-      {hover && phase.step !== 'done' && (
-        <div data-demo-ui="true" style={highlightStyle(hover, false)} />
-      )}
+      {/* Hover highlight */}
+      {hover && phase.step !== 'done' && <ElementOutline rect={hover} />}
 
       {/* First element pinned */}
       {phase.step === 'first' && (
         <>
-          <div data-demo-ui="true" style={highlightStyle(phase.rect, true)} />
+          <ElementOutline rect={phase.rect} locked />
           <div data-demo-ui="true" style={{
-            position: 'fixed', left: phase.rect.left, top: Math.max(40, phase.rect.top - 26),
-            background: '#FF4500', color: '#fff', fontSize: '10px',
-            fontFamily: '"JetBrains Mono", monospace', padding: '2px 8px',
-            borderRadius: '3px', pointerEvents: 'none', zIndex: 8902,
-            whiteSpace: 'nowrap', letterSpacing: '0.03em',
+            ...PILL,
+            left: phase.rect.left,
+            top: Math.max(40, phase.rect.top - 30),
+            background: '#FF4500',
+            border: 'none',
+            color: '#fff',
+            backdropFilter: 'none',
+            WebkitBackdropFilter: 'none',
+            boxShadow: '0 2px 10px rgba(255,69,0,0.35)',
           }}>
-            Now click a second element →
+            Click a second element →
           </div>
         </>
       )}
@@ -267,46 +284,52 @@ function MeasureOverlay() {
         const { from, to, gap, line } = phase;
         const mx = (line.x1 + line.x2) / 2;
         const my = (line.y1 + line.y2) / 2;
+        const CAP = 6;
         return (
           <>
-            <div data-demo-ui="true" style={highlightStyle(from, true)} />
-            <div data-demo-ui="true" style={highlightStyle(to, true)} />
-            {/* SVG measurement line */}
-            <svg
-              data-demo-ui="true"
-              style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', pointerEvents: 'none', zIndex: 8950, overflow: 'visible' }}
-            >
-              <line x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="#FF4500" strokeWidth="1.5" strokeDasharray="4 3" />
-              {/* end caps */}
+            <ElementOutline rect={from} locked />
+            <ElementOutline rect={to}   locked />
+
+            {/* Measurement line + end caps */}
+            <svg data-demo-ui="true" style={{
+              position: 'fixed', inset: 0, width: '100vw', height: '100vh',
+              pointerEvents: 'none', zIndex: 8950, overflow: 'visible',
+            }}>
+              <line
+                x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2}
+                stroke="rgba(255,69,0,0.85)" strokeWidth="1.5"
+              />
               {phase.axis === 'h' ? (
                 <>
-                  <line x1={line.x1} y1={line.y1 - 6} x2={line.x1} y2={line.y1 + 6} stroke="#FF4500" strokeWidth="1.5" />
-                  <line x1={line.x2} y1={line.y2 - 6} x2={line.x2} y2={line.y2 + 6} stroke="#FF4500" strokeWidth="1.5" />
+                  <line x1={line.x1} y1={line.y1 - CAP} x2={line.x1} y2={line.y1 + CAP} stroke="rgba(255,69,0,0.85)" strokeWidth="1.5" strokeLinecap="round" />
+                  <line x1={line.x2} y1={line.y2 - CAP} x2={line.x2} y2={line.y2 + CAP} stroke="rgba(255,69,0,0.85)" strokeWidth="1.5" strokeLinecap="round" />
                 </>
               ) : (
                 <>
-                  <line x1={line.x1 - 6} y1={line.y1} x2={line.x1 + 6} y2={line.y1} stroke="#FF4500" strokeWidth="1.5" />
-                  <line x1={line.x2 - 6} y1={line.y2} x2={line.x2 + 6} y2={line.y2} stroke="#FF4500" strokeWidth="1.5" />
+                  <line x1={line.x1 - CAP} y1={line.y1} x2={line.x1 + CAP} y2={line.y1} stroke="rgba(255,69,0,0.85)" strokeWidth="1.5" strokeLinecap="round" />
+                  <line x1={line.x2 - CAP} y1={line.y2} x2={line.x2 + CAP} y2={line.y2} stroke="rgba(255,69,0,0.85)" strokeWidth="1.5" strokeLinecap="round" />
                 </>
               )}
             </svg>
-            {/* Distance label */}
+
+            {/* Distance pill on the line */}
             <div data-demo-ui="true" style={{
-              position: 'fixed', left: mx, top: my,
+              ...PILL,
+              left: mx, top: my,
               transform: 'translate(-50%, -50%)',
-              background: '#FF4500', color: '#fff',
-              fontSize: '10px', fontFamily: '"JetBrains Mono", monospace',
-              fontWeight: 600, padding: '2px 7px', borderRadius: '3px',
-              pointerEvents: 'none', zIndex: 8951, whiteSpace: 'nowrap',
-              letterSpacing: '0.04em',
             }}>
-              {Math.round(gap)}px
+              {Math.round(gap)} px
             </div>
+
+            {/* Hint */}
             <div data-demo-ui="true" style={{
-              position: 'fixed', left: Math.min(from.left, to.left),
-              top: Math.min(from.top, to.top) - 26,
-              fontSize: '10px', color: '#737373', fontFamily: '"JetBrains Mono", monospace',
+              position: 'fixed',
+              left: Math.min(from.left, to.left),
+              top: Math.min(from.top, to.top) - 30,
+              fontSize: '10px', color: 'rgba(0,0,0,0.3)',
+              fontFamily: '"JetBrains Mono", ui-monospace, monospace',
               pointerEvents: 'none', zIndex: 8951,
+              letterSpacing: '0.02em',
             }}>
               Click any element to measure again
             </div>
@@ -364,18 +387,20 @@ function GuidesOverlay() {
   return (
     <>
       {/* Live crosshair */}
-      <div data-demo-ui="true" style={{ ...lineBase, left: mouse.x, top: 36, width: 1, bottom: 0, background: 'rgba(255,69,0,0.45)', transform: 'translateX(-0.5px)' }} />
-      <div data-demo-ui="true" style={{ ...lineBase, left: 0, top: mouse.y, right: 0, height: 1, background: 'rgba(255,69,0,0.45)', transform: 'translateY(-0.5px)' }} />
+      <div data-demo-ui="true" style={{ ...lineBase, left: mouse.x, top: 44, width: 1, bottom: 0, background: 'rgba(255,69,0,0.4)', transform: 'translateX(-0.5px)' }} />
+      <div data-demo-ui="true" style={{ ...lineBase, left: 0, top: mouse.y, right: 0, height: 1, background: 'rgba(255,69,0,0.4)', transform: 'translateY(-0.5px)' }} />
 
       {/* Pinned guides */}
       {guides.map(g => (
         <div key={g.id} data-demo-ui="true">
-          <div style={{ ...lineBase, left: g.x, top: 36, width: 1, bottom: 0, background: '#FF4500', opacity: 0.55, transform: 'translateX(-0.5px)' }} />
-          <div style={{ ...lineBase, left: 0, top: g.y, right: 0, height: 1, background: '#FF4500', opacity: 0.55, transform: 'translateY(-0.5px)' }} />
+          <div style={{ ...lineBase, left: g.x, top: 44, width: 1, bottom: 0, background: '#FF4500', opacity: 0.5, transform: 'translateX(-0.5px)' }} />
+          <div style={{ ...lineBase, left: 0, top: g.y, right: 0, height: 1, background: '#FF4500', opacity: 0.5, transform: 'translateY(-0.5px)' }} />
+          {/* Coordinate pill */}
           <div style={{
-            ...lineBase, left: g.x + 6, top: g.y - 20,
-            background: '#FF4500', color: '#fff', fontSize: '9px',
-            fontFamily: 'monospace', padding: '1px 5px', borderRadius: '3px', letterSpacing: '0.04em', whiteSpace: 'nowrap',
+            ...PILL,
+            left: g.x + 8, top: g.y - 22,
+            fontSize: '10px',
+            padding: '2px 8px',
           }}>
             {Math.round(g.x)}, {Math.round(g.y)}
           </div>

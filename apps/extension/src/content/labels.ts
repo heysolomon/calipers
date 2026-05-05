@@ -6,25 +6,24 @@ import { uid, copyToClipboard } from './utils';
 
 const LABEL_STYLE = `
   position: absolute;
-  background: rgba(20, 20, 28, 0.85);
+  background: rgba(20, 20, 28, 0.88);
   backdrop-filter: blur(16px) saturate(150%);
   -webkit-backdrop-filter: blur(16px) saturate(150%);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
+  border-radius: 100px;
   color: rgba(255, 255, 255, 0.9);
-  font-family: 'Neue Plak Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 12px;
-  font-weight: 450;
-  letter-spacing: 0.01em;
-  padding: 3px 8px;
+  font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+  padding: 3px 10px;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 1px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
   pointer-events: all;
   cursor: pointer;
   user-select: none;
-  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
-              opacity 0.2s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: transform, opacity;
+  transition: opacity 0.15s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity;
 `;
 
 const TOAST_STYLE = `
