@@ -15,6 +15,7 @@ export type Message =
   | { type: 'SCREENSHOT_READY'; dataUrl: string }
   | { type: 'MEASUREMENT_RESULT'; data: MeasurementData }
   | { type: 'GET_STATE' }
+  | { type: 'TOGGLE_PANEL' }
   | { type: 'COPY_MEASUREMENT' };
 
 export type MessageType = Message['type'];

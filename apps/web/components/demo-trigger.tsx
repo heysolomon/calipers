@@ -18,47 +18,49 @@ export function DemoTrigger() {
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
-        width: '32px',
-        height: '32px',
+        gap: '6px',
+        fontSize: '12px',
+        fontWeight: 500,
         background: 'transparent',
-        border: 'none',
+        border: '1px solid rgba(0,0,0,0.12)',
         borderRadius: '6px',
         cursor: 'pointer',
-        transition: 'background 0.15s',
-        padding: 0,
+        transition: 'background 0.15s, border-color 0.15s',
+        padding: '6px 14px',
         outline: 'none',
-        color: demo.isOpen ? 'rgba(255,255,255,0.5)' : '#737373',
+        color: '#737373',
+        letterSpacing: '-0.01em',
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.background = demo.isOpen
-          ? 'rgba(255,255,255,0.08)'
-          : 'rgba(0,0,0,0.06)';
-        e.currentTarget.style.color = demo.isOpen
-          ? 'rgba(255,255,255,0.9)'
-          : '#000';
+        e.currentTarget.style.background = 'rgba(0,0,0,0.06)';
+        e.currentTarget.style.color = '#000';
       }}
       onMouseLeave={e => {
         e.currentTarget.style.background = 'transparent';
-        e.currentTarget.style.color = demo.isOpen
-          ? 'rgba(255,255,255,0.5)'
-          : '#737373';
+        e.currentTarget.style.color = '#737373';
       }}
     >
       {demo.isOpen ? (
         /* X icon */
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-          <path d="M4 4l8 8M12 4l-8 8" />
-        </svg>
+        <>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <path d="M4 4l8 8M12 4l-8 8" />
+          </svg>
+          Close
+        </>
       ) : (
         /* Sliders / settings icon */
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-          <line x1="4" y1="6" x2="20" y2="6" />
-          <line x1="4" y1="12" x2="20" y2="12" />
-          <line x1="4" y1="18" x2="20" y2="18" />
-          <circle cx="9" cy="6" r="2.5" fill="currentColor" stroke="none" />
-          <circle cx="15" cy="12" r="2.5" fill="currentColor" stroke="none" />
-          <circle cx="9" cy="18" r="2.5" fill="currentColor" stroke="none" />
-        </svg>
+        <>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+            <line x1="4" y1="6" x2="20" y2="6" />
+            <line x1="4" y1="12" x2="20" y2="12" />
+            <line x1="4" y1="18" x2="20" y2="18" />
+            <circle cx="9" cy="6" r="2.5" fill="currentColor" stroke="none" />
+            <circle cx="15" cy="12" r="2.5" fill="currentColor" stroke="none" />
+            <circle cx="9" cy="18" r="2.5" fill="currentColor" stroke="none" />
+          </svg>
+          Try demo
+        </>
       )}
     </button>
   );

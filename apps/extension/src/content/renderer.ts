@@ -342,3 +342,116 @@ export function drawBoxModel(ctx: CanvasRenderingContext2D, box: BoxModel): void
     'rgba(100,180,255,0.95)',
   );
 }
+
+// ─── Ruler overlay ────────────────────────────────────────────────────────────
+
+export const RULER_SIZE = 20;
+
+/** Draw pixel rulers along the top and left viewport edges */
+export function drawRulers(
+  ctx: CanvasRenderingContext2D,
+  mouseX: number,
+  mouseY: number,
+): void {
+  scale(ctx);
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const R = RULER_SIZE;
+
+  // Background strips
+  ctx.fillStyle = 'rgba(10,10,10,0.82)';
+  ctx.fillRect(0, 0, w, R);
+  ctx.fillRect(0, R, R, h - R);
+
+  // Separator lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, R);     ctx.lineTo(w, R);
+  ctx.moveTo(R, R);     ctx.lineTo(R, h);
+  ctx.stroke();
+
+  // Ticks and labels
+  ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+  ctx.lineWidth = 0.5;
+  ctx.font = '7px Inter, -apple-system, sans-serif';
+
+  for (let px = 0; px <= w - R; px += 5) {
+    const x = px + R + 0.5;
+    const major = px % 100 === 0;
+    const mid   = px % 50  === 0;
+    const tick  = major ? 12 : mid ? 7 : 3;
+    ctx.beginPath(); ctx.moveTo(x, R); ctx.lineTo(x, R - tick); ctx.stroke();
+    if (major && px > 0) {
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(String(px), x, R - 14);
+    }
+  }
+
+  for (let py = 0; py <= h - R; py += 5) {
+    const y = py + R + 0.5;
+    const major = py % 100 === 0;
+    const mid   = py % 50  === 0;
+    const tick  = major ? 12 : mid ? 7 : 3;
+    ctx.beginPath(); ctx.moveTo(R, y); ctx.lineTo(R - tick, y); ctx.stroke();
+    if (major && py > 0) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.translate(R - 14, y);
+      ctx.rotate(-Math.PI / 2);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(String(py), 0, 0);
+      ctx.restore();
+    }
+  }
+
+  // Cursor crosshair highlights on the rulers
+  if (mouseX > R && mouseY > R) {
+    ctx.fillStyle = 'rgba(255,69,0,0.55)';
+    ctx.fillRect(mouseX - 0.5, 0, 1, R);
+    ctx.fillRect(0, mouseY - 0.5, R, 1);
+  }
+}
+
+// ─── Viewport edge distances ──────────────────────────────────────────────────
+
+/** Draw dashed lines + labels showing distance from element edges to viewport edges */
+export function drawViewportDistances(
+  ctx: CanvasRenderingContext2D,
+  rect: Rect,
+  container: HTMLElement,
+  setLabelFn: (c: HTMLElement, name: string, text: string, x: number, y: number) => void,
+): void {
+  scale(ctx);
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const R  = RULER_SIZE;
+
+  ctx.strokeStyle = 'rgba(255,69,0,0.3)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 5]);
+
+  const cx = (rect.left + rect.right)  / 2;
+  const cy = (rect.top  + rect.bottom) / 2;
+
+  const distances = [
+    { from: { x: cx,        y: rect.top    }, to: { x: cx,  y: R   }, val: Math.round(rect.top),         name: 'vp-top',    lx: cx + 8,    ly: (rect.top + R) / 2    },
+    { from: { x: cx,        y: rect.bottom }, to: { x: cx,  y: vh  }, val: Math.round(vh - rect.bottom), name: 'vp-bottom', lx: cx + 8,    ly: (rect.bottom + vh) / 2 },
+    { from: { x: rect.left, y: cy          }, to: { x: R,   y: cy  }, val: Math.round(rect.left),        name: 'vp-left',   lx: (rect.left + R) / 2,     ly: cy - 10    },
+    { from: { x: rect.right,y: cy          }, to: { x: vw,  y: cy  }, val: Math.round(vw - rect.right),  name: 'vp-right',  lx: (rect.right + vw) / 2,   ly: cy - 10    },
+  ];
+
+  for (const d of distances) {
+    if (d.val < 2) continue;
+    ctx.beginPath();
+    ctx.moveTo(d.from.x, d.from.y);
+    ctx.lineTo(d.to.x, d.to.y);
+    ctx.stroke();
+    setLabelFn(container, d.name, `${d.val}px`, d.lx, d.ly);
+  }
+
+  ctx.setLineDash([]);
+}

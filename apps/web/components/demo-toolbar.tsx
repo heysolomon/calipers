@@ -2,10 +2,12 @@
 import { useDemo, type DemoKey } from './demo-provider';
 
 const TOOLS: { key: DemoKey; label: string }[] = [
-  { key: 'inspect',  label: 'Inspect'   },
-  { key: 'boxmodel', label: 'Box Model' },
-  { key: 'measure',  label: 'Measure'   },
-  { key: 'guides',   label: 'Guides'    },
+  { key: 'inspect',     label: 'Inspect'    },
+  { key: 'measure',     label: 'Measure'    },
+  { key: 'guides',      label: 'Guides'     },
+  { key: 'colorpicker', label: 'Colours'    },
+  { key: 'spacing',     label: 'Spacing'    },
+  { key: 'boxmodel',    label: 'Box Model'  },
 ];
 
 // ─── Toggle switch ────────────────────────────────────────────────────────────
@@ -73,12 +75,14 @@ export function DemoToolbar() {
       }}
     >
       {/* Left — brand */}
-      <span style={{
-        fontSize: '11px', fontWeight: 500, letterSpacing: '0.07em',
-        color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase',
-      }}>
-        Calipers
-      </span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/calipers-logo.svg"
+        alt="Calipers"
+        width={16}
+        height={16}
+        style={{ filter: 'brightness(0) invert(1)', opacity: 0.5 }}
+      />
 
       {/* Centre — tool toggles */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>

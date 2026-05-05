@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" rx="224" ry="224" fill="#0f0f12"/>
+  <!-- Logo padded to ~46% of icon width (280px padding each side) -->
+  <g transform="translate(280, 280) scale(1.8125)">
+    <path d="M 256 256 L 128 256 L 0 128 L 128 128 Z M 256 128 L 128 128 L 0 0 L 128 0 Z" fill="white"/>
+  </g>
+</svg>

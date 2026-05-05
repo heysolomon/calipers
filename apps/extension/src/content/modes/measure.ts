@@ -1,40 +1,46 @@
 /**
- * Measure mode — click two elements to see the distance between them.
+ * Measure mode — click 2–5 elements to see distances between each consecutive pair.
+ * Phase 2: multi-element selection, ruler overlay.
  */
 import type { Rect } from '@calipers/shared';
 import type { OverlayElements } from '../overlay';
 import { getElementAtPoint, getElementRect } from '../detector';
-import { clearCanvas, drawElementHighlight, drawMeasurementLine, drawAlignmentGuideline } from '../renderer';
-import { setLabel } from '../labels';
+import {
+  clearCanvas, drawElementHighlight, drawMeasurementLine,
+  drawAlignmentGuideline, drawRulers,
+} from '../renderer';
+import { setLabel, hideLabel } from '../labels';
 import { formatDistance, formatDimensions, distanceBetweenRects } from '../utils';
 import { enablePointerEvents, disablePointerEvents } from '../overlay';
 
+const MAX_ELEMENTS = 5;
+const BADGES       = ['A', 'B', 'C', 'D', 'E'];
+
+interface PinnedElement {
+  el:   Element;
+  rect: Rect;
+}
+
 interface MeasureState {
-  elementA: Element | null;
-  rectA: Rect | null;
-  elementB: Element | null;
-  rectB: Rect | null;
-  hoveredEl: Element | null;
+  pinned:     PinnedElement[];
+  hoveredEl:  Element | null;
   hoveredRect: Rect | null;
-  lineProgress: number;
-  rafId: number | null;
-  mouseX: number;
-  mouseY: number;
-  pending: boolean;
+  lineProgress: number[];  // one per pair, animates 0→1
+  rafId:       number | null;
+  mouseX:      number;
+  mouseY:      number;
+  pending:     boolean;
 }
 
 const state: MeasureState = {
-  elementA: null,
-  rectA: null,
-  elementB: null,
-  rectB: null,
-  hoveredEl: null,
-  hoveredRect: null,
-  lineProgress: 0,
-  rafId: null,
-  mouseX: 0,
-  mouseY: 0,
-  pending: false,
+  pinned:       [],
+  hoveredEl:    null,
+  hoveredRect:  null,
+  lineProgress: [],
+  rafId:        null,
+  mouseX:       0,
+  mouseY:       0,
+  pending:      false,
 };
 
 let overlay: OverlayElements | null = null;
@@ -42,14 +48,14 @@ let overlay: OverlayElements | null = null;
 export function initMeasureMode(o: OverlayElements): void {
   overlay = o;
   enablePointerEvents();
-  overlay.canvas.addEventListener('click', onClick);
+  overlay.canvas.addEventListener('click',     onClick);
   overlay.canvas.addEventListener('mousemove', onMouseMove);
   scheduleFrame();
 }
 
 export function destroyMeasureMode(): void {
   if (overlay) {
-    overlay.canvas.removeEventListener('click', onClick);
+    overlay.canvas.removeEventListener('click',     onClick);
     overlay.canvas.removeEventListener('mousemove', onMouseMove);
   }
   disablePointerEvents();
@@ -59,33 +65,33 @@ export function destroyMeasureMode(): void {
 }
 
 function resetState(): void {
-  state.elementA = null;
-  state.rectA = null;
-  state.elementB = null;
-  state.rectB = null;
-  state.hoveredEl = null;
-  state.hoveredRect = null;
-  state.lineProgress = 0;
+  state.pinned       = [];
+  state.hoveredEl    = null;
+  state.hoveredRect  = null;
+  state.lineProgress = [];
 }
 
 function onClick(e: MouseEvent): void {
   const el = getElementAtPoint(e.clientX, e.clientY);
   if (!el) return;
-  const rect = getElementRect(el);
 
-  if (!state.elementA) {
-    state.elementA = el;
-    state.rectA = rect;
-    state.lineProgress = 0;
-  } else if (!state.elementB && el !== state.elementA) {
-    state.elementB = el;
-    state.rectB = rect;
-    state.lineProgress = 0;
-  } else {
-    // Third click — reset
+  // Clicking an already-pinned element resets
+  if (state.pinned.some((p) => p.el === el)) {
     resetState();
-    state.elementA = el;
-    state.rectA = rect;
+    return;
+  }
+
+  // At the max, reset and start over with this element
+  if (state.pinned.length >= MAX_ELEMENTS) {
+    resetState();
+  }
+
+  const rect = getElementRect(el);
+  state.pinned.push({ el, rect });
+
+  // Add a fresh progress value for the new pair (if 2+ elements)
+  if (state.pinned.length >= 2) {
+    state.lineProgress.push(0);
   }
 }
 
@@ -95,8 +101,8 @@ function onMouseMove(e: MouseEvent): void {
   if (!state.pending) {
     state.pending = true;
     requestAnimationFrame(() => {
-      state.pending = false;
-      state.hoveredEl = getElementAtPoint(state.mouseX, state.mouseY);
+      state.pending    = false;
+      state.hoveredEl  = getElementAtPoint(state.mouseX, state.mouseY);
       state.hoveredRect = state.hoveredEl ? getElementRect(state.hoveredEl) : null;
     });
   }
@@ -104,11 +110,35 @@ function onMouseMove(e: MouseEvent): void {
 
 function scheduleFrame(): void {
   if (!overlay) return;
-  state.rafId = requestAnimationFrame(() => {
-    render();
-    scheduleFrame();
-  });
+  state.rafId = requestAnimationFrame(() => { render(); scheduleFrame(); });
 }
+
+// ─── Measurement line geometry ────────────────────────────────────────────────
+
+function measurePair(
+  a: Rect,
+  b: Rect,
+): { x1: number; y1: number; x2: number; y2: number; distance: number; direction: 'horizontal' | 'vertical' } {
+  const { distance, direction } = distanceBetweenRects(a, b);
+
+  let x1: number, y1: number, x2: number, y2: number;
+
+  if (direction === 'horizontal') {
+    const midY = ((a.top + a.bottom) / 2 + (b.top + b.bottom) / 2) / 2;
+    y1 = midY; y2 = midY;
+    x1 = a.right <= b.left ? a.right : a.left;
+    x2 = a.right <= b.left ? b.left  : b.right;
+  } else {
+    const midX = ((a.left + a.right) / 2 + (b.left + b.right) / 2) / 2;
+    x1 = midX; x2 = midX;
+    y1 = a.bottom <= b.top ? a.bottom : a.top;
+    y2 = a.bottom <= b.top ? b.top    : b.bottom;
+  }
+
+  return { x1, y1, x2, y2, distance, direction };
+}
+
+// ─── Render ───────────────────────────────────────────────────────────────────
 
 function render(): void {
   if (!overlay) return;
@@ -116,88 +146,70 @@ function render(): void {
 
   clearCanvas(ctx);
 
-  // Animate line progress toward 1
-  if (state.elementB && state.lineProgress < 1) {
-    state.lineProgress = Math.min(1, state.lineProgress + 0.08);
+  // Animate line progress
+  for (let i = 0; i < state.lineProgress.length; i++) {
+    state.lineProgress[i] = Math.min(1, (state.lineProgress[i] ?? 0) + 0.08);
   }
 
-  // Draw hovered element hint (only if no element A yet, or B not set)
-  if (state.hoveredRect && state.hoveredEl !== state.elementA && state.hoveredEl !== state.elementB) {
-    drawElementHighlight(ctx, state.hoveredRect, false, 0.6);
+  // Hover hint (only when no element pinned yet, or waiting for next)
+  const isHoverPinned = state.pinned.some((p) => p.el === state.hoveredEl);
+  if (state.hoveredRect && !isHoverPinned) {
+    drawElementHighlight(ctx, state.hoveredRect, false, 0.5);
   }
 
-  // Element A
-  if (state.rectA) {
-    drawElementHighlight(ctx, state.rectA, true, 1);
+  // Pinned elements
+  for (let i = 0; i < state.pinned.length; i++) {
+    const { rect } = state.pinned[i]!;
+    drawElementHighlight(ctx, rect, true, 1);
+
+    const badge = BADGES[i] ?? String(i + 1);
     setLabel(
-      labelContainer,
-      'dim-a',
-      formatDimensions(state.rectA.width, state.rectA.height),
-      state.rectA.left,
-      state.rectA.top - 28,
+      labelContainer, `dim-${i}`,
+      `${badge}  ${formatDimensions(rect.width, rect.height)}`,
+      rect.left, rect.top - 28,
     );
   }
 
-  // Element B + measurement
-  if (state.rectA && state.rectB && state.elementB) {
-    drawElementHighlight(ctx, state.rectB, true, 1);
-    setLabel(
-      labelContainer,
-      'dim-b',
-      formatDimensions(state.rectB.width, state.rectB.height),
-      state.rectB.left,
-      state.rectB.top - 28,
-    );
+  // Measurements between each consecutive pair
+  for (let i = 0; i < state.pinned.length - 1; i++) {
+    const a = state.pinned[i]!.rect;
+    const b = state.pinned[i + 1]!.rect;
+    const progress = state.lineProgress[i] ?? 1;
 
-    const { distance, direction } = distanceBetweenRects(state.rectA, state.rectB);
+    const { x1, y1, x2, y2, distance, direction } = measurePair(a, b);
 
-    // Calculate line endpoints (closest edges)
-    let x1: number, y1: number, x2: number, y2: number;
-
+    // Alignment guidelines
     if (direction === 'horizontal') {
-      y1 = (state.rectA.top + state.rectA.bottom) / 2;
-      y2 = (state.rectB.top + state.rectB.bottom) / 2;
-      const midY = (y1 + y2) / 2;
-      y1 = midY;
-      y2 = midY;
-
-      if (state.rectA.right <= state.rectB.left) {
-        x1 = state.rectA.right;
-        x2 = state.rectB.left;
-      } else {
-        x1 = state.rectA.left;
-        x2 = state.rectB.right;
-      }
-
-      // Alignment guidelines
-      drawAlignmentGuideline(ctx, state.rectA.right, state.rectA.top, state.rectA.right, state.rectA.bottom);
-      drawAlignmentGuideline(ctx, state.rectB.left, state.rectB.top, state.rectB.left, state.rectB.bottom);
+      drawAlignmentGuideline(ctx, a.right, a.top, a.right, a.bottom);
+      drawAlignmentGuideline(ctx, b.left,  b.top, b.left,  b.bottom);
     } else {
-      x1 = (state.rectA.left + state.rectA.right) / 2;
-      x2 = (state.rectB.left + state.rectB.right) / 2;
-      const midX = (x1 + x2) / 2;
-      x1 = midX;
-      x2 = midX;
-
-      if (state.rectA.bottom <= state.rectB.top) {
-        y1 = state.rectA.bottom;
-        y2 = state.rectB.top;
-      } else {
-        y1 = state.rectA.top;
-        y2 = state.rectB.bottom;
-      }
-
-      // Alignment guidelines
-      drawAlignmentGuideline(ctx, state.rectA.left, state.rectA.bottom, state.rectA.right, state.rectA.bottom);
-      drawAlignmentGuideline(ctx, state.rectB.left, state.rectB.top, state.rectB.right, state.rectB.top);
+      drawAlignmentGuideline(ctx, a.left, a.bottom, a.right, a.bottom);
+      drawAlignmentGuideline(ctx, b.left, b.top,    b.right, b.top);
     }
 
-    drawMeasurementLine(ctx, x1, y1, x2, y2, state.lineProgress);
+    drawMeasurementLine(ctx, x1, y1, x2, y2, progress);
 
-    // Distance label at midpoint
     const midX = (x1 + x2) / 2;
     const midY = (y1 + y2) / 2;
     const distText = formatDistance(distance);
-    setLabel(labelContainer, 'distance', distText, midX - 20, midY - 12, distText);
+    setLabel(labelContainer, `dist-${i}`, distText, midX - 20, midY - 12, distText);
   }
+
+  // Hint label
+  if (state.pinned.length === 0) {
+    hideLabel('hint');
+  } else if (state.pinned.length < MAX_ELEMENTS) {
+    const last = state.pinned[state.pinned.length - 1]!.rect;
+    setLabel(
+      labelContainer, 'hint',
+      state.pinned.length === 1
+        ? 'Click a second element →'
+        : `Click to add more · click pinned element to reset`,
+      last.left, last.bottom + 8,
+    );
+  } else {
+    setLabel(labelContainer, 'hint', 'Click any element to reset', 20, 60);
+  }
+
+  drawRulers(ctx, state.mouseX, state.mouseY);
 }

@@ -31,7 +31,7 @@ async function sendToContent(tabId: number, message: Message): Promise<void> {
 /** Update the extension icon badge to reflect active state */
 function updateBadge(tabId: number, active: boolean): void {
   chrome.action.setBadgeText({ tabId, text: active ? '●' : '' });
-  chrome.action.setBadgeBackgroundColor({ tabId, color: active ? '#4A9EFF' : '#888888' });
+  chrome.action.setBadgeBackgroundColor({ tabId, color: active ? '#FF4500' : '#888888' });
 }
 
 // ─── Keyboard command handler ─────────────────────────────────────────────────
@@ -50,6 +50,12 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
     : { type: 'DEACTIVATE' };
 
   await sendToContent(tabId, msg);
+});
+
+// ─── Extension icon click handler (no popup) ─────────────────────────────────
+chrome.action.onClicked.addListener(async (tab) => {
+  if (!tab?.id) return;
+  await sendToContent(tab.id, { type: 'TOGGLE_PANEL' });
 });
 
 // ─── Message handler (popup → background → content) ──────────────────────────
@@ -124,10 +130,7 @@ async function handlePopupMessage(
     }
     case 'CAPTURE_SCREENSHOT': {
       try {
-        const dataUrl = await chrome.tabs.captureVisibleTab(undefined, {
-          format: 'png',
-          quality: 100,
-        });
+        const dataUrl = await chrome.tabs.captureVisibleTab({ format: 'png', quality: 100 });
         await sendToContent(tabId, { type: 'SCREENSHOT_READY', dataUrl });
         sendResponse({ dataUrl });
       } catch (err) {
@@ -142,14 +145,65 @@ async function handlePopupMessage(
 
 function handleContentMessage(
   msg: Message,
-  _tabId: number,
+  tabId: number,
   sendResponse: (r: unknown) => void,
 ): void {
   switch (msg.type) {
-    case 'MEASUREMENT_RESULT':
-      // Could be forwarded to popup if it's open — for now just ack
+    case 'GET_STATE': {
+      sendResponse(getTabState(tabId));
+      break;
+    }
+    case 'ACTIVATE': {
+      const next = setTabState(tabId, { active: true, mode: msg.mode });
+      updateBadge(tabId, true);
+      sendToContent(tabId, { type: 'ACTIVATE', mode: next.mode });
+      sendResponse(next);
+      break;
+    }
+    case 'DEACTIVATE': {
+      const next = setTabState(tabId, { active: false });
+      updateBadge(tabId, false);
+      sendToContent(tabId, { type: 'DEACTIVATE' });
+      sendResponse(next);
+      break;
+    }
+    case 'SWITCH_MODE': {
+      const next = setTabState(tabId, { mode: msg.mode as Mode });
+      sendToContent(tabId, { type: 'SWITCH_MODE', mode: msg.mode as Mode });
+      sendResponse(next);
+      break;
+    }
+    case 'TOGGLE_BOX_MODEL': {
+      const next = setTabState(tabId, { showBoxModel: msg.enabled });
+      sendToContent(tabId, { type: 'TOGGLE_BOX_MODEL', enabled: msg.enabled });
+      sendResponse(next);
+      break;
+    }
+    case 'TOGGLE_GUIDES': {
+      const next = setTabState(tabId, { showGuides: msg.enabled });
+      sendToContent(tabId, { type: 'TOGGLE_GUIDES', enabled: msg.enabled });
+      sendResponse(next);
+      break;
+    }
+    case 'TOGGLE_SNAP': {
+      const next = setTabState(tabId, { snapToElements: msg.enabled });
+      sendToContent(tabId, { type: 'TOGGLE_SNAP', enabled: msg.enabled });
+      sendResponse(next);
+      break;
+    }
+    case 'CAPTURE_SCREENSHOT': {
+      chrome.tabs.captureVisibleTab({ format: 'png', quality: 100 }).then((dataUrl) => {
+        sendToContent(tabId, { type: 'SCREENSHOT_READY', dataUrl });
+        sendResponse({ dataUrl });
+      }).catch((err) => {
+        sendResponse({ error: String(err) });
+      });
+      break;
+    }
+    case 'MEASUREMENT_RESULT': {
       sendResponse({ ok: true });
       break;
+    }
     default:
       sendResponse({ ok: true });
   }

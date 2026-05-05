@@ -108,7 +108,9 @@ export function isCalipersElement(el: Element | null): boolean {
   if (!el) return false;
   return (
     el.id === 'calipers-overlay-root' ||
-    el.closest('#calipers-overlay-root') !== null
+    el.id === 'calipers-panel' ||
+    el.closest('#calipers-overlay-root') !== null ||
+    el.closest('#calipers-panel') !== null
   );
 }
 
