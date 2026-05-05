@@ -64,14 +64,14 @@ export function drawElementHighlight(
   scale(ctx);
   ctx.globalAlpha = opacity;
 
-  // Fill
-  ctx.fillStyle = locked ? C.primaryAlpha12 : C.primaryAlpha08;
+  // Fill — very subtle, let the border do the heavy lifting
+  ctx.fillStyle = locked ? 'rgba(255,69,0,0.06)' : 'rgba(255,69,0,0.04)';
   roundedRect(ctx, rect.x, rect.y, rect.width, rect.height, 2);
   ctx.fill();
 
   // Border
-  ctx.strokeStyle = locked ? C.primaryAlpha80 : C.primaryAlpha60;
-  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = locked ? C.primaryAlpha80 : 'rgba(255,69,0,0.75)';
+  ctx.lineWidth = locked ? 1.5 : 1;
   roundedRect(ctx, rect.x, rect.y, rect.width, rect.height, 2);
   ctx.stroke();
 

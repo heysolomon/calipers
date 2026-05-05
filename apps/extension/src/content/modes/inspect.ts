@@ -103,10 +103,11 @@ function getTypographyLabel(el: Element): string | null {
 
 function onDocumentClick(e: MouseEvent): void {
   if (isBoxModelPanel(e.target as Element)) return;
+  if (!state.showBoxModel) return;
+
+  // Only intercept the click when box model panel is being shown
   e.preventDefault();
   e.stopPropagation();
-
-  if (!state.showBoxModel) return;
 
   const el = getElementAtPoint(e.clientX, e.clientY);
   if (!el) { hideBoxModelPanel(); return; }

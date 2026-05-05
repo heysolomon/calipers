@@ -7,7 +7,7 @@ import type { ExtensionState, Mode, Message } from '@calipers/shared';
 import { DEFAULT_STATE } from '@calipers/shared';
 
 const PANEL_ID = 'calipers-panel';
-const PANEL_WIDTH = 260;
+const PANEL_WIDTH = 240;
 
 // ─── Theme tokens ─────────────────────────────────────────────────────────────
 
@@ -28,7 +28,7 @@ const PANEL_CSS = `
   position: fixed;
   top: 12px;
   right: 12px;
-  z-index: 2147483646;
+  z-index: 2147483647;
   width: ${PANEL_WIDTH}px;
   background: ${T.bg};
   border: 1px solid ${T.border};
@@ -104,20 +104,17 @@ function toggleHTML(id: string, checked: boolean, disabled = false): string {
 }
 
 function modeTabHTML(id: Mode, label: string, active: boolean): string {
-  const borderColor = active ? T.textPrimary : 'transparent';
-  const color = active ? T.textPrimary : T.textMuted;
-  const weight = active ? '500' : '400';
   return `
     <button
       data-mode="${id}"
       style="
-        flex:1;padding:7px 0 9px;background:none;border:none;
-        border-bottom:1.5px solid ${borderColor};margin-bottom:-1px;
-        font-size:12px;font-weight:${weight};color:${color};
+        padding:0;background:none;border:none;
+        font-size:11px;font-weight:${active ? '500' : '400'};
+        color:${active ? T.textPrimary : T.textMuted};
         cursor:pointer;letter-spacing:-0.01em;
-        font-family:inherit;
-        transition:color 0.15s, border-color 0.15s;
-        outline:none;
+        font-family:inherit;outline:none;
+        transition:color 0.12s;
+        white-space:nowrap;
       "
     >${label}</button>
   `;
@@ -152,100 +149,60 @@ function buildPanelHTML(state: ExtensionState): string {
     { id: 'spacing',     label: 'Spacing' },
   ];
 
-  const dotColor = state.active ? T.accent : T.textMuted;
+  const btnBase = `
+    background:none;border:1px solid ${T.border};border-radius:5px;
+    font-size:11px;font-weight:500;font-family:inherit;
+    color:${T.textSecondary};cursor:pointer;letter-spacing:-0.01em;outline:none;
+    transition:background 0.12s;padding:6px 0;
+  `;
 
   return `
     <style>${KEYFRAMES}</style>
-    <div style="padding:14px 16px 12px;display:flex;flex-direction:column;gap:12px;">
+    <div style="padding:12px 14px 10px;display:flex;flex-direction:column;gap:10px;">
 
       <!-- Header -->
       <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div style="display:flex;align-items:center;gap:7px;">
-          <span style="color:${T.textPrimary};display:inline-flex;align-items:center;">${LOGO_SVG}</span>
-          <span style="
-            display:inline-block;width:6px;height:6px;border-radius:50%;
-            background:${dotColor};transition:background 0.2s;flex-shrink:0;
-          "></span>
-          <span style="font-size:13px;font-weight:600;letter-spacing:-0.03em;color:${T.textPrimary};">
-            Calipers
-          </span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="color:${T.textPrimary};display:inline-flex;align-items:center;opacity:0.7;">${LOGO_SVG}</span>
+          <span style="font-size:12px;font-weight:600;letter-spacing:-0.03em;color:${T.textPrimary};">Calipers</span>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          ${toggleHTML('active', state.active)}
-          <button data-action="close" style="
-            background:none;border:none;cursor:pointer;padding:2px;
-            color:${T.textMuted};font-size:16px;line-height:1;
-            font-family:inherit;outline:none;
-            transition:color 0.15s;
-          " onmouseenter="this.style.color='${T.textSecondary}'"
-             onmouseleave="this.style.color='${T.textMuted}'"
-          >×</button>
-        </div>
+        <button data-action="close" style="
+          display:inline-flex;align-items:center;justify-content:center;
+          width:20px;height:20px;border-radius:5px;
+          background:none;border:none;cursor:pointer;
+          color:${T.textMuted};font-size:14px;line-height:1;
+          font-family:inherit;outline:none;
+          transition:background 0.12s, color 0.12s;
+        ">×</button>
       </div>
 
       <!-- Divider -->
-      <div style="height:1px;background:${T.borderSubtle};margin:0 -16px;"></div>
+      <div style="height:1px;background:${T.borderSubtle};margin:0 -14px;"></div>
 
-      <!-- Mode selector -->
-      <div style="display:flex;border-bottom:1px solid ${T.borderSubtle};margin-bottom:-1px;">
+      <!-- Mode tabs — plain inline text, no borders -->
+      <div style="display:flex;gap:14px;align-items:center;">
         ${modes.map(({ id, label }) => modeTabHTML(id, label, state.mode === id)).join('')}
       </div>
 
       <!-- Divider -->
-      <div style="height:1px;background:${T.borderSubtle};margin:0 -16px;"></div>
+      <div style="height:1px;background:${T.borderSubtle};margin:0 -14px;"></div>
 
-      <!-- Settings -->
-      <div>
-        <p style="
-          font-size:10px;font-weight:600;letter-spacing:0.07em;
-          text-transform:uppercase;color:${T.textMuted};margin-bottom:6px;
-        ">Settings</p>
-        <div>
-          ${settingRowHTML('boxModel', 'Box model', state.showBoxModel, !['inspect', 'measure'].includes(state.mode), false)}
-          ${settingRowHTML('guides', 'Show guides', state.showGuides, false, false)}
-          ${settingRowHTML('snap', 'Snap to elements', state.snapToElements, false, true)}
-        </div>
+      <!-- Settings toggles -->
+      <div style="display:flex;flex-direction:column;gap:0;">
+        ${settingRowHTML('boxModel', 'Box model',        state.showBoxModel,    !['inspect', 'measure'].includes(state.mode), false)}
+        ${settingRowHTML('guides',   'Show guides',       state.showGuides,      false, false)}
+        ${settingRowHTML('snap',     'Snap to elements',  state.snapToElements,  false, true)}
       </div>
 
-      <!-- Divider -->
-      <div style="height:1px;background:${T.borderSubtle};margin:0 -16px;"></div>
-
-      <!-- Actions row -->
-      <div style="display:flex;gap:6px;">
-        <button data-action="screenshot" style="
-          flex:1;padding:8px 0;background:none;
-          border:1px solid ${T.border};border-radius:6px;
-          font-size:11px;font-weight:500;font-family:inherit;
-          color:${T.textSecondary};cursor:pointer;
-          letter-spacing:-0.01em;outline:none;
-          transition:background 0.15s, color 0.15s;
-        " onmouseenter="this.style.background='rgba(0,0,0,0.04)'"
-           onmouseleave="this.style.background='none'"
-        >Screenshot →</button>
-        <button data-action="tokens" style="
-          flex:1;padding:8px 0;background:none;
-          border:1px solid ${T.border};border-radius:6px;
-          font-size:11px;font-weight:500;font-family:inherit;
-          color:${T.textSecondary};cursor:pointer;
-          letter-spacing:-0.01em;outline:none;
-          transition:background 0.15s, color 0.15s;
-        " onmouseenter="this.style.background='rgba(0,0,0,0.04)'"
-           onmouseleave="this.style.background='none'"
-        >Tokens <kbd style="font-size:9px;font-family:inherit;background:${T.bg};border:1px solid ${T.border};border-bottom-width:2px;border-radius:3px;padding:0 3px;color:${T.textMuted};">D</kbd></button>
+      <!-- Actions -->
+      <div style="display:flex;gap:5px;">
+        <button data-action="screenshot" style="flex:1;${btnBase}">Screenshot</button>
+        <button data-action="tokens"     style="flex:1;${btnBase}">Tokens</button>
       </div>
 
       <!-- Footer -->
-      <p style="
-        font-size:10px;color:${T.textMuted};
-        text-align:center;letter-spacing:-0.01em;
-      ">
-        Press <kbd style="
-          font-size:9px;font-family:inherit;
-          background:#fff;
-          border:1px solid ${T.border};
-          border-bottom-width:2px;border-radius:3px;
-          padding:0 4px;color:${T.textSecondary};
-        ">?</kbd> for all shortcuts
+      <p style="font-size:10px;color:${T.textMuted};text-align:center;letter-spacing:-0.01em;margin:0;">
+        <kbd style="font-size:9px;font-family:inherit;background:#fff;border:1px solid ${T.border};border-bottom-width:2px;border-radius:3px;padding:0 4px;color:${T.textSecondary};">?</kbd> for all shortcuts
       </p>
     </div>
   `;
@@ -253,7 +210,31 @@ function buildPanelHTML(state: ExtensionState): string {
 
 // ─── Event wiring ─────────────────────────────────────────────────────────────
 
+function wireHover(
+  el: HTMLElement,
+  enter: Partial<CSSStyleDeclaration>,
+  leave: Partial<CSSStyleDeclaration>,
+): void {
+  el.addEventListener('mouseenter', () => Object.assign(el.style, enter));
+  el.addEventListener('mouseleave', () => Object.assign(el.style, leave));
+}
+
 function wireEvents(panel: HTMLElement): void {
+  // Close button hover
+  const closeBtn = panel.querySelector<HTMLElement>('[data-action="close"]');
+  if (closeBtn) {
+    wireHover(
+      closeBtn,
+      { background: 'rgba(0,0,0,0.07)', color: T.textSecondary },
+      { background: 'transparent',       color: T.textMuted      },
+    );
+  }
+
+  // Action buttons hover
+  panel.querySelectorAll<HTMLElement>('[data-action="screenshot"],[data-action="tokens"]').forEach((btn) => {
+    wireHover(btn, { background: 'rgba(0,0,0,0.04)' }, { background: 'none' });
+  });
+
   panel.addEventListener('click', async (e) => {
     const target = e.target as HTMLElement;
 
@@ -309,15 +290,6 @@ function wireEvents(panel: HTMLElement): void {
     if (toggleBtn) {
       const id = toggleBtn.dataset['toggle'];
       switch (id) {
-        case 'active': {
-          if (localState.active) {
-            localState = await sendMsg({ type: 'DEACTIVATE' });
-          } else {
-            localState = await sendMsg({ type: 'ACTIVATE', mode: localState.mode });
-          }
-          rerender();
-          break;
-        }
         case 'boxModel': {
           const next = !localState.showBoxModel;
           localState = await sendMsg({ type: 'TOGGLE_BOX_MODEL', enabled: next });
@@ -358,10 +330,14 @@ function rerender(): void {
 export async function showPanel(): Promise<void> {
   if (panelEl) return; // already open
 
-  // Fetch current state from background
+  // Fetch current state, then auto-activate if not already running
   localState = await sendMsg({ type: 'GET_STATE' } as Message);
   if (!localState || typeof localState !== 'object' || !('mode' in localState)) {
     localState = { ...DEFAULT_STATE };
+  }
+  if (!localState.active) {
+    localState = await sendMsg({ type: 'ACTIVATE', mode: localState.mode });
+    localState.active = true;
   }
 
   const panel = document.createElement('div');

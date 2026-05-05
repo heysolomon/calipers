@@ -117,18 +117,16 @@ export function resizeCanvas(canvas: HTMLCanvasElement): void {
   canvas.height = Math.round(h * dpr);
 }
 
-/** Enable pointer events on the overlay (for measure/guides click capture) */
+/** Enable pointer events on the canvas only — root stays none so the panel is never blocked */
 export function enablePointerEvents(): void {
   if (overlay) {
-    overlay.root.style.pointerEvents = 'all';
     overlay.canvas.style.pointerEvents = 'all';
   }
 }
 
-/** Disable pointer events (inspect mode — pass through to page) */
+/** Disable pointer events — canvas passes all events through to the page */
 export function disablePointerEvents(): void {
   if (overlay) {
-    overlay.root.style.pointerEvents = 'none';
     overlay.canvas.style.pointerEvents = 'none';
   }
 }
