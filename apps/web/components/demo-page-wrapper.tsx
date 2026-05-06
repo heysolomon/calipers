@@ -1,7 +1,7 @@
 'use client';
 import { useDemo } from './demo-provider';
 
-const EASE = 'cubic-bezier(0.34, 1.4, 0.64, 1)';
+const EASE = 'cubic-bezier(0.4, 0, 0.2, 1)';
 
 export function DemoPageWrapper({ children }: { children: React.ReactNode }) {
   const { isOpen } = useDemo();

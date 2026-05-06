@@ -103,15 +103,11 @@ export function uid(): string {
   return `calipers-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-/** Check if an element is part of the Calipers overlay (avoid self-measurement) */
+/** Check if an element is part of any Calipers UI (panel, overlay, sub-panels) */
 export function isCalipersElement(el: Element | null): boolean {
   if (!el) return false;
-  return (
-    el.id === 'calipers-overlay-root' ||
-    el.id === 'calipers-panel' ||
-    el.closest('#calipers-overlay-root') !== null ||
-    el.closest('#calipers-panel') !== null
-  );
+  if (el.id?.startsWith('calipers-')) return true;
+  return el.closest('[id^="calipers-"]') !== null;
 }
 
 /** Write text to clipboard */

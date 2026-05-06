@@ -23,6 +23,11 @@ const C = {
   boxMarginBorder: 'rgba(255, 130, 80, 0.4)',
 };
 
+// ─── Module state ─────────────────────────────────────────────────────────────
+
+let _showRulers = false;
+export function setShowRulers(show: boolean): void { _showRulers = show; }
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function scale(ctx: CanvasRenderingContext2D): number {
@@ -64,14 +69,14 @@ export function drawElementHighlight(
   scale(ctx);
   ctx.globalAlpha = opacity;
 
-  // Fill — very subtle, let the border do the heavy lifting
-  ctx.fillStyle = locked ? 'rgba(255,69,0,0.06)' : 'rgba(255,69,0,0.04)';
+  // Fill
+  ctx.fillStyle = locked ? 'rgba(255,69,0,0.15)' : 'rgba(255,69,0,0.10)';
   roundedRect(ctx, rect.x, rect.y, rect.width, rect.height, 2);
   ctx.fill();
 
-  // Border
-  ctx.strokeStyle = locked ? C.primaryAlpha80 : 'rgba(255,69,0,0.75)';
-  ctx.lineWidth = locked ? 1.5 : 1;
+  // Border — solid and defined
+  ctx.strokeStyle = locked ? '#FF4500' : 'rgba(255,69,0,0.95)';
+  ctx.lineWidth = locked ? 2 : 1.5;
   roundedRect(ctx, rect.x, rect.y, rect.width, rect.height, 2);
   ctx.stroke();
 
@@ -353,6 +358,7 @@ export function drawRulers(
   mouseX: number,
   mouseY: number,
 ): void {
+  if (!_showRulers) return;
   scale(ctx);
   const w = window.innerWidth;
   const h = window.innerHeight;

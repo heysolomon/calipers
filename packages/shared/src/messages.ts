@@ -11,6 +11,7 @@ export type Message =
   | { type: 'TOGGLE_BOX_MODEL'; enabled: boolean }
   | { type: 'TOGGLE_GUIDES'; enabled: boolean }
   | { type: 'TOGGLE_SNAP'; enabled: boolean }
+  | { type: 'TOGGLE_RULERS'; enabled: boolean }
   | { type: 'CAPTURE_SCREENSHOT' }
   | { type: 'SCREENSHOT_READY'; dataUrl: string }
   | { type: 'MEASUREMENT_RESULT'; data: MeasurementData }

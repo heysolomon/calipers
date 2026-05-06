@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import type { JSX } from 'react';
 import { Navbar } from '../../components/navbar';
 import { Footer } from '../../components/footer';
 
@@ -26,7 +27,7 @@ const entries = [
   },
 ];
 
-export default function ChangelogPage() {
+export default function ChangelogPage(): JSX.Element {
   return (
     <>
       <Navbar />

@@ -10,8 +10,7 @@ import {
   drawAlignmentGuideline, drawRulers,
 } from '../renderer';
 import { setLabel, hideLabel } from '../labels';
-import { formatDistance, formatDimensions, distanceBetweenRects } from '../utils';
-import { enablePointerEvents, disablePointerEvents } from '../overlay';
+import { formatDistance, formatDimensions, distanceBetweenRects, isCalipersElement } from '../utils';
 
 const MAX_ELEMENTS = 5;
 const BADGES       = ['A', 'B', 'C', 'D', 'E'];
@@ -47,18 +46,14 @@ let overlay: OverlayElements | null = null;
 
 export function initMeasureMode(o: OverlayElements): void {
   overlay = o;
-  enablePointerEvents();
-  overlay.canvas.addEventListener('click',     onClick);
-  overlay.canvas.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('click',     onClick,     true);
+  document.addEventListener('mousemove', onMouseMove, { passive: true });
   scheduleFrame();
 }
 
 export function destroyMeasureMode(): void {
-  if (overlay) {
-    overlay.canvas.removeEventListener('click',     onClick);
-    overlay.canvas.removeEventListener('mousemove', onMouseMove);
-  }
-  disablePointerEvents();
+  document.removeEventListener('click',     onClick,     true);
+  document.removeEventListener('mousemove', onMouseMove);
   if (state.rafId !== null) cancelAnimationFrame(state.rafId);
   state.rafId = null;
   resetState();
@@ -72,6 +67,7 @@ function resetState(): void {
 }
 
 function onClick(e: MouseEvent): void {
+  if (isCalipersElement(e.target as Element)) return;
   const el = getElementAtPoint(e.clientX, e.clientY);
   if (!el) return;
 

@@ -8,7 +8,6 @@ import { clearCanvas, drawRulers, drawMeasurementLine } from '../renderer';
 import { getElementAtPoint } from '../detector';
 import { isCalipersElement } from '../utils';
 import { setLabel, hideLabel, clearLabels } from '../labels';
-import { enablePointerEvents, disablePointerEvents } from '../overlay';
 import { RULER_SIZE } from '../renderer';
 
 interface SpacingState {
@@ -196,7 +195,6 @@ function scheduleFrame(): void {
 
 export function initSpacingMode(o: OverlayElements): void {
   overlay = o;
-  enablePointerEvents();
   document.addEventListener('mousemove', onMouseMove, { passive: true });
   scheduleFrame();
 }
@@ -210,6 +208,5 @@ export function destroySpacingMode(): void {
   const o = overlay;
   if (o) clearLabels(o.labelContainer);
 
-  disablePointerEvents();
   overlay = null;
 }
