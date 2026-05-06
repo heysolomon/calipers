@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useDemo } from './demo-provider';
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
@@ -22,7 +22,7 @@ function getTarget(x: number, y: number): Element | null {
 // ─── Shared styles ────────────────────────────────────────────────────────────
 
 // Dark glassmorphic pill — matches extension label system
-const PILL: React.CSSProperties = {
+const PILL: CSSProperties = {
   background: 'rgba(20,20,28,0.88)',
   backdropFilter: 'blur(16px) saturate(150%)',
   WebkitBackdropFilter: 'blur(16px) saturate(150%)',
@@ -382,7 +382,7 @@ function GuidesOverlay() {
     };
   }, []);
 
-  const lineBase: React.CSSProperties = { position: 'fixed', pointerEvents: 'none', zIndex: 8800 };
+  const lineBase: CSSProperties = { position: 'fixed', pointerEvents: 'none', zIndex: 8800 };
 
   return (
     <>

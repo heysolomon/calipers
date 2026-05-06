@@ -1,9 +1,10 @@
 'use client';
 import { useDemo } from './demo-provider';
+import type { ReactNode } from 'react';
 
 const EASE = 'cubic-bezier(0.4, 0, 0.2, 1)';
 
-export function DemoPageWrapper({ children }: { children: React.ReactNode }) {
+export function DemoPageWrapper({ children }: { children: ReactNode }) {
   const { isOpen } = useDemo();
 
   return (

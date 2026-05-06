@@ -1,5 +1,5 @@
 'use client';
-
+import { type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 
 const shortcuts = [
@@ -84,7 +84,7 @@ export function KeyboardShortcuts() {
   );
 }
 
-function Kbd({ children }: { children: React.ReactNode }) {
+function Kbd({ children }: { children: ReactNode }) {
   return (
     <kbd
       className="inline-flex items-center justify-center rounded text-xs font-medium px-2 py-1 min-w-[28px]"
