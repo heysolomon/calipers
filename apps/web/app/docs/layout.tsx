@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Navbar } from '../../components/navbar';
 import { Footer } from '../../components/footer';
+import type { ReactNode } from 'react';
 
 const navItems = [
   {
@@ -22,7 +23,7 @@ const navItems = [
   },
 ];
 
-export default function DocsLayout({ children }: { children: React.ReactNode }) {
+export default function DocsLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <Navbar />

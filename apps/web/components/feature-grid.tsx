@@ -1,9 +1,9 @@
 'use client';
-
+import { type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 
 interface Feature {
-  icon: React.ReactNode;
+  icon: ReactNode;
   title: string;
   description: string;
   color: string;

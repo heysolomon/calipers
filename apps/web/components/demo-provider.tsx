@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 
 export type DemoKey = 'inspect' | 'boxmodel' | 'measure' | 'guides' | 'colorpicker' | 'spacing';
 
@@ -21,7 +21,7 @@ interface DemoCtx {
 const Ctx = createContext<DemoCtx | null>(null);
 const OFF = { inspect: false, boxmodel: false, measure: false, guides: false, colorpicker: false, spacing: false };
 
-export function DemoProvider({ children }: { children: React.ReactNode }) {
+export function DemoProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [tools, setTools]   = useState(OFF);
 

@@ -7,6 +7,7 @@ import { DemoOverlay } from '../components/demo-overlay';
 import { DemoPageWrapper } from '../components/demo-page-wrapper';
 import { CustomCursor } from '../components/custom-cursor';
 import { AgentationWidget } from '../components/agentation-widget';
+import type { ReactNode } from 'react';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -57,7 +58,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
 
