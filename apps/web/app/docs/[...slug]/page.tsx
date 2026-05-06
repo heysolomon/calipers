@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import type { JSX } from 'react';
 
 interface Props {
   params: Promise<{ slug: string[] }>;
@@ -172,7 +173,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: page?.title ?? 'Docs' };
 }
 
-export default async function DocPage({ params }: Props) {
+export default async function DocPage({ params }: Props): Promise<JSX.Element> {
   const { slug } = await params;
   const slug_str = slug.join('/');
   const page = docPages[slug_str];

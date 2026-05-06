@@ -2,6 +2,8 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "target": "ES2018",
+    "declaration": false,
+    "declarationMap": false,
     "lib": [
       "dom",
       "dom.iterable",
