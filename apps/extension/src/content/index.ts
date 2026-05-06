@@ -25,11 +25,20 @@ import { toggleTokenPanel, hideTokenPanel, isTokenPanel } from './token-panel';
 import { togglePanel, hidePanel, isPanelElement } from './panel';
 import { loadSettings, saveSetting } from './storage';
 import { initCursor, destroyCursor } from './cursor';
+import { isCalipersElement } from './utils';
 
 // ─── Local state ──────────────────────────────────────────────────────────────
 
 let state: ExtensionState = { ...DEFAULT_STATE };
 let activeMode: Mode | null = null;
+
+// ─── Global click interceptor ────────────────────────────────────────────────
+
+function onGlobalInterceptClick(e: MouseEvent): void {
+  if (isCalipersElement(e.target as Element)) return;
+  e.preventDefault();
+  e.stopPropagation();
+}
 
 // ─── Mode management ──────────────────────────────────────────────────────────
 
@@ -81,6 +90,7 @@ async function activate(mode: Mode): Promise<void> {
   setShowRulers(state.showRulers);
   activateMode(mode);
   initCursor();
+  document.addEventListener('click',   onGlobalInterceptClick, true);
   document.addEventListener('keydown', onKeyDown);
   window.addEventListener('resize', onResize);
 }
@@ -94,6 +104,7 @@ function deactivate(): void {
   destroyCursor();
   removeOverlay();
 
+  document.removeEventListener('click',   onGlobalInterceptClick, true);
   document.removeEventListener('keydown', onKeyDown);
   window.removeEventListener('resize', onResize);
 

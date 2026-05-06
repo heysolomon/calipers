@@ -122,22 +122,7 @@ function toggleHTML(id: string, checked: boolean, disabled = false): string {
 
 function modeTabHTML(id: Mode, label: string, active: boolean): string {
   const icon = MODE_ICONS[id] ?? label;
-  return `
-    <button
-      data-mode="${id}"
-      title="${label}"
-      style="
-        display:flex;align-items:center;justify-content:center;
-        padding:5px 0;height:28px;
-        background:${active ? '#fff' : 'transparent'};
-        border:none;border-radius:5px;
-        color:${active ? T.textPrimary : T.textSecondary};
-        cursor:pointer;font-family:inherit;outline:none;
-        transition:background 0.15s cubic-bezier(0.4,0,0.2,1), color 0.15s;
-        box-shadow:${active ? '0 1px 2px rgba(0,0,0,0.12)' : 'none'};
-      "
-    >${icon}</button>
-  `;
+  return `<button data-mode="${id}" title="${label}" style="position:relative;z-index:1;display:flex;align-items:center;justify-content:center;padding:5px 0;height:28px;background:transparent;border:none;border-radius:5px;color:${active ? T.textPrimary : T.textSecondary};cursor:pointer;font-family:inherit;outline:none;transition:color 0.22s cubic-bezier(0.4,0,0.2,1);">${icon}</button>`;
 }
 
 function settingRowHTML(
@@ -160,6 +145,8 @@ function settingRowHTML(
   `;
 }
 
+const MODE_LIST: Mode[] = ['inspect', 'measure', 'guides', 'colorpicker', 'spacing'];
+
 function buildPanelHTML(state: ExtensionState): string {
   const modes: { id: Mode; label: string }[] = [
     { id: 'inspect',     label: 'Inspect' },
@@ -168,6 +155,7 @@ function buildPanelHTML(state: ExtensionState): string {
     { id: 'colorpicker', label: 'Colours' },
     { id: 'spacing',     label: 'Spacing' },
   ];
+  const activeModeIdx = Math.max(0, MODE_LIST.indexOf(state.mode));
 
   const btnBase = `
     background:none;border:1px solid ${T.border};border-radius:5px;
@@ -200,10 +188,9 @@ function buildPanelHTML(state: ExtensionState): string {
       <div style="height:1px;background:${T.borderSubtle};margin:0 -14px;"></div>
 
       <!-- Mode segmented control -->
-      <div style="
-        display:grid;grid-template-columns:repeat(5,1fr);
-        background:rgba(0,0,0,0.06);border-radius:7px;padding:2px;gap:2px;
-      ">
+      <div style="position:relative;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(0,0,0,0.06);border-radius:7px;padding:2px;gap:0;">
+        <!-- Sliding active-tab pill (transitions on left) -->
+        <div data-mode-indicator style="position:absolute;top:2px;bottom:2px;width:calc((100% - 4px) / 5);left:calc(2px + ${activeModeIdx} * ((100% - 4px) / 5));background:#fff;border-radius:5px;box-shadow:0 1px 2px rgba(0,0,0,0.12);pointer-events:none;transition:left 0.22s cubic-bezier(0.4,0,0.2,1);"></div>
         ${modes.map(({ id, label }) => modeTabHTML(id, label, state.mode === id)).join('')}
       </div>
 
@@ -230,6 +217,37 @@ function buildPanelHTML(state: ExtensionState): string {
       </p>
     </div>
   `;
+}
+
+// ─── Partial DOM updates (preserve elements so CSS transitions play) ──────────
+
+function updateModeOnly(mode: Mode): void {
+  if (!panelEl) return;
+  const idx = Math.max(0, MODE_LIST.indexOf(mode));
+
+  const indicator = panelEl.querySelector<HTMLElement>('[data-mode-indicator]');
+  if (indicator) indicator.style.left = `calc(2px + ${idx} * ((100% - 4px) / 5))`;
+
+  panelEl.querySelectorAll<HTMLElement>('[data-mode]').forEach((btn) => {
+    btn.style.color = btn.dataset['mode'] === mode ? T.textPrimary : T.textSecondary;
+  });
+
+  const boxModelToggle = panelEl.querySelector<HTMLButtonElement>('[data-toggle="boxModel"]');
+  if (boxModelToggle) {
+    const disabled = !['inspect', 'measure'].includes(mode);
+    boxModelToggle.style.opacity = disabled ? '0.35' : '1';
+    boxModelToggle.disabled = disabled;
+  }
+}
+
+function updateToggleOnly(id: string, checked: boolean): void {
+  if (!panelEl) return;
+  const toggle = panelEl.querySelector<HTMLElement>(`[data-toggle="${id}"]`);
+  if (!toggle) return;
+  toggle.style.background = checked ? T.accent : 'rgba(0,0,0,0.12)';
+  toggle.setAttribute('aria-checked', String(checked));
+  const knob = toggle.querySelector<HTMLElement>('span');
+  if (knob) knob.style.left = checked ? '15px' : '2px';
 }
 
 // ─── Event wiring ─────────────────────────────────────────────────────────────
@@ -305,7 +323,7 @@ function wireEvents(panel: HTMLElement): void {
         localState = await sendMsg({ type: 'SWITCH_MODE', mode });
       }
       localState.mode = mode;
-      rerender();
+      updateModeOnly(mode);
       return;
     }
 
@@ -318,42 +336,34 @@ function wireEvents(panel: HTMLElement): void {
           const next = !localState.showBoxModel;
           localState = await sendMsg({ type: 'TOGGLE_BOX_MODEL', enabled: next });
           localState.showBoxModel = next;
-          rerender();
+          updateToggleOnly('boxModel', next);
           break;
         }
         case 'guides': {
           const next = !localState.showGuides;
           localState = await sendMsg({ type: 'TOGGLE_GUIDES', enabled: next });
           localState.showGuides = next;
-          rerender();
+          updateToggleOnly('guides', next);
           break;
         }
         case 'rulers': {
           const next = !localState.showRulers;
           localState = await sendMsg({ type: 'TOGGLE_RULERS', enabled: next });
           localState.showRulers = next;
-          rerender();
+          updateToggleOnly('rulers', next);
           break;
         }
         case 'snap': {
           const next = !localState.snapToElements;
           localState = await sendMsg({ type: 'TOGGLE_SNAP', enabled: next });
           localState.snapToElements = next;
-          rerender();
+          updateToggleOnly('snap', next);
           break;
         }
       }
       return;
     }
   });
-}
-
-// ─── Render ───────────────────────────────────────────────────────────────────
-
-function rerender(): void {
-  if (!panelEl) return;
-  panelEl.innerHTML = buildPanelHTML(localState);
-  wireEvents(panelEl);
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
