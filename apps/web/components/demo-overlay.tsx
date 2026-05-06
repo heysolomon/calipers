@@ -410,16 +410,236 @@ function GuidesOverlay() {
   );
 }
 
+// ─── 5. Colour picker mode ────────────────────────────────────────────────────
+
+interface ColorSample { label: string; hex: string; raw: string }
+
+function parseRgba(css: string): [number, number, number, number] | null {
+  const m = css.match(/rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)(?:[,/\s]+([\d.]+))?\s*\)/);
+  if (!m) return null;
+  const r = Number(m[1]), g = Number(m[2]), b = Number(m[3]);
+  const a = m[4] !== undefined ? Number(m[4]) : 1;
+  return [r, g, b, a > 1 ? a / 100 : a];
+}
+
+function toHex(r: number, g: number, b: number): string {
+  return '#' + [r, g, b].map(n => n.toString(16).padStart(2, '0')).join('');
+}
+
+function extractColors(el: Element): ColorSample[] {
+  const css = window.getComputedStyle(el);
+  const candidates: [string, string][] = [
+    ['Background', css.backgroundColor],
+    ['Text',       css.color],
+    ['Border',     css.borderTopColor],
+  ];
+  const out: ColorSample[] = [];
+  const seen = new Set<string>();
+  for (const [label, raw] of candidates) {
+    if (!raw || raw === 'transparent' || raw === 'rgba(0, 0, 0, 0)') continue;
+    const p = parseRgba(raw);
+    if (!p) continue;
+    const [r, g, b, a] = p;
+    if (a < 0.05) continue;
+    const hex = toHex(r, g, b);
+    if (seen.has(hex)) continue;
+    seen.add(hex);
+    out.push({ label, hex, raw });
+  }
+  return out;
+}
+
+function ColorPickerOverlay() {
+  const [panelPos, setPanelPos] = useState({ x: 0, y: 0 });
+  const [colors, setColors]     = useState<ColorSample[]>([]);
+
+  useEffect(() => {
+    function onMove(e: MouseEvent) {
+      if (isOurUI(e.target as Element)) return;
+      const el         = getTarget(e.clientX, e.clientY);
+      const newColors  = el ? extractColors(el) : [];
+      setColors(newColors);
+      const panelW = 200;
+      const panelH = 44 + newColors.length * 34;
+      // Place below cursor, clearing the crosshair + coordinate text (~48px)
+      let y = e.clientY + 52;
+      if (y + panelH > window.innerHeight) y = e.clientY - panelH - 14;
+      let x = e.clientX + 12;
+      if (x + panelW > window.innerWidth)  x = e.clientX - panelW - 12;
+      setPanelPos({ x, y });
+    }
+    window.addEventListener('mousemove', onMove, { passive: true });
+    return () => window.removeEventListener('mousemove', onMove);
+  }, []);
+
+  return (
+    <div data-demo-ui="true" style={{
+      position: 'fixed', left: panelPos.x, top: panelPos.y,
+      background: 'rgba(12,12,14,0.97)',
+      border: '1px solid rgba(255,255,255,0.1)',
+      borderRadius: '8px', padding: '10px',
+      minWidth: '190px', pointerEvents: 'none', zIndex: 9001,
+      boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+      fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+    }}>
+      <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>
+        Colours
+      </div>
+      {colors.length === 0 ? (
+        <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', textAlign: 'center', padding: '4px 0' }}>
+          No colours
+        </div>
+      ) : colors.map((c, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '3px 0' }}>
+          <span style={{
+            width: '18px', height: '18px', borderRadius: '4px', flexShrink: 0,
+            background: c.raw, border: '1px solid rgba(255,255,255,0.12)', display: 'block',
+          }} />
+          <div>
+            <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '9px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{c.label}</div>
+            <div style={{ color: 'rgba(255,255,255,0.87)', fontSize: '11px' }}>{c.hex}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── 6. Spacing mode ──────────────────────────────────────────────────────────
+
+interface SpacingGap { x1: number; y1: number; x2: number; y2: number; gap: number; lx: number; ly: number }
+
+function computeGaps(children: Element[]): SpacingGap[] {
+  if (children.length < 2) return [];
+  const rects  = children.map(c => c.getBoundingClientRect());
+  const isRow  = Math.abs(rects[1]!.left - rects[0]!.right) < Math.abs(rects[1]!.top - rects[0]!.bottom);
+  const result: SpacingGap[] = [];
+  for (let i = 0; i < rects.length - 1; i++) {
+    const a = rects[i]!; const b = rects[i + 1]!;
+    if (isRow) {
+      const gap = b.left - a.right; if (gap <= 0) continue;
+      const my  = (Math.max(a.top, b.top) + Math.min(a.bottom, b.bottom)) / 2 || (a.top + a.bottom) / 2;
+      result.push({ x1: a.right, y1: my, x2: b.left, y2: my, gap: Math.round(gap), lx: (a.right + b.left) / 2, ly: my - 16 });
+    } else {
+      const gap = b.top - a.bottom; if (gap <= 0) continue;
+      const mx  = (Math.max(a.left, b.left) + Math.min(a.right, b.right)) / 2 || (a.left + a.right) / 2;
+      result.push({ x1: mx, y1: a.bottom, x2: mx, y2: b.top, gap: Math.round(gap), lx: mx + 8, ly: (a.bottom + b.top) / 2 - 8 });
+    }
+  }
+  return result;
+}
+
+function SpacingOverlay() {
+  const [data, setData] = useState<{
+    childRects:  DOMRect[];
+    gaps:        SpacingGap[];
+    parentRect:  DOMRect | null;
+    hoveredRect: DOMRect | null;
+  }>({ childRects: [], gaps: [], parentRect: null, hoveredRect: null });
+
+  useEffect(() => {
+    function onMove(e: MouseEvent) {
+      const el = getTarget(e.clientX, e.clientY);
+      if (!el) { setData({ childRects: [], gaps: [], parentRect: null, hoveredRect: null }); return; }
+
+      const parent = el.parentElement;
+      if (!parent || parent === document.body || parent === document.documentElement) {
+        setData({ childRects: [], gaps: [], parentRect: null, hoveredRect: el.getBoundingClientRect() });
+        return;
+      }
+
+      const children    = Array.from(parent.children).filter(c => {
+        if (isOurUI(c)) return false;
+        const r = c.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+      });
+      const childRects  = children.map(c => c.getBoundingClientRect());
+      const gaps        = computeGaps(children);
+      setData({ childRects, gaps, parentRect: parent.getBoundingClientRect(), hoveredRect: el.getBoundingClientRect() });
+    }
+    window.addEventListener('mousemove', onMove, { passive: true });
+    return () => window.removeEventListener('mousemove', onMove);
+  }, []);
+
+  const { childRects, gaps, parentRect, hoveredRect } = data;
+  const CAP = 4;
+
+  return (
+    <>
+      {parentRect && (
+        <div data-demo-ui="true" style={{
+          position: 'fixed', left: parentRect.left, top: parentRect.top,
+          width: parentRect.width, height: parentRect.height,
+          border: '1px dashed rgba(255,69,0,0.3)',
+          pointerEvents: 'none', zIndex: 8800, boxSizing: 'border-box',
+        }} />
+      )}
+      {childRects.map((r, i) => (
+        <div key={i} data-demo-ui="true" style={{
+          position: 'fixed', left: r.left, top: r.top, width: r.width, height: r.height,
+          border: '1px solid rgba(255,69,0,0.3)', background: 'rgba(255,69,0,0.04)',
+          pointerEvents: 'none', zIndex: 8801, boxSizing: 'border-box',
+        }} />
+      ))}
+      {hoveredRect && (
+        <div data-demo-ui="true" style={{
+          position: 'fixed', left: hoveredRect.left, top: hoveredRect.top,
+          width: hoveredRect.width, height: hoveredRect.height,
+          border: '1.5px solid rgba(255,69,0,0.8)', background: 'rgba(255,69,0,0.08)',
+          pointerEvents: 'none', zIndex: 8802, boxSizing: 'border-box',
+        }} />
+      )}
+      {gaps.length > 0 && (
+        <svg data-demo-ui="true" style={{
+          position: 'fixed', inset: 0, width: '100vw', height: '100vh',
+          pointerEvents: 'none', zIndex: 8900, overflow: 'visible',
+        }}>
+          {gaps.map((g, i) => {
+            const isH = g.y1 === g.y2;
+            return (
+              <g key={i}>
+                <line x1={g.x1} y1={g.y1} x2={g.x2} y2={g.y2} stroke="rgba(255,69,0,0.85)" strokeWidth="1.5" />
+                {isH ? (
+                  <>
+                    <line x1={g.x1} y1={g.y1 - CAP} x2={g.x1} y2={g.y1 + CAP} stroke="rgba(255,69,0,0.85)" strokeWidth="1.5" strokeLinecap="round" />
+                    <line x1={g.x2} y1={g.y2 - CAP} x2={g.x2} y2={g.y2 + CAP} stroke="rgba(255,69,0,0.85)" strokeWidth="1.5" strokeLinecap="round" />
+                  </>
+                ) : (
+                  <>
+                    <line x1={g.x1 - CAP} y1={g.y1} x2={g.x1 + CAP} y2={g.y1} stroke="rgba(255,69,0,0.85)" strokeWidth="1.5" strokeLinecap="round" />
+                    <line x1={g.x2 - CAP} y1={g.y2} x2={g.x2 + CAP} y2={g.y2} stroke="rgba(255,69,0,0.85)" strokeWidth="1.5" strokeLinecap="round" />
+                  </>
+                )}
+              </g>
+            );
+          })}
+        </svg>
+      )}
+      {gaps.map((g, i) => (
+        <div key={i} data-demo-ui="true" style={{
+          ...PILL, left: g.lx, top: g.ly,
+          transform: 'translate(-50%, -50%)',
+          fontSize: '10px', padding: '2px 6px',
+        }}>
+          {g.gap} px
+        </div>
+      ))}
+    </>
+  );
+}
+
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
 export function DemoOverlay() {
   const demo = useDemo();
   return (
     <>
-      {demo.inspect  && <InspectOverlay />}
-      {demo.boxmodel && <BoxModelOverlay />}
-      {demo.measure  && <MeasureOverlay />}
-      {demo.guides   && <GuidesOverlay />}
+      {demo.inspect     && <InspectOverlay />}
+      {demo.boxmodel    && <BoxModelOverlay />}
+      {demo.measure     && <MeasureOverlay />}
+      {demo.guides      && <GuidesOverlay />}
+      {demo.colorpicker && <ColorPickerOverlay />}
+      {demo.spacing     && <SpacingOverlay />}
     </>
   );
 }

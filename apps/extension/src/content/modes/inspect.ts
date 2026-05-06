@@ -12,6 +12,7 @@ import {
 import { setLabel, hideLabel } from '../labels';
 import { formatDimensions } from '../utils';
 import { showBoxModelPanel, hideBoxModelPanel, isBoxModelPanel } from '../box-model-panel';
+import { isCalipersElement } from '../utils';
 
 interface InspectState {
   hoveredEl:    Element | null;
@@ -102,7 +103,7 @@ function getTypographyLabel(el: Element): string | null {
 // ─── Event handlers ───────────────────────────────────────────────────────────
 
 function onDocumentClick(e: MouseEvent): void {
-  if (isBoxModelPanel(e.target as Element)) return;
+  if (isCalipersElement(e.target as Element)) return;
   if (!state.showBoxModel) return;
 
   // Only intercept the click when box model panel is being shown

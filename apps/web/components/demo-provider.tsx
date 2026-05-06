@@ -29,7 +29,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   const close = () => { setIsOpen(false); setTools(OFF); };
 
   function toggle(k: DemoKey) {
-    setTools(p => ({ ...p, [k]: !p[k] }));
+    setTools(p => p[k] ? { ...OFF } : { ...OFF, [k]: true });
   }
 
   function reset() { setTools(OFF); }

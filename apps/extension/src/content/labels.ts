@@ -6,19 +6,17 @@ import { uid, copyToClipboard } from './utils';
 
 const LABEL_STYLE = `
   position: absolute;
-  background: rgba(20, 20, 28, 0.88);
-  backdrop-filter: blur(16px) saturate(150%);
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(12, 12, 18, 0.97);
+  border: 1px solid rgba(255, 69, 0, 0.45);
   border-radius: 100px;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.95);
   font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.025em;
   padding: 3px 10px;
   white-space: nowrap;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 69, 0, 0.15);
   pointer-events: all;
   cursor: pointer;
   user-select: none;

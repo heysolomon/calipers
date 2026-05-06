@@ -7,7 +7,6 @@ import type { OverlayElements } from '../overlay';
 import { clearCanvas, drawGuide, drawGuideHandle, drawRulers, RULER_SIZE } from '../renderer';
 import { setLabel } from '../labels';
 import { formatDistance, uid, isCalipersElement } from '../utils';
-import { enablePointerEvents } from '../overlay';
 import { loadGuides, saveGuides } from '../storage';
 
 interface GuidesState {
@@ -44,13 +43,11 @@ export function setSnapEnabled(enabled: boolean): void {
 export async function initGuidesMode(o: OverlayElements, snapEnabled = true): Promise<void> {
   overlay = o;
   state.snapEnabled = snapEnabled;
-  enablePointerEvents();
-  overlay.canvas.style.cursor = 'crosshair';
-  overlay.canvas.addEventListener('click',       onClick);
-  overlay.canvas.addEventListener('mousemove',   onMouseMove);
-  overlay.canvas.addEventListener('mousedown',   onMouseDown);
-  overlay.canvas.addEventListener('mouseup',     onMouseUp);
-  overlay.canvas.addEventListener('contextmenu', onContextMenu);
+  document.addEventListener('click',       onClick,       true);
+  document.addEventListener('mousemove',   onMouseMove,   { passive: true });
+  document.addEventListener('mousedown',   onMouseDown,   true);
+  document.addEventListener('mouseup',     onMouseUp);
+  document.addEventListener('contextmenu', onContextMenu, true);
 
   // Load persisted guides
   const saved = await loadGuides();
@@ -60,14 +57,11 @@ export async function initGuidesMode(o: OverlayElements, snapEnabled = true): Pr
 }
 
 export function destroyGuidesMode(): void {
-  if (overlay) {
-    overlay.canvas.style.cursor = '';
-    overlay.canvas.removeEventListener('click',       onClick);
-    overlay.canvas.removeEventListener('mousemove',   onMouseMove);
-    overlay.canvas.removeEventListener('mousedown',   onMouseDown);
-    overlay.canvas.removeEventListener('mouseup',     onMouseUp);
-    overlay.canvas.removeEventListener('contextmenu', onContextMenu);
-  }
+  document.removeEventListener('click',       onClick,       true);
+  document.removeEventListener('mousemove',   onMouseMove);
+  document.removeEventListener('mousedown',   onMouseDown,   true);
+  document.removeEventListener('mouseup',     onMouseUp);
+  document.removeEventListener('contextmenu', onContextMenu, true);
   if (state.rafId !== null) cancelAnimationFrame(state.rafId);
   state.rafId = null;
 }
@@ -156,6 +150,7 @@ function findGuideAtPoint(x: number, y: number): Guide | null {
 }
 
 function onClick(e: MouseEvent): void {
+  if (isCalipersElement(e.target as Element)) return;
   if (state.hoveredId) return; // clicking existing guide — don't create new one
 
   const x = e.clientX;
@@ -190,6 +185,7 @@ function onMouseMove(e: MouseEvent): void {
 }
 
 function onMouseDown(e: MouseEvent): void {
+  if (isCalipersElement(e.target as Element)) return;
   const guide = findGuideAtPoint(e.clientX, e.clientY);
   if (guide) {
     state.draggingId = guide.id;

@@ -60,6 +60,23 @@ const KEYFRAMES = `
 
 const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 256 256"><path d="M 256 256 L 128 256 L 0 128 L 128 128 Z M 256 128 L 128 128 L 0 0 L 128 0 Z" fill="currentColor"></path></svg>`;
 
+// ─── Mode icons (Hugeicons stroke style) ──────────────────────────────────────
+
+const SVG_ATTRS = `xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"`;
+
+const MODE_ICONS: Record<string, string> = {
+  // Cursor/pointer → Inspect
+  inspect: `<svg ${SVG_ATTRS}><path d="M5 3l5.5 17 2.5-5.5L18.5 12 5 3z"/><path d="M13 14.5l4.5 4.5"/></svg>`,
+  // Ruler → Measure
+  measure: `<svg ${SVG_ATTRS}><rect x="2" y="8" width="20" height="8" rx="1.5"/><line x1="6" y1="8" x2="6" y2="13"/><line x1="10" y1="8" x2="10" y2="11.5"/><line x1="14" y1="8" x2="14" y2="11.5"/><line x1="18" y1="8" x2="18" y2="13"/></svg>`,
+  // Crosshair → Guides
+  guides: `<svg ${SVG_ATTRS}><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/><circle cx="12" cy="12" r="2.5"/></svg>`,
+  // Eyedropper → Colour picker
+  colorpicker: `<svg ${SVG_ATTRS}><path d="M14.5 6.5l3-3c.8-.8 2.2-.8 3 0 .8.8.8 2.2 0 3l-3 3"/><path d="M14.5 6.5L7 14l-3 3-.5 3.5 3.5-.5 3-3 7.5-7.5-3-3z"/><line x1="3.5" y1="20.5" x2="5.5" y2="18.5"/></svg>`,
+  // Gap distribution → Spacing
+  spacing: `<svg ${SVG_ATTRS}><line x1="4" y1="4" x2="4" y2="20"/><line x1="20" y1="4" x2="20" y2="20"/><rect x="8" y="8" width="8" height="8" rx="1.5"/><line x1="4" y1="12" x2="8" y2="12"/><line x1="16" y1="12" x2="20" y2="12"/></svg>`,
+};
+
 // ─── State ────────────────────────────────────────────────────────────────────
 
 let panelEl: HTMLElement | null = null;
@@ -97,26 +114,29 @@ function toggleHTML(id: string, checked: boolean, disabled = false): string {
         width:13px;height:13px;border-radius:50%;
         background:#fff;
         box-shadow:0 1px 3px rgba(0,0,0,0.22);
-        transition:left 0.22s cubic-bezier(0.34,1.56,0.64,1);
+        transition:left 0.18s cubic-bezier(0.4,0,0.2,1);
       "></span>
     </button>
   `;
 }
 
 function modeTabHTML(id: Mode, label: string, active: boolean): string {
+  const icon = MODE_ICONS[id] ?? label;
   return `
     <button
       data-mode="${id}"
+      title="${label}"
       style="
-        padding:0;background:none;border:none;
-        font-size:11px;font-weight:${active ? '500' : '400'};
-        color:${active ? T.textPrimary : T.textMuted};
-        cursor:pointer;letter-spacing:-0.01em;
-        font-family:inherit;outline:none;
-        transition:color 0.12s;
-        white-space:nowrap;
+        display:flex;align-items:center;justify-content:center;
+        padding:5px 0;height:28px;
+        background:${active ? '#fff' : 'transparent'};
+        border:none;border-radius:5px;
+        color:${active ? T.textPrimary : T.textSecondary};
+        cursor:pointer;font-family:inherit;outline:none;
+        transition:background 0.15s cubic-bezier(0.4,0,0.2,1), color 0.15s;
+        box-shadow:${active ? '0 1px 2px rgba(0,0,0,0.12)' : 'none'};
       "
-    >${label}</button>
+    >${icon}</button>
   `;
 }
 
@@ -179,8 +199,11 @@ function buildPanelHTML(state: ExtensionState): string {
       <!-- Divider -->
       <div style="height:1px;background:${T.borderSubtle};margin:0 -14px;"></div>
 
-      <!-- Mode tabs — plain inline text, no borders -->
-      <div style="display:flex;gap:14px;align-items:center;">
+      <!-- Mode segmented control -->
+      <div style="
+        display:grid;grid-template-columns:repeat(5,1fr);
+        background:rgba(0,0,0,0.06);border-radius:7px;padding:2px;gap:2px;
+      ">
         ${modes.map(({ id, label }) => modeTabHTML(id, label, state.mode === id)).join('')}
       </div>
 
@@ -191,6 +214,7 @@ function buildPanelHTML(state: ExtensionState): string {
       <div style="display:flex;flex-direction:column;gap:0;">
         ${settingRowHTML('boxModel', 'Box model',        state.showBoxModel,    !['inspect', 'measure'].includes(state.mode), false)}
         ${settingRowHTML('guides',   'Show guides',       state.showGuides,      false, false)}
+        ${settingRowHTML('rulers',   'Rulers',            state.showRulers,      false, false)}
         ${settingRowHTML('snap',     'Snap to elements',  state.snapToElements,  false, true)}
       </div>
 
@@ -270,16 +294,16 @@ function wireEvents(panel: HTMLElement): void {
       return;
     }
 
-    // Mode tabs
+    // Mode tabs — clicking a mode always activates if not already active
     const modeBtn = target.closest('[data-mode]') as HTMLElement | null;
     if (modeBtn) {
       const mode = modeBtn.dataset['mode'] as Mode;
       if (!localState.active) {
         localState = await sendMsg({ type: 'ACTIVATE', mode });
+        localState.active = true;
       } else {
         localState = await sendMsg({ type: 'SWITCH_MODE', mode });
       }
-      localState.active = true;
       localState.mode = mode;
       rerender();
       return;
@@ -301,6 +325,13 @@ function wireEvents(panel: HTMLElement): void {
           const next = !localState.showGuides;
           localState = await sendMsg({ type: 'TOGGLE_GUIDES', enabled: next });
           localState.showGuides = next;
+          rerender();
+          break;
+        }
+        case 'rulers': {
+          const next = !localState.showRulers;
+          localState = await sendMsg({ type: 'TOGGLE_RULERS', enabled: next });
+          localState.showRulers = next;
           rerender();
           break;
         }
@@ -330,11 +361,11 @@ function rerender(): void {
 export async function showPanel(): Promise<void> {
   if (panelEl) return; // already open
 
-  // Fetch current state, then auto-activate if not already running
   localState = await sendMsg({ type: 'GET_STATE' } as Message);
   if (!localState || typeof localState !== 'object' || !('mode' in localState)) {
     localState = { ...DEFAULT_STATE };
   }
+  // Auto-activate so the overlay is ready immediately
   if (!localState.active) {
     localState = await sendMsg({ type: 'ACTIVATE', mode: localState.mode });
     localState.active = true;
@@ -354,7 +385,9 @@ export async function showPanel(): Promise<void> {
 export function hidePanel(): void {
   if (!panelEl) return;
 
-  // Animate out
+  // Deactivate extension when panel is closed
+  void sendMsg({ type: 'DEACTIVATE' });
+
   panelEl.style.animation = 'calipers-panel-out 0.15s cubic-bezier(0.22, 1, 0.36, 1) forwards';
   const el = panelEl;
   panelEl = null;
@@ -363,9 +396,9 @@ export function hidePanel(): void {
 
 export function togglePanel(): void {
   if (panelEl) {
-    hidePanel();
+    hidePanel(); // includes deactivate
   } else {
-    showPanel();
+    void showPanel();
   }
 }
 

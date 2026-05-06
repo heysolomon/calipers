@@ -42,7 +42,7 @@ function ToggleSwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
           borderRadius: '50%',
           background: '#fff',
           boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
-          transition: 'left 0.22s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          transition: 'left 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       />
     </button>
@@ -70,7 +70,7 @@ export function DemoToolbar() {
         userSelect: 'none',
         // Slide in from above
         transform: demo.isOpen ? 'translateY(0)' : 'translateY(-100%)',
-        transition: 'transform 0.42s cubic-bezier(0.34, 1.4, 0.64, 1)',
+        transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
         willChange: 'transform',
       }}
     >

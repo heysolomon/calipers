@@ -9,7 +9,7 @@ import {
   createOverlay, removeOverlay, getOverlay,
   resizeCanvas, disablePointerEvents,
 } from './overlay';
-import { clearCanvas } from './renderer';
+import { clearCanvas, setShowRulers } from './renderer';
 import { clearLabels } from './labels';
 
 import { initInspectMode, destroyInspectMode, setShowBoxModel } from './modes/inspect';
@@ -22,8 +22,9 @@ import { initColorPickerMode, destroyColorPickerMode } from './modes/colorpicker
 import { initSpacingMode, destroySpacingMode } from './modes/spacing';
 import { toggleShortcutsPanel, hideShortcutsPanel, isShortcutsPanelOpen } from './shortcuts-panel';
 import { toggleTokenPanel, hideTokenPanel, isTokenPanel } from './token-panel';
-import { togglePanel, isPanelElement } from './panel';
+import { togglePanel, hidePanel, isPanelElement } from './panel';
 import { loadSettings, saveSetting } from './storage';
+import { initCursor, destroyCursor } from './cursor';
 
 // ─── Local state ──────────────────────────────────────────────────────────────
 
@@ -77,7 +78,9 @@ async function activate(mode: Mode): Promise<void> {
   state.mode   = mode;
 
   createOverlay();
+  setShowRulers(state.showRulers);
   activateMode(mode);
+  initCursor();
   document.addEventListener('keydown', onKeyDown);
   window.addEventListener('resize', onResize);
 }
@@ -88,12 +91,14 @@ function deactivate(): void {
   hideShortcutsPanel();
   hideTokenPanel();
   destroyCurrentMode();
+  destroyCursor();
   removeOverlay();
 
   document.removeEventListener('keydown', onKeyDown);
   window.removeEventListener('resize', onResize);
 
-  state = { ...DEFAULT_STATE };
+  state = { ...DEFAULT_STATE }; // active→false; any re-entrant deactivate() no-ops
+  hidePanel();                   // close floating panel; its DEACTIVATE msg is then a no-op
 }
 
 function switchMode(mode: Mode): void {
@@ -126,6 +131,11 @@ function onKeyDown(e: KeyboardEvent): void {
       state.showBoxModel = !state.showBoxModel;
       setShowBoxModel(state.showBoxModel);
       saveSetting('showBoxModel', state.showBoxModel);
+      break;
+    case 'r':
+    case 'R':
+      state.showRulers = !state.showRulers;
+      setShowRulers(state.showRulers);
       break;
     case 'd':
     case 'D':
@@ -187,6 +197,11 @@ chrome.runtime.onMessage.addListener((rawMsg: unknown, _sender, sendResponse) =>
       state.snapToElements = msg.enabled;
       setSnapEnabled(msg.enabled);
       saveSetting('snapToElements', msg.enabled);
+      sendResponse({ ok: true });
+      break;
+    case 'TOGGLE_RULERS':
+      state.showRulers = msg.enabled;
+      setShowRulers(msg.enabled);
       sendResponse({ ok: true });
       break;
     case 'SCREENSHOT_READY':

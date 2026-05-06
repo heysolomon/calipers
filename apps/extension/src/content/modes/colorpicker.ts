@@ -7,7 +7,6 @@ import { clearCanvas, drawRulers } from '../renderer';
 import { getElementAtPoint } from '../detector';
 import { isCalipersElement, copyToClipboard } from '../utils';
 import { showToast } from '../labels';
-import { enablePointerEvents, disablePointerEvents } from '../overlay';
 
 interface ColorEntry {
   label: string;
@@ -205,10 +204,17 @@ function refreshPanel(): void {
 function positionPanel(): void {
   if (!state.panelEl) return;
   const { mouseX, mouseY } = state;
-  const panelW = 220; const panelH = 160;
+  const panelW = state.panelEl.offsetWidth  || 220;
+  const panelH = state.panelEl.offsetHeight || 160;
   const vw = window.innerWidth; const vh = window.innerHeight;
-  const x = mouseX + 16 + panelW > vw ? mouseX - panelW - 8 : mouseX + 16;
-  const y = mouseY + panelH > vh ? mouseY - panelH : mouseY;
+
+  // Place below the cursor (clears the crosshair + coordinate text ~44px tall)
+  let y = mouseY + 48;
+  if (y + panelH > vh) y = mouseY - panelH - 14;
+
+  let x = mouseX + 12;
+  if (x + panelW > vw) x = mouseX - panelW - 12;
+
   state.panelEl.style.left = `${x}px`;
   state.panelEl.style.top  = `${y}px`;
 }
@@ -277,7 +283,6 @@ function render(): void {
 
 export function initColorPickerMode(o: OverlayElements): void {
   overlay = o;
-  enablePointerEvents();
 
   const panel = buildPanel();
   document.documentElement.appendChild(panel);
@@ -296,6 +301,5 @@ export function destroyColorPickerMode(): void {
   state.panelEl = null;
   state.colors  = [];
 
-  disablePointerEvents();
   overlay = null;
 }

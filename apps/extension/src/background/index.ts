@@ -128,6 +128,12 @@ async function handlePopupMessage(
       sendResponse(next);
       break;
     }
+    case 'TOGGLE_RULERS': {
+      const next = setTabState(tabId, { showRulers: msg.enabled });
+      await sendToContent(tabId, { type: 'TOGGLE_RULERS', enabled: msg.enabled });
+      sendResponse(next);
+      break;
+    }
     case 'CAPTURE_SCREENSHOT': {
       try {
         const dataUrl = await chrome.tabs.captureVisibleTab({ format: 'png', quality: 100 });
@@ -143,11 +149,11 @@ async function handlePopupMessage(
   }
 }
 
-function handleContentMessage(
+async function handleContentMessage(
   msg: Message,
   tabId: number,
   sendResponse: (r: unknown) => void,
-): void {
+): Promise<void> {
   switch (msg.type) {
     case 'GET_STATE': {
       sendResponse(getTabState(tabId));
@@ -156,48 +162,55 @@ function handleContentMessage(
     case 'ACTIVATE': {
       const next = setTabState(tabId, { active: true, mode: msg.mode });
       updateBadge(tabId, true);
-      sendToContent(tabId, { type: 'ACTIVATE', mode: next.mode });
+      await sendToContent(tabId, { type: 'ACTIVATE', mode: next.mode });
       sendResponse(next);
       break;
     }
     case 'DEACTIVATE': {
       const next = setTabState(tabId, { active: false });
       updateBadge(tabId, false);
-      sendToContent(tabId, { type: 'DEACTIVATE' });
+      await sendToContent(tabId, { type: 'DEACTIVATE' });
       sendResponse(next);
       break;
     }
     case 'SWITCH_MODE': {
       const next = setTabState(tabId, { mode: msg.mode as Mode });
-      sendToContent(tabId, { type: 'SWITCH_MODE', mode: msg.mode as Mode });
+      await sendToContent(tabId, { type: 'SWITCH_MODE', mode: msg.mode as Mode });
       sendResponse(next);
       break;
     }
     case 'TOGGLE_BOX_MODEL': {
       const next = setTabState(tabId, { showBoxModel: msg.enabled });
-      sendToContent(tabId, { type: 'TOGGLE_BOX_MODEL', enabled: msg.enabled });
+      await sendToContent(tabId, { type: 'TOGGLE_BOX_MODEL', enabled: msg.enabled });
       sendResponse(next);
       break;
     }
     case 'TOGGLE_GUIDES': {
       const next = setTabState(tabId, { showGuides: msg.enabled });
-      sendToContent(tabId, { type: 'TOGGLE_GUIDES', enabled: msg.enabled });
+      await sendToContent(tabId, { type: 'TOGGLE_GUIDES', enabled: msg.enabled });
       sendResponse(next);
       break;
     }
     case 'TOGGLE_SNAP': {
       const next = setTabState(tabId, { snapToElements: msg.enabled });
-      sendToContent(tabId, { type: 'TOGGLE_SNAP', enabled: msg.enabled });
+      await sendToContent(tabId, { type: 'TOGGLE_SNAP', enabled: msg.enabled });
+      sendResponse(next);
+      break;
+    }
+    case 'TOGGLE_RULERS': {
+      const next = setTabState(tabId, { showRulers: msg.enabled });
+      await sendToContent(tabId, { type: 'TOGGLE_RULERS', enabled: msg.enabled });
       sendResponse(next);
       break;
     }
     case 'CAPTURE_SCREENSHOT': {
-      chrome.tabs.captureVisibleTab({ format: 'png', quality: 100 }).then((dataUrl) => {
-        sendToContent(tabId, { type: 'SCREENSHOT_READY', dataUrl });
+      try {
+        const dataUrl = await chrome.tabs.captureVisibleTab({ format: 'png', quality: 100 });
+        await sendToContent(tabId, { type: 'SCREENSHOT_READY', dataUrl });
         sendResponse({ dataUrl });
-      }).catch((err) => {
+      } catch (err) {
         sendResponse({ error: String(err) });
-      });
+      }
       break;
     }
     case 'MEASUREMENT_RESULT': {

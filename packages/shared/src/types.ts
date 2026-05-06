@@ -11,6 +11,7 @@ export interface ExtensionState {
   mode: Mode;
   showBoxModel: boolean;
   showGuides: boolean;
+  showRulers: boolean;
   snapToElements: boolean;
 }
 
@@ -79,6 +80,7 @@ export const DEFAULT_STATE: ExtensionState = {
   mode: 'inspect',
   showBoxModel: false,
   showGuides: true,
+  showRulers: false,
   snapToElements: true,
 };
 
