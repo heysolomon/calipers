@@ -1,35 +1,36 @@
 import Link from 'next/link';
 import { DemoTrigger } from '../components/demo-trigger';
+import { ExpandableSection, type SectionRow } from '../components/expandable-section';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
-const MODES = [
-  { key: '1', name: 'Inspect',       desc: 'Dimensions, box model, CSS path, typography & viewport distances' },
-  { key: '2', name: 'Measure',       desc: 'Click up to 5 elements — all gaps measured simultaneously'         },
-  { key: '3', name: 'Guides',        desc: 'Draggable guides with snap-to-element edges, persisted across sessions' },
-  { key: '4', name: 'Colour Picker', desc: 'Sample element colours and copy as HEX, RGB, or HSL'               },
-  { key: '5', name: 'Spacing Grid',  desc: 'Show all gaps between sibling elements at once'                     },
+const MODE_ROWS: SectionRow[] = [
+  { id: 'inspect',      leftBadge: '1', left: 'Inspect',       right: 'Dimensions, box model, CSS path, typography & viewport distances' },
+  { id: 'measure',      leftBadge: '2', left: 'Measure',       right: 'Click up to 5 elements — all gaps measured simultaneously'         },
+  { id: 'guides',       leftBadge: '3', left: 'Guides',        right: 'Draggable guides with snap-to-element edges, persisted across sessions' },
+  { id: 'colour',       leftBadge: '4', left: 'Colour Picker', right: 'Sample element colours and copy as HEX, RGB, or HSL'               },
+  { id: 'spacing-grid', leftBadge: '5', left: 'Spacing Grid',  right: 'Show all gaps between sibling elements at once'                    },
 ];
 
-const TOOLS = [
-  { name: 'Box model overlay',    desc: 'Colour-coded margin / border / padding / content rings on any element' },
-  { name: 'Ruler overlay',        desc: 'Pixel rulers along the viewport edges with cursor crosshair'           },
-  { name: 'Design tokens',        desc: 'Extract all CSS custom properties; export as JSON with one click'      },
-  { name: 'Screenshot export',    desc: 'Capture the visible viewport with measurements baked in'               },
-  { name: 'Typography inspector', desc: 'Font family, size, weight, line-height, and letter-spacing for text nodes' },
-  { name: 'Viewport distances',   desc: 'Dashed lines from element edges to viewport edges with px labels'      },
-  { name: 'Element path',         desc: 'CSS selector breadcrumb of the hovered element shown inline'           },
-  { name: 'Multi-element measure','desc': 'Pin multiple elements; every consecutive pair is measured at once'   },
+const TOOL_ROWS: SectionRow[] = [
+  { id: 'box-model',     left: 'Box model overlay',    right: 'Colour-coded margin / border / padding / content rings on any element' },
+  { id: 'ruler',         left: 'Ruler overlay',        right: 'Pixel rulers along the viewport edges with cursor crosshair'           },
+  { id: 'design-tokens', left: 'Design tokens',        right: 'Extract all CSS custom properties; export as JSON with one click'      },
+  { id: 'screenshot',    left: 'Screenshot export',    right: 'Capture the visible viewport with measurements baked in'               },
+  { id: 'typography',    left: 'Typography inspector', right: 'Font family, size, weight, line-height, and letter-spacing for text nodes' },
+  { id: 'viewport',      left: 'Viewport distances',   right: 'Dashed lines from element edges to viewport edges with px labels'      },
+  { id: 'element-path',  left: 'Element path',         right: 'CSS selector breadcrumb of the hovered element shown inline'           },
+  { id: 'multi',         left: 'Multi-element measure', right: 'Pin multiple elements; every consecutive pair is measured at once'    },
 ];
 
-const SHORTCUTS = [
-  ['1 – 5',   'Switch mode'],
-  ['B',        'Toggle box model overlay'],
-  ['D',        'Open design token panel'],
-  ['S',        'Capture screenshot'],
-  ['?',        'Show all shortcuts'],
-  ['Del / ⌫', 'Clear guides'],
-  ['Esc',      'Deactivate'],
+const SHORTCUT_ROWS: SectionRow[] = [
+  { id: 'modes',      left: 'Switch mode',          right: '1 – 5',   rightIsKbd: true, rowPadding: '7px 0' },
+  { id: 'box',        left: 'Toggle box model',      right: 'B',       rightIsKbd: true, rowPadding: '7px 0' },
+  { id: 'tokens',     left: 'Open design tokens',    right: 'D',       rightIsKbd: true, rowPadding: '7px 0' },
+  { id: 'screenshot', left: 'Capture screenshot',    right: 'S',       rightIsKbd: true, rowPadding: '7px 0' },
+  { id: 'help',       left: 'Show all shortcuts',    right: '?',       rightIsKbd: true, rowPadding: '7px 0' },
+  { id: 'clear',      left: 'Clear guides',          right: 'Del / ⌫', rightIsKbd: true, rowPadding: '7px 0' },
+  { id: 'deactivate', left: 'Deactivate',            right: 'Esc',     rightIsKbd: true, rowPadding: '7px 0' },
 ];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -50,10 +51,6 @@ function SectionLabel({ label }: { label: string }) {
       {label}
     </p>
   );
-}
-
-function Divider() {
-  return <div style={{ height: '1px', background: 'rgba(0,0,0,0.06)' }} />;
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -154,88 +151,11 @@ export default function HomePage() {
           padding: '0 24px 80px',
         }}
       >
-        {/* Modes */}
         <SectionLabel label="Modes" />
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          {MODES.map(({ key, name, desc }, i) => (
-            <li key={name}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'baseline',
-                  gap: '16px',
-                  padding: '9px 0',
-                }}
-              >
-                <span
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '13px',
-                    color: '#000',
-                    letterSpacing: '-0.01em',
-                    flexShrink: 0,
-                  }}
-                >
-                  <kbd
-                    style={{
-                      fontSize: '9px',
-                      fontFamily: '"JetBrains Mono", monospace',
-                      color: '#737373',
-                      background: '#fff',
-                      border: '1px solid rgba(0,0,0,0.12)',
-                      borderBottomWidth: '2px',
-                      borderRadius: '3px',
-                      padding: '1px 5px',
-                    }}
-                  >
-                    {key}
-                  </kbd>
-                  {name}
-                </span>
-                <span
-                  style={{
-                    fontSize: '11.5px',
-                    color: '#999',
-                    textAlign: 'right',
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {desc}
-                </span>
-              </div>
-              {i < MODES.length - 1 && <Divider />}
-            </li>
-          ))}
-        </ul>
+        <ExpandableSection items={MODE_ROWS} initialCount={3} showMoreLabel="modes" />
 
-        {/* Tools */}
         <SectionLabel label="Tools &amp; Overlays" />
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          {TOOLS.map(({ name, desc }, i) => (
-            <li key={name}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'baseline',
-                  gap: '16px',
-                  padding: '9px 0',
-                }}
-              >
-                <span style={{ fontSize: '13px', color: '#000', letterSpacing: '-0.01em', flexShrink: 0 }}>
-                  {name}
-                </span>
-                <span style={{ fontSize: '11.5px', color: '#999', textAlign: 'right', lineHeight: 1.5 }}>
-                  {desc}
-                </span>
-              </div>
-              {i < TOOLS.length - 1 && <Divider />}
-            </li>
-          ))}
-        </ul>
+        <ExpandableSection items={TOOL_ROWS} initialCount={4} showMoreLabel="tools" />
       </section>
 
       {/* ── Keyboard shortcuts ──────────────────────────────────────────────── */}
@@ -248,39 +168,7 @@ export default function HomePage() {
         }}
       >
         <SectionLabel label="Shortcuts" />
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          {SHORTCUTS.map(([key, label], i) => (
-            <li key={key}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '7px 0',
-                }}
-              >
-                <span style={{ fontSize: '13px', color: '#737373', letterSpacing: '-0.01em' }}>{label}</span>
-                <kbd
-                  style={{
-                    fontSize: '10px',
-                    fontFamily: '"JetBrains Mono", monospace',
-                    color: '#000',
-                    background: '#fff',
-                    border: '1px solid rgba(0,0,0,0.12)',
-                    borderBottomWidth: '2px',
-                    borderRadius: '4px',
-                    padding: '1px 7px',
-                    letterSpacing: '0.02em',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {key}
-                </kbd>
-              </div>
-              {i < SHORTCUTS.length - 1 && <Divider />}
-            </li>
-          ))}
-        </ul>
+        <ExpandableSection items={SHORTCUT_ROWS} initialCount={4} showMoreLabel="shortcuts" />
       </section>
 
       {/* ── Browser support ─────────────────────────────────────────────────── */}
