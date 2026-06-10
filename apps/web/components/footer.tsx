@@ -20,7 +20,8 @@ export function Footer() {
         {[
           { label: 'Docs',      href: '/docs' },
           { label: 'Changelog', href: '/changelog' },
-          { label: 'GitHub',    href: 'https://github.com/calipers/calipers' },
+          { label: 'Privacy',   href: '/privacy' },
+          { label: 'GitHub',    href: 'https://github.com/heysolomon/calipers' },
         ].map(({ label, href }) => (
           <Link
             key={label}

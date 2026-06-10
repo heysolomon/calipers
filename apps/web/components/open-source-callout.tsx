@@ -37,7 +37,7 @@ export function OpenSourceCallout() {
               welcome — whether you want to file a bug, suggest a feature, or send a pull request.
             </p>
             <a
-              href="https://github.com/calipers/calipers/blob/main/CONTRIBUTING.md"
+              href="https://github.com/heysolomon/calipers/blob/main/CONTRIBUTING.md"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-sm font-medium"

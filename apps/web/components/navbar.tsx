@@ -1,18 +1,20 @@
 'use client';
 import Link from 'next/link';
+import { useDemo } from './demo-provider';
 
 const NAV = [
   { label: 'Docs',      href: '/docs' },
   { label: 'Changelog', href: '/changelog' },
-  { label: 'GitHub',    href: 'https://github.com/calipers/calipers' },
+  { label: 'GitHub',    href: 'https://github.com/heysolomon/calipers' },
 ];
 
 export function Navbar() {
+  const { isOpen } = useDemo();
   return (
     <header
       style={{
         position: 'fixed',
-        top: 36, // below demo toolbar
+        top: isOpen ? 44 : 0,
         left: 0,
         right: 0,
         zIndex: 100,
@@ -21,9 +23,7 @@ export function Navbar() {
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '0 24px',
-        background: 'rgba(247,247,247,0.9)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
+        background: '#F7F7F7',
         borderBottom: '1px solid rgba(0,0,0,0.06)',
       }}
     >

@@ -31,7 +31,7 @@ export default function DocsIndexPage() {
         <li>
           Clone the repository:
           <pre>
-            <code>git clone https://github.com/calipers/calipers.git</code>
+            <code>git clone https://github.com/heysolomon/calipers.git</code>
           </pre>
         </li>
         <li>
