@@ -138,7 +138,7 @@ or design feedback.
 ## Setting up the dev environment
 
 \`\`\`bash
-git clone https://github.com/calipers/calipers.git
+git clone https://github.com/heysolomon/calipers.git
 cd calipers
 pnpm install
 pnpm dev
@@ -162,7 +162,7 @@ Then load \`apps/extension/dist/\` as an unpacked extension in Chrome.
 3. Run \`pnpm typecheck && pnpm lint\`
 4. Open a pull request against \`main\`
 
-See [CONTRIBUTING.md](https://github.com/calipers/calipers/blob/main/CONTRIBUTING.md) for full details.
+See [CONTRIBUTING.md](https://github.com/heysolomon/calipers/blob/main/CONTRIBUTING.md) for full details.
     `.trim(),
   },
 };

@@ -126,7 +126,7 @@ export default function HomePage() {
             <DemoTrigger />
           </div>
           <a
-            href="https://github.com/calipers/calipers"
+            href="https://github.com/heysolomon/calipers"
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -228,7 +228,7 @@ export default function HomePage() {
           Calipers is free and open source under the MIT License. Contributions,
           bug reports, and feature requests are welcome on{' '}
           <a
-            href="https://github.com/calipers/calipers"
+            href="https://github.com/heysolomon/calipers"
             target="_blank"
             rel="noopener noreferrer"
             style={{ color: '#000', textDecoration: 'underline', textDecorationStyle: 'dotted' }}
@@ -261,7 +261,7 @@ export default function HomePage() {
           {[
             { label: 'Docs',      href: '/docs'          },
             { label: 'Changelog', href: '/changelog'     },
-            { label: 'GitHub',    href: 'https://github.com/calipers/calipers' },
+            { label: 'GitHub',    href: 'https://github.com/heysolomon/calipers' },
           ].map(({ label, href }) => (
             <Link
               key={label}
