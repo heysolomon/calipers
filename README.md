@@ -8,9 +8,9 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-coming%20soon-lightgrey?style=flat-square&logo=google-chrome)](https://chrome.google.com/webstore)
-[![GitHub Stars](https://img.shields.io/github/stars/calipers/calipers?style=flat-square&color=4A9EFF)](https://github.com/calipers/calipers/stargazers)
-[![GitHub Issues](https://img.shields.io/github/issues/calipers/calipers?style=flat-square)](https://github.com/calipers/calipers/issues)
-[![Contributors](https://img.shields.io/github/contributors/calipers/calipers?style=flat-square)](https://github.com/calipers/calipers/graphs/contributors)
+[![GitHub Stars](https://img.shields.io/github/stars/calipers/calipers?style=flat-square&color=4A9EFF)](https://github.com/heysolomon/calipers/stargazers)
+[![GitHub Issues](https://img.shields.io/github/issues/calipers/calipers?style=flat-square)](https://github.com/heysolomon/calipers/issues)
+[![Contributors](https://img.shields.io/github/contributors/calipers/calipers?style=flat-square)](https://github.com/heysolomon/calipers/graphs/contributors)
 
 </div>
 
@@ -45,7 +45,7 @@ Activate it with `⌘⇧M`, hover over any element, and immediately see its exac
 
 ```bash
 # 1. Clone
-git clone https://github.com/calipers/calipers.git
+git clone https://github.com/heysolomon/calipers.git
 cd calipers
 
 # 2. Install dependencies
@@ -120,20 +120,20 @@ After running the extension dev server, load `apps/extension/dist/` as an unpack
 
 Contributions of all kinds are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, branch naming conventions, commit format, and the PR process.
 
-Good first issues are labelled [`good first issue`](https://github.com/calipers/calipers/labels/good%20first%20issue).
+Good first issues are labelled [`good first issue`](https://github.com/heysolomon/calipers/labels/good%20first%20issue).
 
 ---
 
 ## Roadmap
 
-See [ROADMAP.md](ROADMAP.md) for planned features, or track progress on the [GitHub Projects board](https://github.com/calipers/calipers/projects).
+See [ROADMAP.md](ROADMAP.md) for planned features, or track progress on the [GitHub Projects board](https://github.com/heysolomon/calipers/projects).
 
 ---
 
 ## Community
 
-- **Bugs & features:** [GitHub Issues](https://github.com/calipers/calipers/issues)
-- **Discussion:** [GitHub Discussions](https://github.com/calipers/calipers/discussions)
+- **Bugs & features:** [GitHub Issues](https://github.com/heysolomon/calipers/issues)
+- **Discussion:** [GitHub Discussions](https://github.com/heysolomon/calipers/discussions)
 - **Website & docs:** [calipers.solomonakuson.com](https://calipers.solomonakuson.com)
 
 ---

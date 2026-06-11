@@ -2,7 +2,7 @@
 
 This roadmap outlines the planned development phases for Calipers. Items marked ✅ are shipped; items without a mark are planned. The roadmap is a living document — priorities shift based on community feedback.
 
-Have a feature idea? [Open a feature request](https://github.com/calipers/calipers/issues/new?template=feature_request.yml) or start a thread in [Discussions](https://github.com/calipers/calipers/discussions).
+Have a feature idea? [Open a feature request](https://github.com/heysolomon/calipers/issues/new?template=feature_request.yml) or start a thread in [Discussions](https://github.com/heysolomon/calipers/discussions).
 
 ---
 

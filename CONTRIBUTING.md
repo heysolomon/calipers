@@ -8,7 +8,7 @@ Calipers is a community project and all contributions are welcome — code, docu
 
 ```bash
 # Clone the repo
-git clone https://github.com/calipers/calipers.git
+git clone https://github.com/heysolomon/calipers.git
 cd calipers
 
 # Install all workspace dependencies
@@ -92,7 +92,7 @@ PRs that introduce new user-facing behaviour should include a short description 
 
 ## Reporting Bugs
 
-Use the [Bug Report template](https://github.com/calipers/calipers/issues/new?template=bug_report.yml). Please include:
+Use the [Bug Report template](https://github.com/heysolomon/calipers/issues/new?template=bug_report.yml). Please include:
 - Browser + version
 - Operating system
 - Steps to reproduce
@@ -100,7 +100,7 @@ Use the [Bug Report template](https://github.com/calipers/calipers/issues/new?te
 
 ## Suggesting Features
 
-Open a [Feature Request](https://github.com/calipers/calipers/issues/new?template=feature_request.yml) or start a discussion in [GitHub Discussions](https://github.com/calipers/calipers/discussions).
+Open a [Feature Request](https://github.com/heysolomon/calipers/issues/new?template=feature_request.yml) or start a discussion in [GitHub Discussions](https://github.com/heysolomon/calipers/discussions).
 
 ## Code of Conduct
 
