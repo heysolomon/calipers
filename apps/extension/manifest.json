@@ -43,8 +43,6 @@
     "tabs"
   ],
 
-  "host_permissions": ["<all_urls>"],
-
   "commands": {
     "toggle-calipers": {
       "suggested_key": {
