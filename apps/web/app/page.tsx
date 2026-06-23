@@ -5,32 +5,95 @@ import { ExpandableSection, type SectionRow } from '../components/expandable-sec
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const MODE_ROWS: SectionRow[] = [
-  { id: 'inspect',      leftBadge: '1', left: 'Inspect',       right: 'Dimensions, box model, CSS path, typography & viewport distances' },
-  { id: 'measure',      leftBadge: '2', left: 'Measure',       right: 'Click up to 5 elements — all gaps measured simultaneously'         },
-  { id: 'guides',       leftBadge: '3', left: 'Guides',        right: 'Draggable guides with snap-to-element edges, persisted across sessions' },
-  { id: 'colour',       leftBadge: '4', left: 'Colour Picker', right: 'Sample element colours and copy as HEX, RGB, or HSL'               },
-  { id: 'spacing-grid', leftBadge: '5', left: 'Spacing Grid',  right: 'Show all gaps between sibling elements at once'                    },
+  {
+    id: 'inspect',
+    leftBadge: '1',
+    left: 'Inspect',
+    right: 'Dimensions, box model, CSS path, typography & viewport distances',
+  },
+  {
+    id: 'measure',
+    leftBadge: '2',
+    left: 'Measure',
+    right: 'Click up to 5 elements — all gaps measured simultaneously',
+  },
+  {
+    id: 'guides',
+    leftBadge: '3',
+    left: 'Guides',
+    right: 'Draggable guides with snap-to-element edges, persisted across sessions',
+  },
+  {
+    id: 'colour',
+    leftBadge: '4',
+    left: 'Colour Picker',
+    right: 'Sample element colours and copy as HEX, RGB, or HSL',
+  },
+  {
+    id: 'spacing-grid',
+    leftBadge: '5',
+    left: 'Spacing Grid',
+    right: 'Show all gaps between sibling elements at once',
+  },
 ];
 
 const TOOL_ROWS: SectionRow[] = [
-  { id: 'box-model',     left: 'Box model overlay',    right: 'Colour-coded margin / border / padding / content rings on any element' },
-  { id: 'ruler',         left: 'Ruler overlay',        right: 'Pixel rulers along the viewport edges with cursor crosshair'           },
-  { id: 'design-tokens', left: 'Design tokens',        right: 'Extract all CSS custom properties; export as JSON with one click'      },
-  { id: 'screenshot',    left: 'Screenshot export',    right: 'Capture the visible viewport with measurements baked in'               },
-  { id: 'typography',    left: 'Typography inspector', right: 'Font family, size, weight, line-height, and letter-spacing for text nodes' },
-  { id: 'viewport',      left: 'Viewport distances',   right: 'Dashed lines from element edges to viewport edges with px labels'      },
-  { id: 'element-path',  left: 'Element path',         right: 'CSS selector breadcrumb of the hovered element shown inline'           },
-  { id: 'multi',         left: 'Multi-element measure', right: 'Pin multiple elements; every consecutive pair is measured at once'    },
+  {
+    id: 'box-model',
+    left: 'Box model overlay',
+    right: 'Colour-coded margin / border / padding / content rings on any element',
+  },
+  {
+    id: 'ruler',
+    left: 'Ruler overlay',
+    right: 'Pixel rulers along the viewport edges with cursor crosshair',
+  },
+  {
+    id: 'design-tokens',
+    left: 'Design tokens',
+    right: 'Extract all CSS custom properties; export as JSON with one click',
+  },
+  {
+    id: 'screenshot',
+    left: 'Screenshot export',
+    right: 'Capture the visible viewport with measurements baked in',
+  },
+  {
+    id: 'typography',
+    left: 'Typography inspector',
+    right: 'Font family, size, weight, line-height, and letter-spacing for text nodes',
+  },
+  {
+    id: 'viewport',
+    left: 'Viewport distances',
+    right: 'Dashed lines from element edges to viewport edges with px labels',
+  },
+  {
+    id: 'element-path',
+    left: 'Element path',
+    right: 'CSS selector breadcrumb of the hovered element shown inline',
+  },
+  {
+    id: 'multi',
+    left: 'Multi-element measure',
+    right: 'Pin multiple elements; every consecutive pair is measured at once',
+  },
 ];
 
 const SHORTCUT_ROWS: SectionRow[] = [
-  { id: 'modes',      left: 'Switch mode',          right: '1 – 5',   rightIsKbd: true, rowPadding: '7px 0' },
-  { id: 'box',        left: 'Toggle box model',      right: 'B',       rightIsKbd: true, rowPadding: '7px 0' },
-  { id: 'tokens',     left: 'Open design tokens',    right: 'D',       rightIsKbd: true, rowPadding: '7px 0' },
-  { id: 'screenshot', left: 'Capture screenshot',    right: 'S',       rightIsKbd: true, rowPadding: '7px 0' },
-  { id: 'help',       left: 'Show all shortcuts',    right: '?',       rightIsKbd: true, rowPadding: '7px 0' },
-  { id: 'clear',      left: 'Clear guides',          right: 'Del / ⌫', rightIsKbd: true, rowPadding: '7px 0' },
-  { id: 'deactivate', left: 'Deactivate',            right: 'Esc',     rightIsKbd: true, rowPadding: '7px 0' },
+  { id: 'modes', left: 'Switch mode', right: '1 – 5', rightIsKbd: true, rowPadding: '7px 0' },
+  { id: 'box', left: 'Toggle box model', right: 'B', rightIsKbd: true, rowPadding: '7px 0' },
+  { id: 'tokens', left: 'Open design tokens', right: 'D', rightIsKbd: true, rowPadding: '7px 0' },
+  {
+    id: 'screenshot',
+    left: 'Capture screenshot',
+    right: 'S',
+    rightIsKbd: true,
+    rowPadding: '7px 0',
+  },
+  { id: 'help', left: 'Show all shortcuts', right: '?', rightIsKbd: true, rowPadding: '7px 0' },
+  { id: 'clear', left: 'Clear guides', right: 'Del / ⌫', rightIsKbd: true, rowPadding: '7px 0' },
+  { id: 'deactivate', left: 'Deactivate', right: 'Esc', rightIsKbd: true, rowPadding: '7px 0' },
 ];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -57,8 +120,9 @@ function SectionLabel({ label }: { label: string }) {
 
 export default function HomePage() {
   return (
-    <main style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', paddingTop: '36px' }}>
-
+    <main
+      style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', paddingTop: '36px' }}
+    >
       {/* ── Hero ───────────────────────────────────────────────────────────── */}
       <section
         style={{
@@ -95,16 +159,26 @@ export default function HomePage() {
             letterSpacing: '-0.01em',
           }}
         >
-          Precision measurement for the web. A free, open-source browser extension
-          with five measurement modes, a colour picker, design token extraction,
-          typography inspection, and more — with pixel-perfect accuracy.
+          Precision measurement for the web. A free, open-source browser extension with five
+          measurement modes, a colour picker, design token extraction, typography inspection, and
+          more — with pixel-perfect accuracy.
         </p>
 
         {/* CTA */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <div
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              gap: '8px',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+            }}
+          >
             <a
-              href="https://chromewebstore.google.com"
+              href="https://chromewebstore.google.com/detail/calipers/anocimjcbeijomifkdcdkafdjphcdale?authuser=0&hl=en"
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -189,7 +263,7 @@ export default function HomePage() {
           }}
         >
           {[
-            { name: 'Chrome',  note: 'Manifest V3' },
+            { name: 'Chrome', note: 'Manifest V3' },
             { name: 'Firefox', note: 'Manifest V2' },
           ].map(({ name, note }) => (
             <div
@@ -224,9 +298,17 @@ export default function HomePage() {
         }}
       >
         <SectionLabel label="Open Source" />
-        <p style={{ fontSize: '13px', color: '#737373', lineHeight: 1.75, letterSpacing: '-0.01em', maxWidth: '380px' }}>
-          Calipers is free and open source under the MIT License. Contributions,
-          bug reports, and feature requests are welcome on{' '}
+        <p
+          style={{
+            fontSize: '13px',
+            color: '#737373',
+            lineHeight: 1.75,
+            letterSpacing: '-0.01em',
+            maxWidth: '380px',
+          }}
+        >
+          Calipers is free and open source under the MIT License. Contributions, bug reports, and
+          feature requests are welcome on{' '}
           <a
             href="https://github.com/heysolomon/calipers"
             target="_blank"
@@ -259,9 +341,9 @@ export default function HomePage() {
 
         <nav style={{ display: 'flex', gap: '16px' }}>
           {[
-            { label: 'Docs',      href: '/docs'          },
-            { label: 'Changelog', href: '/changelog'     },
-            { label: 'GitHub',    href: 'https://github.com/heysolomon/calipers' },
+            { label: 'Docs', href: '/docs' },
+            { label: 'Changelog', href: '/changelog' },
+            { label: 'GitHub', href: 'https://github.com/heysolomon/calipers' },
           ].map(({ label, href }) => (
             <Link
               key={label}
@@ -277,7 +359,6 @@ export default function HomePage() {
 
         <span>v0.1.0</span>
       </footer>
-
     </main>
   );
 }
