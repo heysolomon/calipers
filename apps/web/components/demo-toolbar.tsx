@@ -75,7 +75,6 @@ export function DemoToolbar() {
       }}
     >
       {/* Left — brand */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/calipers-logo.svg"
         alt="Calipers"
