@@ -7,7 +7,7 @@
 ![Demo](docs/assets/demo.gif)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
-[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-coming%20soon-lightgrey?style=flat-square&logo=google-chrome)](https://chrome.google.com/webstore)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-install-blue?style=flat-square&logo=google-chrome)](https://chromewebstore.google.com/detail/calipers/anocimjcbeijomifkdcdkafdjphcdale)
 [![GitHub Stars](https://img.shields.io/github/stars/heysolomon/calipers?style=flat-square&color=4A9EFF)](https://github.com/heysolomon/calipers/stargazers)
 [![GitHub Issues](https://img.shields.io/github/issues/heysolomon/calipers?style=flat-square)](https://github.com/heysolomon/calipers/issues)
 [![Contributors](https://img.shields.io/github/contributors/heysolomon/calipers?style=flat-square)](https://github.com/heysolomon/calipers/graphs/contributors)
