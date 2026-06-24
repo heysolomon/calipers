@@ -9,7 +9,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "lint": "next lint"
+    "lint": "eslint \"**/*.{ts,tsx}\""
   },
   "dependencies": {
     "@calipers/shared": "workspace:*",

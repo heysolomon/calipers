@@ -14,6 +14,7 @@ export default [
       '**/.next/**',
       '**/.turbo/**',
       '**/build/**',
+      '**/next-env.d.ts',
     ],
   },
   {
