@@ -11,7 +11,7 @@ import {
 } from '../renderer';
 import { setLabel, hideLabel } from '../labels';
 import { formatDimensions } from '../utils';
-import { showBoxModelPanel, hideBoxModelPanel, isBoxModelPanel } from '../box-model-panel';
+import { showBoxModelPanel, hideBoxModelPanel } from '../box-model-panel';
 import { isCalipersElement } from '../utils';
 
 interface InspectState {
