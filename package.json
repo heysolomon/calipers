@@ -30,6 +30,10 @@
   },
   "packageManager": "pnpm@10.20.0",
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "@swc/core", "sharp"]
+    "onlyBuiltDependencies": ["esbuild", "@swc/core", "sharp"],
+    "supportedArchitectures": {
+      "os": ["darwin", "linux"],
+      "cpu": ["x64", "arm64"]
+    }
   }
 }
