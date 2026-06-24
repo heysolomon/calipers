@@ -8,7 +8,7 @@
     "build": "vite build",
     "build:firefox": "vite build --config vite.config.firefox.ts",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext .ts,.tsx"
+    "lint": "eslint \"src/**/*.{ts,tsx}\""
   },
   "dependencies": {
     "@calipers/shared": "workspace:*",

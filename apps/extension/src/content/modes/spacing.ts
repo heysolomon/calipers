@@ -7,7 +7,7 @@ import type { OverlayElements } from '../overlay';
 import { clearCanvas, drawRulers, drawMeasurementLine } from '../renderer';
 import { getElementAtPoint } from '../detector';
 import { isCalipersElement } from '../utils';
-import { setLabel, hideLabel, clearLabels } from '../labels';
+import { setLabel, clearLabels } from '../labels';
 import { RULER_SIZE } from '../renderer';
 
 interface SpacingState {
