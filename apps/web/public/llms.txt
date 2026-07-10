@@ -1,0 +1,70 @@
+# Calipers
+
+> Free, open-source Chrome extension to measure pixel distances, inspect element dimensions, check alignment, and verify spacing on any webpage.
+
+Calipers is a browser extension for designers and frontend developers who need pixel-perfect measurements directly on live web pages — without screenshots or switching to a separate app.
+
+## What Calipers does
+
+- Measure pixel distance between two or more elements
+- Inspect element dimensions (width × height) on hover
+- Place draggable horizontal and vertical alignment guides
+- Visualise box model (margin, padding, border, content)
+- Extract CSS custom properties as design tokens
+- Export screenshots with measurements overlaid
+- Keyboard-first workflow with shortcuts for every action
+
+## Who it's for
+
+- Frontend developers doing QA before shipping UI
+- Designers checking implementation against specs
+- Agencies reviewing client websites for spacing and alignment
+- Anyone who needs a pixel ruler inside the browser
+
+## Install
+
+- Chrome Web Store: https://chromewebstore.google.com/detail/calipers/anocimjcbeijomifkdcdkafdjphcdale
+- Website: https://calipers.solomonakuson.com
+- GitHub (open source, MIT): https://github.com/heysolomon/calipers
+
+## How it compares
+
+| Tool | Platform | Approach |
+|------|----------|----------|
+| Calipers | Chrome, Firefox | DOM-native measurement on live pages |
+| PixelSnap | macOS desktop | Screenshot-based measurement |
+| Page Ruler Redux | Chrome | Basic ruler overlay |
+| Dimensions | Chrome | Hover dimensions only |
+
+Calipers combines measure mode, alignment guides, box model overlay, design tokens, and screenshot export in one free, open-source extension with direct DOM access for accurate results.
+
+## Keyboard shortcuts
+
+- Ctrl+Shift+M / Cmd+Shift+M — Toggle Calipers on/off
+- 1 — Inspect mode
+- 2 — Measure mode
+- 3 — Guides mode
+- 4 — Colour picker mode
+- 5 — Spacing grid mode
+- B — Toggle box model overlay
+- C — Copy measurement
+- S — Screenshot export
+- Esc — Deactivate
+
+## Alternatives and comparisons
+
+- Calipers vs PixelSnap: https://calipers.solomonakuson.com/alternatives/pixelsnap
+- Calipers vs Page Ruler Redux: https://calipers.solomonakuson.com/alternatives/page-ruler
+
+## Use cases
+
+- Frontend QA spacing checks: https://calipers.solomonakuson.com/use-cases/frontend-qa
+- Design handoff verification: https://calipers.solomonakuson.com/use-cases/design-handoff
+
+## Documentation
+
+https://calipers.solomonakuson.com/docs
+
+## License
+
+MIT — free and open source forever.

@@ -228,6 +228,7 @@ function ElementOutline({ rect, locked = false }: { rect: DOMRect; locked?: bool
 function MeasureOverlay() {
   const [phase, setPhase] = useState<MeasurePhase>({ step: 'idle' });
   const [hover, setHover] = useState<DOMRect | null>(null);
+  const [announcement, setAnnouncement] = useState('');
 
   useEffect(() => {
     function onMove(e: MouseEvent) {
@@ -241,8 +242,12 @@ function MeasureOverlay() {
       e.preventDefault(); e.stopPropagation();
       const rect = el.getBoundingClientRect();
       setPhase(prev => {
-        if (prev.step === 'idle' || prev.step === 'done') return { step: 'first', rect };
+        if (prev.step === 'idle' || prev.step === 'done') {
+          setAnnouncement('First element selected. Click a second element to measure.');
+          return { step: 'first', rect };
+        }
         const { gap, axis, line } = calcGap(prev.rect, rect);
+        setAnnouncement(`Distance measured: ${Math.round(gap)} pixels`);
         return { step: 'done', from: prev.rect, to: rect, gap, axis, line };
       });
     }
@@ -256,6 +261,9 @@ function MeasureOverlay() {
 
   return (
     <>
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {announcement}
+      </div>
       {/* Hover highlight */}
       {hover && phase.step !== 'done' && <ElementOutline rect={hover} />}
 
@@ -274,7 +282,7 @@ function MeasureOverlay() {
             WebkitBackdropFilter: 'none',
             boxShadow: '0 2px 10px rgba(255,69,0,0.35)',
           }}>
-            Click a second element →
+            Click a second element…
           </div>
         </>
       )}

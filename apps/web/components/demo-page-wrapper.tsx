@@ -1,23 +1,34 @@
 'use client';
 import { useDemo } from './demo-provider';
+import { useReducedMotion } from 'framer-motion';
 import type { ReactNode } from 'react';
 
 const EASE = 'cubic-bezier(0.4, 0, 0.2, 1)';
 
 export function DemoPageWrapper({ children }: { children: ReactNode }) {
   const { isOpen } = useDemo();
+  const reduceMotion = useReducedMotion();
+
+  const transition = reduceMotion
+    ? 'none'
+    : [
+        `margin-left 0.44s ${EASE}`,
+        `margin-right 0.44s ${EASE}`,
+        `border-radius 0.44s ${EASE}`,
+        'box-shadow 0.3s ease',
+        `background 0.3s ease`,
+        `padding-top 0.44s ${EASE}`,
+      ].join(', ');
 
   return (
-    /* Outer shell — fills the full viewport, shows toolbar background in the gutters */
     <div
       style={{
         background: '#0f0f0f',
         paddingTop: isOpen ? '44px' : '0',
-        transition: `background 0.3s ease, padding-top 0.44s ${EASE}`,
+        transition: reduceMotion ? 'none' : `background 0.3s ease, padding-top 0.44s ${EASE}`,
         minHeight: '100vh',
       }}
     >
-      {/* Inner page — inset with rounded top corners to look like a scaled-down card */}
       <div
         style={{
           marginLeft: isOpen ? '14px' : '0',
@@ -29,12 +40,7 @@ export function DemoPageWrapper({ children }: { children: ReactNode }) {
             : 'none',
           background: '#F7F7F7',
           minHeight: `calc(100vh - ${isOpen ? '44px' : '0px'})`,
-          transition: [
-            `margin-left 0.44s ${EASE}`,
-            `margin-right 0.44s ${EASE}`,
-            `border-radius 0.44s ${EASE}`,
-            'box-shadow 0.3s ease',
-          ].join(', '),
+          transition,
         }}
       >
         {children}

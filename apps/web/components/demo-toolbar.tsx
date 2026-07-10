@@ -1,5 +1,6 @@
 'use client';
 import { useDemo, type DemoKey } from './demo-provider';
+import { useReducedMotion } from 'framer-motion';
 
 const TOOLS: { key: DemoKey; label: string }[] = [
   { key: 'inspect',     label: 'Inspect'    },
@@ -10,13 +11,21 @@ const TOOLS: { key: DemoKey; label: string }[] = [
   { key: 'boxmodel',    label: 'Box Model'  },
 ];
 
-// ─── Toggle switch ────────────────────────────────────────────────────────────
-
-function ToggleSwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+function ToggleSwitch({
+  on,
+  onToggle,
+  label,
+}: {
+  on: boolean;
+  onToggle: () => void;
+  label: string;
+}) {
   return (
     <button
+      type="button"
       role="switch"
       aria-checked={on}
+      aria-label={`${label} demo tool`}
       onClick={onToggle}
       style={{
         position: 'relative',
@@ -29,10 +38,10 @@ function ToggleSwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
         flexShrink: 0,
         transition: 'background 0.2s ease',
         padding: 0,
-        outline: 'none',
       }}
     >
       <span
+        aria-hidden="true"
         style={{
           position: 'absolute',
           top: '2px',
@@ -49,17 +58,18 @@ function ToggleSwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   );
 }
 
-// ─── Toolbar ──────────────────────────────────────────────────────────────────
-
 export function DemoToolbar() {
   const demo = useDemo();
+  const reduceMotion = useReducedMotion();
 
   return (
     <div
       data-demo-ui="true"
       style={{
         position: 'fixed',
-        top: 0, left: 0, right: 0,
+        top: 0,
+        left: 0,
+        right: 0,
         zIndex: 9999,
         height: '44px',
         background: '#0f0f0f',
@@ -68,22 +78,20 @@ export function DemoToolbar() {
         justifyContent: 'space-between',
         padding: '0 20px',
         userSelect: 'none',
-        // Slide in from above
         transform: demo.isOpen ? 'translateY(0)' : 'translateY(-100%)',
-        transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
-        willChange: 'transform',
+        transition: reduceMotion ? 'none' : 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+        willChange: reduceMotion ? 'auto' : 'transform',
       }}
     >
-      {/* Left — brand */}
       <img
         src="/calipers-logo.svg"
-        alt="Calipers"
+        alt=""
         width={16}
         height={16}
+        aria-hidden="true"
         style={{ filter: 'brightness(0) invert(1)', opacity: 0.5 }}
       />
 
-      {/* Centre — tool toggles */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
         {TOOLS.map(({ key, label }) => {
           const on = demo[key];
@@ -91,18 +99,22 @@ export function DemoToolbar() {
             <label
               key={key}
               style={{
-                display: 'flex', alignItems: 'center', gap: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
                 cursor: 'pointer',
               }}
             >
-              <ToggleSwitch on={on} onToggle={() => demo.toggle(key)} />
-              <span style={{
-                fontSize: '11.5px',
-                color: on ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.38)',
-                letterSpacing: '0.01em',
-                transition: 'color 0.15s',
-                whiteSpace: 'nowrap',
-              }}>
+              <ToggleSwitch on={on} onToggle={() => demo.toggle(key)} label={label} />
+              <span
+                style={{
+                  fontSize: '11.5px',
+                  color: on ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.38)',
+                  letterSpacing: '0.01em',
+                  transition: 'color 0.15s',
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 {label}
               </span>
             </label>
@@ -110,32 +122,28 @@ export function DemoToolbar() {
         })}
       </div>
 
-      {/* Right — close */}
       <button
+        type="button"
         onClick={demo.close}
-        title="Close demo tools"
+        aria-label="Close demo tools"
+        className="site-link-dark"
         style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          width: '22px', height: '22px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '22px',
+          height: '22px',
           background: 'transparent',
           border: 'none',
           borderRadius: '5px',
           color: 'rgba(255,255,255,0.4)',
-          fontSize: '13px', lineHeight: 1,
+          fontSize: '13px',
+          lineHeight: 1,
           cursor: 'pointer',
-          transition: 'background 0.15s, color 0.15s',
           padding: 0,
         }}
-        onMouseEnter={e => {
-          e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-          e.currentTarget.style.color = 'rgba(255,255,255,0.8)';
-        }}
-        onMouseLeave={e => {
-          e.currentTarget.style.background = 'transparent';
-          e.currentTarget.style.color = 'rgba(255,255,255,0.4)';
-        }}
       >
-        ×
+        <span aria-hidden="true">×</span>
       </button>
     </div>
   );

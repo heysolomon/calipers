@@ -127,11 +127,11 @@ export function ExpandableSection({ items, initialCount, showMoreLabel = 'items'
       <AnimatePresence initial={false}>
         {!expanded && hidden.length > 0 && (
           <motion.button
+            type="button"
+            aria-expanded={expanded}
             onClick={() => setExpanded(true)}
             exit={reduce ? { opacity: 0 } : { opacity: 0, y: -4 }}
             transition={{ duration: 0.1, ease: 'easeIn' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#737373'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#C4C4C4'; }}
             style={{
               background: 'none',
               border: 'none',
@@ -142,6 +142,10 @@ export function ExpandableSection({ items, initialCount, showMoreLabel = 'items'
               letterSpacing: '-0.01em',
               transition: 'color 150ms ease',
             }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = '#737373'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = '#C4C4C4'; }}
+            onFocus={(e) => { e.currentTarget.style.color = '#737373'; }}
+            onBlur={(e) => { e.currentTarget.style.color = '#C4C4C4'; }}
           >
             Show {hidden.length} more {showMoreLabel} ↓
           </motion.button>

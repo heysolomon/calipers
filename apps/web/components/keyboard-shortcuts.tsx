@@ -1,24 +1,30 @@
 'use client';
 import { type ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 
 const shortcuts = [
   { keys: ['⌘', '⇧', 'M'], description: 'Toggle Calipers on/off', platform: '/ Ctrl+Shift+M' },
   { keys: ['1'], description: 'Switch to Inspect mode' },
   { keys: ['2'], description: 'Switch to Measure mode' },
   { keys: ['3'], description: 'Switch to Guides mode' },
+  { keys: ['4'], description: 'Switch to Colour picker mode' },
+  { keys: ['5'], description: 'Switch to Spacing grid mode' },
   { keys: ['B'], description: 'Toggle box model overlay' },
+  { keys: ['D'], description: 'Open design token panel' },
   { keys: ['C'], description: 'Copy current measurement' },
   { keys: ['S'], description: 'Take screenshot' },
+  { keys: ['?'], description: 'Show all shortcuts' },
   { keys: ['Esc'], description: 'Deactivate / cancel' },
 ];
 
 export function KeyboardShortcuts() {
+  const reduceMotion = useReducedMotion();
+
   return (
     <section className="py-24 px-6">
       <div className="max-w-2xl mx-auto">
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={reduceMotion ? false : { opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
@@ -26,7 +32,7 @@ export function KeyboardShortcuts() {
         >
           <h2
             className="text-3xl font-semibold mb-3"
-            style={{ letterSpacing: '-0.02em', color: 'rgba(255,255,255,0.9)' }}
+            style={{ letterSpacing: '-0.02em', color: 'rgba(255,255,255,0.9)', textWrap: 'balance' }}
           >
             Keyboard-first
           </h2>
@@ -45,14 +51,14 @@ export function KeyboardShortcuts() {
           {shortcuts.map((shortcut, i) => (
             <motion.div
               key={shortcut.description}
-              initial={{ opacity: 0, x: -12 }}
+              initial={reduceMotion ? false : { opacity: 0, x: -12 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{
                 type: 'spring',
                 stiffness: 300,
                 damping: 30,
-                delay: i * 0.05,
+                delay: reduceMotion ? 0 : i * 0.05,
               }}
               className="flex items-center justify-between px-5 py-3.5"
               style={{
@@ -68,10 +74,7 @@ export function KeyboardShortcuts() {
                   <Kbd key={key}>{key}</Kbd>
                 ))}
                 {shortcut.platform && (
-                  <span
-                    className="text-xs ml-1"
-                    style={{ color: 'rgba(255,255,255,0.3)' }}
-                  >
+                  <span className="text-xs ml-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
                     {shortcut.platform}
                   </span>
                 )}
@@ -95,6 +98,7 @@ function Kbd({ children }: { children: ReactNode }) {
         color: 'rgba(255,255,255,0.7)',
         fontFamily: 'inherit',
         fontSize: '12px',
+        fontVariantNumeric: 'tabular-nums',
       }}
     >
       {children}

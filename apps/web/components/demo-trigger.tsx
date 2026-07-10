@@ -1,18 +1,14 @@
 'use client';
 import { useDemo } from './demo-provider';
 
-/**
- * Settings-style icon that toggles the demo toolbar.
- * When open → shows an X to close. When closed → shows a sliders icon.
- */
 export function DemoTrigger() {
   const demo = useDemo();
 
   return (
     <button
+      type="button"
       onClick={demo.isOpen ? demo.close : demo.open}
       data-demo-ui="true"
-      title={demo.isOpen ? 'Close demo tools' : 'Open demo tools'}
       aria-label={demo.isOpen ? 'Close demo tools' : 'Open demo tools'}
       style={{
         display: 'inline-flex',
@@ -25,33 +21,30 @@ export function DemoTrigger() {
         border: '1px solid rgba(0,0,0,0.12)',
         borderRadius: '6px',
         cursor: 'pointer',
-        transition: 'background 0.15s, border-color 0.15s',
+        transition: 'background 0.15s ease, border-color 0.15s ease, color 0.15s ease',
         padding: '6px 14px',
-        outline: 'none',
         color: '#737373',
         letterSpacing: '-0.01em',
       }}
-      onMouseEnter={e => {
+      onMouseEnter={(e) => {
         e.currentTarget.style.background = 'rgba(0,0,0,0.06)';
         e.currentTarget.style.color = '#000';
       }}
-      onMouseLeave={e => {
+      onMouseLeave={(e) => {
         e.currentTarget.style.background = 'transparent';
         e.currentTarget.style.color = '#737373';
       }}
     >
       {demo.isOpen ? (
-        /* X icon */
         <>
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
             <path d="M4 4l8 8M12 4l-8 8" />
           </svg>
           Close
         </>
       ) : (
-        /* Sliders / settings icon */
         <>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
             <line x1="4" y1="6" x2="20" y2="6" />
             <line x1="4" y1="12" x2="20" y2="12" />
             <line x1="4" y1="18" x2="20" y2="18" />
