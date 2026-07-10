@@ -1,6 +1,7 @@
-import Link from 'next/link';
 import { DemoTrigger } from '../components/demo-trigger';
 import { ExpandableSection, type SectionRow } from '../components/expandable-section';
+import { Footer } from '../components/footer';
+import { CHROME_STORE_URL, GITHUB_URL } from '../lib/site';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -100,7 +101,7 @@ const SHORTCUT_ROWS: SectionRow[] = [
 
 function SectionLabel({ label }: { label: string }) {
   return (
-    <p
+    <h2
       style={{
         fontSize: '10px',
         fontWeight: 600,
@@ -109,10 +110,11 @@ function SectionLabel({ label }: { label: string }) {
         color: '#C4C4C4',
         marginBottom: '8px',
         marginTop: '28px',
+        scrollMarginTop: '5rem',
       }}
     >
       {label}
-    </p>
+    </h2>
   );
 }
 
@@ -178,7 +180,7 @@ export default function HomePage() {
             }}
           >
             <a
-              href="https://chromewebstore.google.com/detail/calipers/anocimjcbeijomifkdcdkafdjphcdale?authuser=0&hl=en"
+              href={CHROME_STORE_URL}
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -196,13 +198,15 @@ export default function HomePage() {
               }}
             >
               Install for Chrome →
+              <span className="sr-only"> (opens in new tab)</span>
             </a>
             <DemoTrigger />
           </div>
           <a
-            href="https://github.com/heysolomon/calipers"
+            href={GITHUB_URL}
             target="_blank"
             rel="noopener noreferrer"
+            className="site-link"
             style={{
               fontSize: '11.5px',
               color: '#D4D4D4',
@@ -212,6 +216,7 @@ export default function HomePage() {
             }}
           >
             View on GitHub
+            <span className="sr-only"> (opens in new tab)</span>
           </a>
         </div>
       </section>
@@ -310,55 +315,20 @@ export default function HomePage() {
           Calipers is free and open source under the MIT License. Contributions, bug reports, and
           feature requests are welcome on{' '}
           <a
-            href="https://github.com/heysolomon/calipers"
+            href={GITHUB_URL}
             target="_blank"
             rel="noopener noreferrer"
+            className="site-link"
             style={{ color: '#000', textDecoration: 'underline', textDecorationStyle: 'dotted' }}
           >
             GitHub
+            <span className="sr-only"> (opens in new tab)</span>
           </a>
           .
         </p>
       </section>
 
-      {/* ── Footer ──────────────────────────────────────────────────────────── */}
-      <footer
-        style={{
-          height: '36px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 16px',
-          background: '#F7F7F7',
-          borderTop: '1px solid rgba(0,0,0,0.06)',
-          fontSize: '11px',
-          color: '#D4D4D4',
-          letterSpacing: '-0.01em',
-          marginTop: 'auto',
-        }}
-      >
-        <span>MIT License · Free forever</span>
-
-        <nav style={{ display: 'flex', gap: '16px' }}>
-          {[
-            { label: 'Docs', href: '/docs' },
-            { label: 'Changelog', href: '/changelog' },
-            { label: 'GitHub', href: 'https://github.com/heysolomon/calipers' },
-          ].map(({ label, href }) => (
-            <Link
-              key={label}
-              href={href}
-              style={{ color: '#737373', textDecoration: 'none', fontSize: '11px' }}
-              target={href.startsWith('http') ? '_blank' : undefined}
-              rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
-            >
-              {label}
-            </Link>
-          ))}
-        </nav>
-
-        <span>v0.1.0</span>
-      </footer>
+      <Footer />
     </main>
   );
 }

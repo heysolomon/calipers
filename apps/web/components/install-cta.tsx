@@ -1,12 +1,15 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
+import { CHROME_STORE_URL } from '../lib/site';
 
 export function InstallCTA() {
+  const reduceMotion = useReducedMotion();
+
   return (
     <section id="install" className="py-24 px-6">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={reduceMotion ? false : { opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ type: 'spring', stiffness: 280, damping: 28 }}
@@ -24,7 +27,7 @@ export function InstallCTA() {
             border: '1px solid rgba(74,158,255,0.25)',
           }}
         >
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+          <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none">
             <path
               d="M12 4v12m0 0l-4-4m4 4l4-4"
               stroke="#4A9EFF"
@@ -32,18 +35,13 @@ export function InstallCTA() {
               strokeLinecap="round"
               strokeLinejoin="round"
             />
-            <path
-              d="M4 20h16"
-              stroke="#4A9EFF"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
+            <path d="M4 20h16" stroke="#4A9EFF" strokeWidth="2" strokeLinecap="round" />
           </svg>
         </div>
 
         <h2
           className="text-3xl font-semibold mb-3"
-          style={{ letterSpacing: '-0.02em', color: 'rgba(255,255,255,0.92)' }}
+          style={{ letterSpacing: '-0.02em', color: 'rgba(255,255,255,0.92)', textWrap: 'balance' }}
         >
           Ready to measure?
         </h2>
@@ -53,23 +51,28 @@ export function InstallCTA() {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <a
-            href="#"
-            className="flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-sm w-full sm:w-auto justify-center transition-all"
+            href={CHROME_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-sm w-full sm:w-auto justify-center"
             style={{
               background: '#4A9EFF',
               color: '#0f0f14',
               boxShadow: '0 0 24px rgba(74,158,255,0.35)',
+              transition: 'box-shadow 0.2s ease',
             }}
           >
             Add to Chrome — it&apos;s free
+            <span className="sr-only"> (opens in new tab)</span>
           </a>
           <a
             href="/docs"
-            className="flex items-center gap-2 px-7 py-3.5 rounded-xl font-medium text-sm w-full sm:w-auto justify-center transition-all"
+            className="flex items-center gap-2 px-7 py-3.5 rounded-xl font-medium text-sm w-full sm:w-auto justify-center site-link"
             style={{
               background: 'rgba(255,255,255,0.05)',
               border: '1px solid rgba(255,255,255,0.08)',
               color: 'rgba(255,255,255,0.6)',
+              transition: 'background 0.2s ease, color 0.2s ease',
             }}
           >
             Read the docs

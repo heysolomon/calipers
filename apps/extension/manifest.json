@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Calipers",
-  "version": "0.1.0",
-  "description": "Precision measurement for the web — inspect dimensions, measure distances, and check alignment on any webpage.",
+  "name": "Calipers — Measure & Inspect Web Pages",
+  "version": "0.1.1",
+  "description": "Measure pixel distances, inspect element sizes, and check alignment on any webpage. Free, open source.",
   "author": "Calipers Contributors",
 
   "icons": {

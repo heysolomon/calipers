@@ -1,101 +1,123 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
+import { buildPageMetadata } from '../../components/content-page';
+import { DOC_NAV } from '../../lib/docs';
+import { CHROME_STORE_URL, GITHUB_URL } from '../../lib/site';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: 'Documentation',
-};
+  description:
+    'Learn how to install and use Calipers — the free Chrome extension for measuring distances, inspecting dimensions, and checking alignment on any webpage.',
+  path: '/docs',
+});
 
 export default function DocsIndexPage() {
   return (
-    <div>
+    <>
       <h1>Getting Started with Calipers</h1>
-      <p>
-        Calipers is a free, open-source Chrome extension that lets designers and developers
+      <p className="docs-lead">
+        Calipers is a free, open-source browser extension that lets designers and developers
         instantly measure distances, inspect dimensions, and check alignment on any webpage.
         Think PixelSnap, but for the browser — with direct DOM access for pixel-perfect accuracy.
       </p>
 
-      <h2>Installation</h2>
-
-      <h3>From the Chrome Web Store</h3>
-      <ol>
-        <li>
-          Visit the{' '}
-          <a href="#">Calipers page on the Chrome Web Store</a>.
-        </li>
-        <li>Click <strong>Add to Chrome</strong>.</li>
-        <li>Click the Calipers icon in your toolbar, or press <code>⌘⇧M</code> to activate.</li>
-      </ol>
-
-      <h3>From Source</h3>
-      <ol>
-        <li>
-          Clone the repository:
-          <pre>
-            <code>git clone https://github.com/heysolomon/calipers.git</code>
-          </pre>
-        </li>
-        <li>
-          Install dependencies:
-          <pre>
-            <code>pnpm install</code>
-          </pre>
-        </li>
-        <li>
-          Build the extension:
-          <pre>
-            <code>pnpm build --filter=@calipers/extension</code>
-          </pre>
-        </li>
-        <li>Open Chrome and navigate to <code>chrome://extensions</code>.</li>
-        <li>Enable <strong>Developer mode</strong> (top right toggle).</li>
-        <li>
-          Click <strong>Load unpacked</strong> and select the{' '}
-          <code>apps/extension/dist</code> folder.
-        </li>
-      </ol>
-
-      <h2>Quick Tour</h2>
-
-      <h3>Activating Calipers</h3>
+      <h2>Install</h2>
       <p>
-        Press <code>⌘⇧M</code> (Mac) or <code>Ctrl+Shift+M</code> (Windows/Linux) to toggle
-        Calipers on the current page. You can also click the extension icon in your toolbar and
-        use the on/off toggle in the popup.
+        The fastest way to get started is the{' '}
+        <a href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer">
+          Chrome Web Store
+        </a>
+        . Click <strong>Add to Chrome</strong>, then press <code>Cmd+Shift+M</code> (Mac) or{' '}
+        <code>Ctrl+Shift+M</code> (Windows/Linux) to activate on any page.
+      </p>
+      <p>
+        Prefer to build from source? See the full{' '}
+        <Link href="/docs/getting-started/installation">installation guide</Link>.
       </p>
 
-      <h3>Modes</h3>
-      <p>Calipers has three modes, selectable from the popup or via keyboard shortcuts:</p>
+      <h2>Quick Tour</h2>
+      <h3>Activate Calipers</h3>
+      <p>
+        Press <code>Cmd+Shift+M</code> / <code>Ctrl+Shift+M</code> to toggle Calipers on the
+        current page. A floating control panel appears in the top-right corner with the mode
+        switcher and contextual settings.
+      </p>
+
+      <h3>Five Measurement Modes</h3>
       <ul>
         <li>
-          <strong>Inspect (1)</strong> — Hover over elements to see their width and height.
+          <strong>Inspect (1)</strong> — Hover elements to see dimensions, typography, CSS path,
+          and viewport distances.
         </li>
         <li>
-          <strong>Measure (2)</strong> — Click two elements to measure the distance between them.
+          <strong>Measure (2)</strong> — Click elements to measure pixel distance between closest
+          edges. Pin up to five at once.
         </li>
         <li>
-          <strong>Guides (3)</strong> — Place draggable alignment guides on the page.
+          <strong>Guides (3)</strong> — Place draggable alignment guides with snap-to-element edges.
+        </li>
+        <li>
+          <strong>Colour picker (4)</strong> — Sample colours and copy as HEX, RGB, or HSL.
+        </li>
+        <li>
+          <strong>Spacing grid (5)</strong> — Show all gaps between sibling elements at once.
         </li>
       </ul>
 
-      <h2>Keyboard Shortcuts</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Shortcut</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td><code>⌘⇧M</code> / <code>Ctrl+Shift+M</code></td><td>Toggle Calipers on/off</td></tr>
-          <tr><td><code>1</code></td><td>Switch to Inspect mode</td></tr>
-          <tr><td><code>2</code></td><td>Switch to Measure mode</td></tr>
-          <tr><td><code>3</code></td><td>Switch to Guides mode</td></tr>
-          <tr><td><code>B</code></td><td>Toggle box model overlay</td></tr>
-          <tr><td><code>C</code></td><td>Copy current measurement</td></tr>
-          <tr><td><code>S</code></td><td>Take screenshot</td></tr>
-          <tr><td><code>Esc</code></td><td>Deactivate / cancel</td></tr>
-        </tbody>
-      </table>
-    </div>
+      <h3>Tools &amp; Overlays</h3>
+      <ul>
+        <li>
+          <strong>Box model (B)</strong> — Colour-coded margin, padding, border, and content rings.
+        </li>
+        <li>
+          <strong>Rulers</strong> — Pixel rulers along viewport edges with cursor crosshair.
+        </li>
+        <li>
+          <strong>Design tokens (D)</strong> — Extract CSS custom properties and export as JSON.
+        </li>
+        <li>
+          <strong>Screenshot (S)</strong> — Export the viewport with measurements baked in.
+        </li>
+      </ul>
+
+      <h2>Documentation</h2>
+      <div className="docs-nav-grid">
+        {DOC_NAV.map((group) => (
+          <div key={group.section} className="docs-nav-card">
+            <h3>{group.section}</h3>
+            <ul>
+              {group.items.map((item) => (
+                <li key={item.href}>
+                  <Link href={item.href}>{item.label}</Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+
+      <h2>Resources</h2>
+      <ul>
+        <li>
+          <a href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer">
+            Install from Chrome Web Store
+          </a>
+        </li>
+        <li>
+          <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
+            Source code on GitHub
+          </a>
+        </li>
+        <li>
+          <Link href="/changelog">Changelog</Link>
+        </li>
+        <li>
+          <Link href="/use-cases/frontend-qa">Frontend QA workflow</Link>
+        </li>
+        <li>
+          <Link href="/use-cases/design-handoff">Design handoff workflow</Link>
+        </li>
+      </ul>
+    </>
   );
 }

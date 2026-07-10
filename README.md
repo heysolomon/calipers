@@ -2,7 +2,7 @@
 
 # Calipers
 
-**Precision measurement for the web.**
+**Precision measurement for the web.** Free, open-source Chrome extension to measure pixel distances, inspect element dimensions, and check alignment on any webpage.
 
 ![Demo](docs/assets/demo.gif)
 
@@ -37,9 +37,11 @@ Activate it with `⌘⇧M`, hover over any element, and immediately see its exac
 
 ## Install
 
-### From the Chrome Web Store _(coming soon)_
+### From the Chrome Web Store
 
-> The Chrome Web Store listing is in progress. Star this repo to get notified.
+[Install Calipers for Chrome →](https://chromewebstore.google.com/detail/calipers/anocimjcbeijomifkdcdkafdjphcdale)
+
+Also available: [companion website & docs](https://calipers.solomonakuson.com) · [Chrome Web Store listing copy](docs/CHROME_WEB_STORE_LISTING.md)
 
 ### From Source
 

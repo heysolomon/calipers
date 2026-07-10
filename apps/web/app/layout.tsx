@@ -4,50 +4,65 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { DemoProvider } from '../components/demo-provider';
 import { DemoToolbar } from '../components/demo-toolbar';
 import { DemoOverlay } from '../components/demo-overlay';
+import { DemoNotice } from '../components/demo-notice';
 import { DemoPageWrapper } from '../components/demo-page-wrapper';
 import { CustomCursor } from '../components/custom-cursor';
 import { AgentationWidget } from '../components/agentation-widget';
+import { JsonLd } from '../components/json-ld';
+import { SkipLink } from '../components/skip-link';
+import { SEO_KEYWORDS, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from '../lib/site';
 import type { ReactNode } from 'react';
 import './globals.css';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://calipers.solomonakuson.com'),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: 'Calipers — Precision measurement for the web',
-    template: '%s | Calipers',
+    default: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    template: `%s | ${SITE_NAME}`,
   },
-  description:
-    'Free, open-source Chrome extension for measuring distances, inspecting dimensions, and checking alignment on any webpage.',
-  keywords: ['design tools', 'chrome extension', 'measurement', 'pixel perfect', 'frontend'],
+  description: SITE_DESCRIPTION,
+  keywords: SEO_KEYWORDS,
   authors: [{ name: 'Calipers Contributors' }],
   creator: 'Calipers',
+  applicationName: SITE_NAME,
+  category: 'design tools',
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://calipers.solomonakuson.com',
-    title: 'Calipers — Precision measurement for the web',
-    description:
-      'Free, open-source Chrome extension for measuring distances, inspecting dimensions, and checking alignment on any webpage.',
-    siteName: 'Calipers',
+    url: SITE_URL,
+    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    description: SITE_DESCRIPTION,
+    siteName: SITE_NAME,
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Calipers — Precision measurement for the web',
+        alt: `${SITE_NAME} — ${SITE_TAGLINE}`,
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Calipers — Precision measurement for the web',
-    description:
-      'Free, open-source Chrome extension for measuring distances, inspecting dimensions, and checking alignment on any webpage.',
+    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    description: SITE_DESCRIPTION,
     images: ['/og-image.png'],
   },
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  alternates: {
+    canonical: SITE_URL,
+  },
+  other: {
+    'theme-color': '#F7F7F7',
   },
   icons: {
     icon: [
@@ -61,13 +76,20 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-
+      <head>
+        <JsonLd />
+        <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-friendly site summary" />
+      </head>
       <body>
+        <SkipLink />
         <DemoProvider>
           <CustomCursor />
           <DemoToolbar />
           <DemoOverlay />
-          <DemoPageWrapper>{children}</DemoPageWrapper>
+          <DemoNotice />
+          <DemoPageWrapper>
+            <div id="main-content">{children}</div>
+          </DemoPageWrapper>
         </DemoProvider>
         <Analytics />
         <SpeedInsights />

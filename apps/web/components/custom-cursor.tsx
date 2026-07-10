@@ -1,46 +1,44 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useReducedMotion } from 'framer-motion';
 import { useDemo } from './demo-provider';
 
 export function CustomCursor() {
   const { anyTool } = useDemo();
-  const [pos, setPos]       = useState({ x: -200, y: -200 });
+  const reduceMotion = useReducedMotion();
+  const [pos, setPos] = useState({ x: -200, y: -200 });
   const [active, setActive] = useState(false);
   const [overUI, setOverUI] = useState(false);
-  const raf = useRef<number>(null);
-  const raw = useRef({ x: -200, y: -200 });
+
+  const enabled = anyTool && !reduceMotion;
 
   useEffect(() => {
-    if (!anyTool) return;
+    if (!enabled) {
+      document.body.style.cursor = '';
+      return;
+    }
 
     function onMove(e: MouseEvent) {
-      raw.current = { x: e.clientX, y: e.clientY };
+      setPos({ x: e.clientX, y: e.clientY });
       const el = e.target as HTMLElement | null;
       const onDemoUI = !!el?.closest?.('[data-demo-ui="true"]');
       setOverUI(onDemoUI);
       document.body.style.cursor = onDemoUI ? '' : 'none';
-      const isInteractive = !!(el as HTMLElement | null)?.closest?.('a, button, [role="button"], input, select, textarea');
+      const isInteractive = !!el?.closest?.('a, button, [role="button"], input, select, textarea');
       setActive(isInteractive);
     }
 
-    function tick() {
-      setPos({ x: raw.current.x, y: raw.current.y });
-      raf.current = requestAnimationFrame(tick);
-    }
-
     document.addEventListener('mousemove', onMove, { passive: true });
-    raf.current = requestAnimationFrame(tick);
     document.body.style.cursor = 'none';
 
     return () => {
       document.removeEventListener('mousemove', onMove);
-      if (raf.current) cancelAnimationFrame(raf.current);
       document.body.style.cursor = '';
       setPos({ x: -200, y: -200 });
     };
-  }, [anyTool]);
+  }, [enabled]);
 
-  if (!anyTool || overUI) return null;
+  if (!enabled || overUI) return null;
 
   const px = String(Math.max(0, Math.round(pos.x))).padStart(4, '0');
   const py = String(Math.max(0, Math.round(pos.y))).padStart(4, '0');
@@ -56,11 +54,10 @@ export function CustomCursor() {
         transform: 'translate(-50%, -50%)',
         pointerEvents: 'none',
         zIndex: 99999,
-        willChange: 'transform',
       }}
     >
-      {/* Crosshair */}
       <svg
+        aria-hidden="true"
         width="18"
         height="18"
         viewBox="-9 -9 18 18"
@@ -71,7 +68,9 @@ export function CustomCursor() {
         <line x1="0" y1="-9" x2="0" y2="-4" stroke="#FF4500" strokeWidth="1.5" strokeLinecap="round" />
         <line x1="0" y1="4"  x2="0" y2="9"  stroke="#FF4500" strokeWidth="1.5" strokeLinecap="round" />
         <circle
-          cx="0" cy="0" r="2.5"
+          cx="0"
+          cy="0"
+          r="2.5"
           stroke="#FF4500"
           strokeWidth="1.5"
           fill={active ? '#FF4500' : 'none'}
@@ -79,7 +78,6 @@ export function CustomCursor() {
         />
       </svg>
 
-      {/* Coordinates */}
       <div
         style={{
           position: 'absolute',
@@ -92,6 +90,7 @@ export function CustomCursor() {
           color: '#FF4500',
           whiteSpace: 'nowrap',
           userSelect: 'none',
+          fontVariantNumeric: 'tabular-nums',
         }}
       >
         <div>X:{px}</div>

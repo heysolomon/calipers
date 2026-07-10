@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 function SectionLabel({ label }: { label: string }): JSX.Element {
   return (
-    <p
+    <h2
       style={{
         fontSize: '10px',
         fontWeight: 600,
@@ -18,10 +18,11 @@ function SectionLabel({ label }: { label: string }): JSX.Element {
         color: '#C4C4C4',
         marginBottom: '8px',
         marginTop: '28px',
+        scrollMarginTop: '5rem',
       }}
     >
       {label}
-    </p>
+    </h2>
   );
 }
 
