@@ -46,7 +46,8 @@ export function InstallCTA() {
           Ready to measure?
         </h2>
         <p className="mb-8 text-base" style={{ color: 'rgba(255,255,255,0.5)' }}>
-          Install Calipers from the Chrome Web Store — it&apos;s free, open source, and takes 10 seconds.
+          Install Calipers from the Chrome Web Store — it&apos;s free, open source, and takes 10
+          seconds.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
