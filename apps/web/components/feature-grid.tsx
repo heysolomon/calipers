@@ -72,7 +72,10 @@ export function FeatureGrid() {
         >
           Everything you need to measure the web
         </h2>
-        <p className="text-lg max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.45)', textWrap: 'pretty' }}>
+        <p
+          className="text-lg max-w-xl mx-auto"
+          style={{ color: 'rgba(255,255,255,0.45)', textWrap: 'pretty' }}
+        >
           A complete measurement toolkit built directly into Chrome — no switching apps, no
           screenshots, no guessing.
         </p>
@@ -153,7 +156,12 @@ function InspectIcon() {
 function MeasureIcon() {
   return (
     <svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <path d="M3 9h12M3 7v4M15 7v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path
+        d="M3 9h12M3 7v4M15 7v4"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -169,8 +177,26 @@ function GuidesIcon() {
 function BoxModelIcon() {
   return (
     <svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <rect x="1" y="1" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" />
-      <rect x="4" y="4" width="10" height="10" rx="1" stroke="currentColor" strokeWidth="1" strokeOpacity="0.6" />
+      <rect
+        x="1"
+        y="1"
+        width="16"
+        height="16"
+        rx="2"
+        stroke="currentColor"
+        strokeWidth="1"
+        strokeOpacity="0.4"
+      />
+      <rect
+        x="4"
+        y="4"
+        width="10"
+        height="10"
+        rx="1"
+        stroke="currentColor"
+        strokeWidth="1"
+        strokeOpacity="0.6"
+      />
       <rect x="7" y="7" width="4" height="4" rx="0.5" fill="currentColor" opacity="0.8" />
     </svg>
   );
@@ -179,7 +205,11 @@ function BoxModelIcon() {
 function ScreenshotIcon() {
   return (
     <svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <path d="M2 6a2 2 0 012-2h.5l1-2h7l1 2H16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M2 6a2 2 0 012-2h.5l1-2h7l1 2H16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
       <circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5" />
     </svg>
   );
@@ -189,7 +219,12 @@ function KeyboardIcon() {
   return (
     <svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none">
       <rect x="1" y="4" width="16" height="10" rx="2" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M5 8h1M8 8h1M11 8h1M5 11h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path
+        d="M5 8h1M8 8h1M11 8h1M5 11h8"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

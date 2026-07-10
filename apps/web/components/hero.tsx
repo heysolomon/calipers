@@ -145,7 +145,15 @@ function DemoPlaceholder() {
           <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none">
             <rect x="3" y="3" width="18" height="18" rx="2" stroke="#4A9EFF" strokeWidth="1.5" />
             <path d="M3 9h18M9 3v18" stroke="#4A9EFF" strokeWidth="1.5" strokeOpacity="0.5" />
-            <rect x="9" y="9" width="6" height="6" fill="rgba(74,158,255,0.2)" stroke="#4A9EFF" strokeWidth="1" />
+            <rect
+              x="9"
+              y="9"
+              width="6"
+              height="6"
+              fill="rgba(74,158,255,0.2)"
+              stroke="#4A9EFF"
+              strokeWidth="1"
+            />
           </svg>
         </div>
         <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px' }}>
