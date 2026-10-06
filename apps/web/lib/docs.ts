@@ -261,10 +261,13 @@ Drag the small handle (circle at the edge of the line) to reposition a guide. Wi
 
 - **Right-click** a guide or its handle to remove that single guide.
 - Press **Del** or **Backspace** to clear all guides.
+- In Guides mode, use **Clear all guides** in the control panel Settings section.
 
 ## Persistence
 
-Guides are saved to \`chrome.storage.local\` and reload when you reopen Calipers. They survive mode switches — place guides in Guides mode, then switch to Inspect or Measure without losing them.
+Guides are saved to \`chrome.storage.local\` and reload when you reopen Calipers on the same browser profile. They also survive mode switches — place guides in Guides mode, then switch to Inspect or Measure without losing them.
+
+Closing Calipers (Esc / deactivate) does **not** delete guides. They stay until you remove them with right-click, Del/Backspace, or **Clear all guides**.
 
 Toggle **Show guides** in the control panel to hide guides without deleting them.
     `.trim(),

@@ -31,13 +31,20 @@ const entries: ChangelogEntry[] = [
     preRelease: true,
     sections: {
       Added: [
-        'Permanent guide deletion — right-click and Del / Backspace should clear guides from storage across sessions',
+        'Annotate mode — notebook-style UI critique with size callouts, notes, arrows, freehand, and PNG export',
+        'Canvas layers — guides and measurements stay visible across mode switches until cleared',
+        'Guide placement — choose Both, Horizontal only, or Vertical only (H / V / C)',
+        'Region screenshot — drag a rectangle to capture a cropped PNG',
+        'Draggable control panel — drag the header to reposition; position is saved across sessions',
+        'Clear guides / measurements / annotations from the control panel in any mode',
         'Figma plugin — import Calipers measurements directly into a Figma file',
         'Shareable sessions — generate a link that replays a measurement session in another browser',
         'Measurement presets — save and name common measurements (e.g. "8pt grid", "nav height")',
-        'Annotations — attach sticky notes to measured elements, exportable as PNG',
         'Accessibility auditing — contrast ratio checker and touch target size validator (WCAG 2.1 AA/AAA)',
         'Changelog diff mode — visually compare how element sizes changed between two page snapshots',
+      ],
+      Fixed: [
+        'Guides cleared with right-click, Del/Backspace, or Clear all now stay deleted after reopening Calipers',
       ],
     },
   },

@@ -103,11 +103,12 @@ export function uid(): string {
   return `calipers-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-/** Check if an element is part of any Calipers UI (panel, overlay, sub-panels) */
+/** Check if an element is part of any Calipers UI (panel, overlay, sub-panels, Excalidraw) */
 export function isCalipersElement(el: Element | null): boolean {
   if (!el) return false;
   if (el.id?.startsWith('calipers-')) return true;
-  return el.closest('[id^="calipers-"]') !== null;
+  if (el.closest('[id^="calipers-"]')) return true;
+  return false;
 }
 
 /** Write text to clipboard */
@@ -129,4 +130,26 @@ export async function copyToClipboard(text: string): Promise<void> {
 /** Parse a CSS pixel value like "12px" → 12 */
 export function parsePx(value: string): number {
   return parseFloat(value) || 0;
+}
+
+// ─── Page ↔ viewport coordinates ─────────────────────────────────────────────
+
+/** Convert a viewport X to document (page) space */
+export function toPageX(clientX: number): number {
+  return clientX + window.scrollX;
+}
+
+/** Convert a viewport Y to document (page) space */
+export function toPageY(clientY: number): number {
+  return clientY + window.scrollY;
+}
+
+/** Convert a document X to viewport space */
+export function toViewX(pageX: number): number {
+  return pageX - window.scrollX;
+}
+
+/** Convert a document Y to viewport space */
+export function toViewY(pageY: number): number {
+  return pageY - window.scrollY;
 }

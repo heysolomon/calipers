@@ -24,6 +24,8 @@ interface PickerState {
   format:  'hex' | 'rgb' | 'hsl';
   rafId:   number | null;
   panelEl: HTMLDivElement | null;
+  /** True while the pointer is over the colour panel — freezes follow + resampling. */
+  pinned:  boolean;
 }
 
 const state: PickerState = {
@@ -33,6 +35,7 @@ const state: PickerState = {
   format:  'hex',
   rafId:   null,
   panelEl: null,
+  pinned:  false,
 };
 
 let overlay: OverlayElements | null = null;
@@ -85,55 +88,126 @@ function cssColorToEntry(label: string, css: string): ColorEntry | null {
   };
 }
 
-// ─── Panel DOM ────────────────────────────────────────────────────────────────
+// ─── Panel DOM (matches main Calipers control panel design system) ────────────
+
+const T = {
+  bg:            '#F7F7F7',
+  border:        'rgba(0, 0, 0, 0.08)',
+  borderSubtle:  'rgba(0, 0, 0, 0.06)',
+  textPrimary:   '#000',
+  textSecondary: '#737373',
+  textMuted:     '#D4D4D4',
+  accent:        '#FF4500',
+  shadow:        '0 8px 32px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04)',
+};
+
+const FORMATS = ['hex', 'rgb', 'hsl'] as const;
 
 const PANEL_STYLE = `
   position: fixed;
   z-index: 2147483647;
   pointer-events: all;
   user-select: none;
-  font-family: 'Neue Plak Text', Inter, -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 12px;
-  background: rgba(15,15,18,0.97);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-  padding: 10px;
-  min-width: 210px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  font-family: 'Neue Plak Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  color: ${T.textPrimary};
+  background: ${T.bg};
+  border: 1px solid ${T.border};
+  border-radius: 14px;
+  box-shadow: ${T.shadow};
+  padding: 12px 14px;
+  min-width: 220px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 `;
+
+function formatButtonStyle(active: boolean): string {
+  return `
+    position:relative;z-index:1;display:flex;align-items:center;justify-content:center;
+    padding:4px 0;height:24px;background:transparent;border:none;border-radius:5px;
+    color:${active ? T.textPrimary : T.textSecondary};cursor:pointer;
+    font-family:inherit;font-size:10px;font-weight:500;outline:none;letter-spacing:-0.01em;
+    transition:color 0.22s cubic-bezier(0.4,0,0.2,1);
+  `;
+}
+
+function updateFormatIndicator(): void {
+  if (!state.panelEl) return;
+  const idx = Math.max(0, FORMATS.indexOf(state.format));
+  const indicator = state.panelEl.querySelector<HTMLElement>('[data-fmt-indicator]');
+  if (indicator) {
+    indicator.style.left = `calc(2px + ${idx} * ((100% - 4px) / 3))`;
+  }
+  state.panelEl.querySelectorAll<HTMLButtonElement>('button[data-fmt]').forEach((btn) => {
+    const active = btn.dataset['fmt'] === state.format;
+    btn.style.color = active ? T.textPrimary : T.textSecondary;
+  });
+}
 
 function buildPanel(): HTMLDivElement {
   const panel = document.createElement('div');
-  panel.id    = 'calipers-color-panel';
+  panel.id = 'calipers-color-panel';
   panel.setAttribute('style', PANEL_STYLE);
 
-  // Format toggle
+  const title = document.createElement('div');
+  title.style.cssText = `
+    font-size:10px;font-weight:500;color:${T.textMuted};
+    letter-spacing:0.05em;text-transform:uppercase;margin-bottom:8px;
+  `;
+  title.textContent = 'Colours';
+  panel.appendChild(title);
+
+  // Segmented format control — same sliding-pill pattern as mode tabs
   const fmt = document.createElement('div');
-  fmt.style.cssText = 'display:flex;gap:4px;margin-bottom:8px;';
-  (['hex', 'rgb', 'hsl'] as const).forEach((f) => {
+  fmt.style.cssText = `
+    position:relative;display:grid;grid-template-columns:repeat(3,1fr);
+    background:rgba(0,0,0,0.06);border-radius:7px;padding:2px;gap:0;margin-bottom:10px;
+  `;
+
+  const indicator = document.createElement('div');
+  indicator.dataset['fmtIndicator'] = '';
+  const activeIdx = Math.max(0, FORMATS.indexOf(state.format));
+  indicator.style.cssText = `
+    position:absolute;top:2px;bottom:2px;
+    width:calc((100% - 4px) / 3);
+    left:calc(2px + ${activeIdx} * ((100% - 4px) / 3));
+    background:#fff;border-radius:5px;
+    box-shadow:0 1px 2px rgba(0,0,0,0.12);
+    pointer-events:none;
+    transition:left 0.22s cubic-bezier(0.4,0,0.2,1);
+  `;
+  fmt.appendChild(indicator);
+
+  for (const f of FORMATS) {
     const btn = document.createElement('button');
+    btn.type = 'button';
     btn.textContent = f.toUpperCase();
     btn.dataset['fmt'] = f;
-    btn.style.cssText = `
-      flex:1; padding:3px 0; border-radius:4px; border:none; cursor:pointer;
-      font-size:10px; font-weight:600; letter-spacing:0.04em;
-      background: ${state.format === f ? 'rgba(255,69,0,0.2)' : 'rgba(255,255,255,0.06)'};
-      color: ${state.format === f ? '#FF4500' : 'rgba(255,255,255,0.45)'};
-    `;
-    btn.addEventListener('click', () => {
+    btn.style.cssText = formatButtonStyle(state.format === f);
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
       state.format = f;
       refreshPanel();
     });
     fmt.appendChild(btn);
-  });
+  }
   panel.appendChild(fmt);
 
-  // Color rows
+  const divider = document.createElement('div');
+  divider.style.cssText = `height:1px;background:${T.borderSubtle};margin:0 -14px 6px;`;
+  panel.appendChild(divider);
+
   const rows = document.createElement('div');
   rows.id = 'calipers-color-rows';
   panel.appendChild(rows);
+
+  const hint = document.createElement('p');
+  hint.style.cssText = `
+    font-size:10px;color:${T.textMuted};text-align:center;
+    letter-spacing:-0.01em;margin:8px 0 0;
+  `;
+  hint.innerHTML = `<kbd style="font-size:9px;font-family:inherit;background:#fff;border:1px solid ${T.border};border-bottom-width:2px;border-radius:3px;padding:0 4px;color:${T.textSecondary};">F</kbd> cycle format`;
+  panel.appendChild(hint);
 
   return panel;
 }
@@ -141,47 +215,52 @@ function buildPanel(): HTMLDivElement {
 function refreshPanel(): void {
   if (!state.panelEl) return;
 
-  // Rebuild format buttons
-  const btns = state.panelEl.querySelectorAll<HTMLButtonElement>('button[data-fmt]');
-  btns.forEach((btn) => {
-    const f = btn.dataset['fmt'];
-    btn.style.background = f === state.format ? 'rgba(255,69,0,0.2)' : 'rgba(255,255,255,0.06)';
-    btn.style.color       = f === state.format ? '#FF4500' : 'rgba(255,255,255,0.45)';
-  });
+  updateFormatIndicator();
 
-  // Rebuild rows
   const container = state.panelEl.querySelector('#calipers-color-rows') as HTMLDivElement;
   container.innerHTML = '';
 
   if (state.colors.length === 0) {
     const empty = document.createElement('div');
-    empty.style.cssText = 'color:rgba(255,255,255,0.3);font-size:11px;text-align:center;padding:6px 0;';
+    empty.style.cssText = `color:${T.textMuted};font-size:11px;text-align:center;padding:10px 0;`;
     empty.textContent = 'No colours found';
     container.appendChild(empty);
     return;
   }
 
-  state.colors.forEach((c) => {
+  state.colors.forEach((c, i) => {
     const row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:5px;cursor:pointer;';
+    row.style.cssText = `
+      display:flex;align-items:center;gap:8px;padding:7px 2px;cursor:pointer;
+      border-bottom:${i === state.colors.length - 1 ? 'none' : `1px solid ${T.borderSubtle}`};
+      transition:background 0.1s ease;border-radius:5px;margin:0 -2px;padding-left:4px;padding-right:4px;
+    `;
     row.title = 'Click to copy';
 
     const swatch = document.createElement('span');
     swatch.style.cssText = `
-      width:20px;height:20px;border-radius:4px;flex-shrink:0;
+      width:18px;height:18px;border-radius:5px;flex-shrink:0;
       background:${c.raw};
-      border:1px solid rgba(255,255,255,0.12);
+      border:1px solid ${T.border};
+      box-shadow:inset 0 0 0 1px rgba(0,0,0,0.04);
     `;
 
     const info = document.createElement('span');
-    info.style.cssText = 'flex:1;overflow:hidden;';
+    info.style.cssText = 'flex:1;overflow:hidden;min-width:0;';
 
     const label = document.createElement('div');
-    label.style.cssText = 'color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:0.04em;text-transform:uppercase;';
+    label.style.cssText = `
+      color:${T.textMuted};font-size:10px;font-weight:500;
+      letter-spacing:0.05em;text-transform:uppercase;
+    `;
     label.textContent = c.label;
 
     const value = document.createElement('div');
-    value.style.cssText = 'color:rgba(255,255,255,0.87);font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:0.02em;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+    value.style.cssText = `
+      color:${T.textPrimary};font-family:"JetBrains Mono",ui-monospace,monospace;
+      font-size:11px;letter-spacing:-0.01em;margin-top:2px;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    `;
     value.textContent = state.format === 'rgb' ? c.rgb : state.format === 'hsl' ? c.hsl : c.hex;
 
     info.appendChild(label);
@@ -189,9 +268,10 @@ function refreshPanel(): void {
     row.appendChild(swatch);
     row.appendChild(info);
 
-    row.addEventListener('mouseenter', () => { row.style.background = 'rgba(255,255,255,0.05)'; });
+    row.addEventListener('mouseenter', () => { row.style.background = 'rgba(0,0,0,0.03)'; });
     row.addEventListener('mouseleave', () => { row.style.background = ''; });
-    row.addEventListener('click', async () => {
+    row.addEventListener('click', async (e) => {
+      e.stopPropagation();
       const val = state.format === 'rgb' ? c.rgb : state.format === 'hsl' ? c.hsl : c.hex;
       await copyToClipboard(val);
       showToast(`Copied ${val}`);
@@ -201,22 +281,47 @@ function refreshPanel(): void {
   });
 }
 
+/** Vertical/horizontal gap between cursor and panel — approach pad must stay smaller. */
+const PANEL_OFFSET_Y = 48;
+const PANEL_OFFSET_X = 12;
+/** Freeze follow when the pointer enters this corridor toward the panel. */
+const APPROACH_PAD = 40;
+
 function positionPanel(): void {
-  if (!state.panelEl) return;
+  if (!state.panelEl || state.pinned) return;
   const { mouseX, mouseY } = state;
   const panelW = state.panelEl.offsetWidth  || 220;
   const panelH = state.panelEl.offsetHeight || 160;
   const vw = window.innerWidth; const vh = window.innerHeight;
 
   // Place below the cursor (clears the crosshair + coordinate text ~44px tall)
-  let y = mouseY + 48;
+  let y = mouseY + PANEL_OFFSET_Y;
   if (y + panelH > vh) y = mouseY - panelH - 14;
 
-  let x = mouseX + 12;
-  if (x + panelW > vw) x = mouseX - panelW - 12;
+  let x = mouseX + PANEL_OFFSET_X;
+  if (x + panelW > vw) x = mouseX - panelW - PANEL_OFFSET_X;
 
   state.panelEl.style.left = `${x}px`;
   state.panelEl.style.top  = `${y}px`;
+}
+
+/** True when the pointer is on the panel or in the gap used to reach it. */
+function isInPanelInteractionZone(x: number, y: number): boolean {
+  if (!state.panelEl) return false;
+  const r = state.panelEl.getBoundingClientRect();
+  if (r.width === 0 && r.height === 0) return false;
+
+  const inX = x >= r.left - 16 && x <= r.right + 16;
+  if (!inX) return false;
+
+  // On the panel itself
+  if (y >= r.top && y <= r.bottom) return true;
+  // Approaching from above (normal placement)
+  if (y >= r.top - APPROACH_PAD && y < r.top) return true;
+  // Approaching from below (flipped placement near viewport bottom)
+  if (y > r.bottom && y <= r.bottom + APPROACH_PAD) return true;
+
+  return false;
 }
 
 // ─── Colour extraction ────────────────────────────────────────────────────────
@@ -249,9 +354,19 @@ function extractColors(el: Element): ColorEntry[] {
 // ─── Event handlers ───────────────────────────────────────────────────────────
 
 function onMouseMove(e: MouseEvent): void {
-  if (isCalipersElement(e.target as Element)) return;
-  state.mouseX = e.clientX;
-  state.mouseY = e.clientY;
+  const x = e.clientX;
+  const y = e.clientY;
+
+  // Freeze when moving into the panel (or the gap toward it) so HEX/RGB/HSL
+  // tabs and copy rows can be clicked instead of the panel fleeing.
+  if (isInPanelInteractionZone(x, y) || isCalipersElement(e.target as Element)) {
+    state.pinned = true;
+    return;
+  }
+
+  state.pinned = false;
+  state.mouseX = x;
+  state.mouseY = y;
 }
 
 function scheduleFrame(): void {
@@ -264,25 +379,38 @@ function render(): void {
   const { ctx } = overlay;
   clearCanvas(ctx);
 
-  const el = getElementAtPoint(state.mouseX, state.mouseY);
-  const newColors = el ? extractColors(el) : [];
+  // While the pointer is on the panel, keep the last sample so format tabs
+  // and copy rows stay usable instead of the panel fleeing the cursor.
+  if (!state.pinned) {
+    const el = getElementAtPoint(state.mouseX, state.mouseY);
+    const newColors = el ? extractColors(el) : [];
 
-  // Only refresh DOM if colours changed
-  const newSig = newColors.map((c) => c.hex).join('|');
-  const oldSig = state.colors.map((c) => c.hex).join('|');
-  if (newSig !== oldSig) {
-    state.colors = newColors;
-    refreshPanel();
+    const newSig = newColors.map((c) => c.hex).join('|');
+    const oldSig = state.colors.map((c) => c.hex).join('|');
+    if (newSig !== oldSig) {
+      state.colors = newColors;
+      refreshPanel();
+    }
+
+    positionPanel();
   }
 
-  positionPanel();
   drawRulers(ctx, state.mouseX, state.mouseY);
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
+/** Cycle HEX → RGB → HSL (also wired to the `F` key from the content script). */
+export function cycleColorFormat(): void {
+  const order = ['hex', 'rgb', 'hsl'] as const;
+  const idx = order.indexOf(state.format);
+  state.format = order[(idx + 1) % order.length] ?? 'hex';
+  refreshPanel();
+}
+
 export function initColorPickerMode(o: OverlayElements): void {
   overlay = o;
+  state.pinned = false;
 
   const panel = buildPanel();
   document.documentElement.appendChild(panel);
@@ -300,6 +428,7 @@ export function destroyColorPickerMode(): void {
   state.panelEl?.remove();
   state.panelEl = null;
   state.colors  = [];
+  state.pinned  = false;
 
   overlay = null;
 }

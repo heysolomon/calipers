@@ -122,6 +122,12 @@ async function handlePopupMessage(
       sendResponse(next);
       break;
     }
+    case 'TOGGLE_GUIDE_LABELS': {
+      const next = setTabState(tabId, { showGuideLabels: msg.enabled });
+      await sendToContent(tabId, { type: 'TOGGLE_GUIDE_LABELS', enabled: msg.enabled });
+      sendResponse(next);
+      break;
+    }
     case 'TOGGLE_SNAP': {
       const next = setTabState(tabId, { snapToElements: msg.enabled });
       await sendToContent(tabId, { type: 'TOGGLE_SNAP', enabled: msg.enabled });
@@ -135,17 +141,111 @@ async function handlePopupMessage(
       break;
     }
     case 'CAPTURE_SCREENSHOT': {
-      try {
-        const dataUrl = await chrome.tabs.captureVisibleTab({ format: 'png', quality: 100 });
-        await sendToContent(tabId, { type: 'SCREENSHOT_READY', dataUrl });
-        sendResponse({ dataUrl });
-      } catch (err) {
-        sendResponse({ error: String(err) });
-      }
+      sendResponse(await captureAndDownload(tabId));
       break;
     }
     default:
       sendResponse({ error: 'Unknown message type' });
+  }
+}
+
+function captureVisible(windowId: number, opts: chrome.tabs.CaptureVisibleTabOptions): Promise<string> {
+  return new Promise((resolve, reject) => {
+    chrome.tabs.captureVisibleTab(windowId, opts, (url) => {
+      if (chrome.runtime.lastError || !url) {
+        reject(new Error(chrome.runtime.lastError?.message ?? 'Capture failed'));
+        return;
+      }
+      resolve(url);
+    });
+  });
+}
+
+function downloadsAvailable(): boolean {
+  return typeof chrome.downloads?.download === 'function';
+}
+
+function downloadUrl(url: string, filename: string): Promise<number> {
+  return new Promise((resolve, reject) => {
+    if (!downloadsAvailable()) {
+      reject(new Error('chrome.downloads is unavailable (missing "downloads" permission)'));
+      return;
+    }
+    chrome.downloads.download({ url, filename, saveAs: false }, (id) => {
+      if (chrome.runtime.lastError || id === undefined) {
+        reject(new Error(chrome.runtime.lastError?.message ?? 'Download failed'));
+        return;
+      }
+      resolve(id);
+    });
+  });
+}
+
+/** Prefer chrome.downloads; fall back to a content-script <a download> click. */
+async function saveDataUrl(tabId: number, dataUrl: string, filename: string): Promise<void> {
+  if (downloadsAvailable()) {
+    try {
+      await downloadUrl(dataUrl, filename);
+      return;
+    } catch (err) {
+      console.warn('[Calipers] downloads API failed, falling back to content download', err);
+    }
+  } else {
+    console.warn('[Calipers] chrome.downloads missing; using content-script download fallback');
+  }
+  // Do not use sendToContent here — it swallows errors and would hide save failures.
+  await chrome.tabs.sendMessage(tabId, {
+    type: 'TRIGGER_DOWNLOAD',
+    dataUrl,
+    filename,
+  } satisfies Message);
+}
+
+/**
+ * Capture the visible tab and save via the downloads API.
+ * Retina PNGs can exceed Chrome's data-URL download limit — fall back to JPEG.
+ */
+async function captureAndDownload(tabId: number): Promise<{ ok: true; filename: string } | { error: string }> {
+  let stage = 'getTab';
+  try {
+    const tab = await chrome.tabs.get(tabId);
+    const windowId = tab.windowId;
+
+    stage = 'captureVisibleTab(png)';
+    let dataUrl = await captureVisible(windowId, { format: 'png' });
+    let filename = `calipers-${Date.now()}.png`;
+
+    // ~1.5MB string limit is a common failure point for chrome.downloads + data: URLs
+    if (dataUrl.length > 1_500_000) {
+      stage = 'captureVisibleTab(jpeg-fallback-size)';
+      dataUrl = await captureVisible(windowId, { format: 'jpeg', quality: 92 });
+      filename = `calipers-${Date.now()}.jpg`;
+    }
+
+    try {
+      stage = `save(${filename}, ${Math.round(dataUrl.length / 1024)}KB)`;
+      await saveDataUrl(tabId, dataUrl, filename);
+    } catch (downloadErr) {
+      // Last resort: smaller JPEG if PNG download failed for any reason
+      if (filename.endsWith('.png')) {
+        stage = 'captureVisibleTab(jpeg-fallback-download)';
+        dataUrl = await captureVisible(windowId, { format: 'jpeg', quality: 88 });
+        filename = `calipers-${Date.now()}.jpg`;
+        stage = `save(${filename}, ${Math.round(dataUrl.length / 1024)}KB)`;
+        await saveDataUrl(tabId, dataUrl, filename);
+      } else {
+        throw downloadErr;
+      }
+    }
+
+    stage = 'notifyContent';
+    await sendToContent(tabId, { type: 'SCREENSHOT_READY', dataUrl });
+    return { ok: true, filename };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    const error = `[${stage}] ${message}`;
+    console.error('[Calipers] CAPTURE_SCREENSHOT failed:', error, err);
+    return { error };
   }
 }
 
@@ -191,6 +291,12 @@ async function handleContentMessage(
       sendResponse(next);
       break;
     }
+    case 'TOGGLE_GUIDE_LABELS': {
+      const next = setTabState(tabId, { showGuideLabels: msg.enabled });
+      await sendToContent(tabId, { type: 'TOGGLE_GUIDE_LABELS', enabled: msg.enabled });
+      sendResponse(next);
+      break;
+    }
     case 'TOGGLE_SNAP': {
       const next = setTabState(tabId, { snapToElements: msg.enabled });
       await sendToContent(tabId, { type: 'TOGGLE_SNAP', enabled: msg.enabled });
@@ -204,12 +310,19 @@ async function handleContentMessage(
       break;
     }
     case 'CAPTURE_SCREENSHOT': {
+      sendResponse(await captureAndDownload(tabId));
+      break;
+    }
+    case 'CAPTURE_VISIBLE': {
+      sendResponse(await captureVisibleOnly(tabId));
+      break;
+    }
+    case 'DOWNLOAD_DATA_URL': {
       try {
-        const dataUrl = await chrome.tabs.captureVisibleTab({ format: 'png', quality: 100 });
-        await sendToContent(tabId, { type: 'SCREENSHOT_READY', dataUrl });
-        sendResponse({ dataUrl });
+        await saveDataUrl(tabId, msg.dataUrl, msg.filename);
+        sendResponse({ ok: true, filename: msg.filename });
       } catch (err) {
-        sendResponse({ error: String(err) });
+        sendResponse({ error: err instanceof Error ? err.message : String(err) });
       }
       break;
     }
@@ -219,6 +332,18 @@ async function handleContentMessage(
     }
     default:
       sendResponse({ ok: true });
+  }
+}
+
+async function captureVisibleOnly(
+  tabId: number,
+): Promise<{ ok: true; dataUrl: string } | { error: string }> {
+  try {
+    const tab = await chrome.tabs.get(tabId);
+    const dataUrl = await captureVisible(tab.windowId, { format: 'png' });
+    return { ok: true, dataUrl };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
   }
 }
 

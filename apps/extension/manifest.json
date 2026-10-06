@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Calipers — Measure & Inspect Web Pages",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Measure pixel distances, inspect element sizes, and check alignment on any webpage. Free, open source.",
   "author": "Calipers Contributors",
 
@@ -40,7 +40,12 @@
     "activeTab",
     "scripting",
     "storage",
-    "tabs"
+    "tabs",
+    "downloads"
+  ],
+
+  "host_permissions": [
+    "<all_urls>"
   ],
 
   "commands": {

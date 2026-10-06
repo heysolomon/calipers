@@ -109,6 +109,9 @@ function buildHTML(): string {
       ${row(['1'], 'Inspect — hover to measure elements')}
       ${row(['2'], 'Measure — click two elements to compare')}
       ${row(['3'], 'Guides — crosshair + pin guide lines')}
+      ${row(['4'], 'Colour picker')}
+      ${row(['5'], 'Spacing grid')}
+      ${row(['6'], 'Annotate — critique UI like a notebook')}
     `)}
 
     ${section('Inspect Mode', `
@@ -117,13 +120,35 @@ function buildHTML(): string {
     `)}
 
     ${section('Guides Mode', `
-      ${row(['Click'], 'Pin crosshair as guide lines')}
-      ${row(['Del'], 'Clear all pinned guides')}
+      ${row(['C'], 'Place both H + V (cross)')}
+      ${row(['H'], 'Place horizontal only')}
+      ${row(['V'], 'Place vertical only')}
+      ${row(['Click'], 'Pin guide(s) at cursor')}
       ${row(['Right-click'], 'Remove a single guide')}
+      ${row(['Del'], 'Clear all guides')}
+    `)}
+
+    ${section('Colour Picker', `
+      ${row(['F'], 'Cycle HEX / RGB / HSL')}
+      ${row(['Click'], 'Copy colour (hover panel to pin)')}
+    `)}
+
+    ${section('Annotate', `
+      ${row(['M'], 'Size tool — click elements for HxW')}
+      ${row(['N'], 'Note tool — click to write')}
+      ${row(['A'], 'Arrow tool — drag to draw')}
+      ${row(['P'], 'Pen tool — freehand')}
+      ${row(['⇧', '1–8'], 'Pick annotation colour')}
+      ${row(['Del'], 'Clear all annotations')}
+      ${row(['S'], 'Export annotated view as PNG')}
+    `)}
+
+    ${section('Canvas layers', `
+      ${row(['—'], 'Guides & measurements persist across modes until cleared')}
     `)}
 
     ${section('General', `
-      ${row(['S'], 'Capture screenshot')}
+      ${row(['S'], 'Capture full screenshot')}
       ${row(['?'], 'Show / hide shortcuts')}
       ${row(['Esc'], 'Close Calipers')}
     `)}

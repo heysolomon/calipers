@@ -10,9 +10,13 @@ export type Message =
   | { type: 'SWITCH_MODE'; mode: Mode }
   | { type: 'TOGGLE_BOX_MODEL'; enabled: boolean }
   | { type: 'TOGGLE_GUIDES'; enabled: boolean }
+  | { type: 'TOGGLE_GUIDE_LABELS'; enabled: boolean }
   | { type: 'TOGGLE_SNAP'; enabled: boolean }
   | { type: 'TOGGLE_RULERS'; enabled: boolean }
   | { type: 'CAPTURE_SCREENSHOT' }
+  | { type: 'CAPTURE_VISIBLE' }
+  | { type: 'DOWNLOAD_DATA_URL'; dataUrl: string; filename: string }
+  | { type: 'TRIGGER_DOWNLOAD'; dataUrl: string; filename: string }
   | { type: 'SCREENSHOT_READY'; dataUrl: string }
   | { type: 'MEASUREMENT_RESULT'; data: MeasurementData }
   | { type: 'GET_STATE' }

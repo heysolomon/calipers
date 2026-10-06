@@ -3,7 +3,7 @@
  */
 
 /** Active measurement mode */
-export type Mode = 'inspect' | 'measure' | 'guides' | 'colorpicker' | 'spacing';
+export type Mode = 'inspect' | 'measure' | 'guides' | 'colorpicker' | 'spacing' | 'annotate';
 
 /** Extension activation state */
 export interface ExtensionState {
@@ -11,6 +11,7 @@ export interface ExtensionState {
   mode: Mode;
   showBoxModel: boolean;
   showGuides: boolean;
+  showGuideLabels: boolean;
   showRulers: boolean;
   snapToElements: boolean;
 }
@@ -63,7 +64,7 @@ export interface MeasurementData {
 export interface Guide {
   id: string;
   axis: 'horizontal' | 'vertical';
-  /** Position in pixels from top (horizontal) or left (vertical) */
+  /** Document-space position: px from page top (horizontal) or page left (vertical) */
   position: number;
 }
 
@@ -80,6 +81,7 @@ export const DEFAULT_STATE: ExtensionState = {
   mode: 'inspect',
   showBoxModel: false,
   showGuides: true,
+  showGuideLabels: false,
   showRulers: false,
   snapToElements: true,
 };
@@ -90,6 +92,7 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
   { key: '3', description: 'Switch to Guides mode',        action: 'SWITCH_MODE_GUIDES' },
   { key: '4', description: 'Switch to Colour Picker mode', action: 'SWITCH_MODE_COLORPICKER' },
   { key: '5', description: 'Switch to Spacing Grid mode',  action: 'SWITCH_MODE_SPACING' },
+  { key: '6', description: 'Switch to Annotate mode',      action: 'SWITCH_MODE_ANNOTATE' },
   { key: 'b', description: 'Toggle box model overlay',     action: 'TOGGLE_BOX_MODEL' },
   { key: 'd', description: 'Open design token panel',      action: 'TOGGLE_TOKEN_PANEL' },
   { key: 'c', description: 'Copy current measurement',     action: 'COPY_MEASUREMENT' },

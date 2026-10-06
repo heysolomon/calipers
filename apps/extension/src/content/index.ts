@@ -2,6 +2,9 @@
  * Content script entry point.
  * Manages the extension lifecycle on the page: overlay creation/teardown,
  * mode switching, message handling, keyboard shortcuts.
+ *
+ * Persistent layers (guides, measurements, annotations) stay visible across
+ * mode switches until the user explicitly clears them.
  */
 import type { Message, Mode, ExtensionState } from '@calipers/shared';
 import { DEFAULT_STATE } from '@calipers/shared';
@@ -16,16 +19,23 @@ import { initInspectMode, destroyInspectMode, setShowBoxModel } from './modes/in
 import { initMeasureMode, destroyMeasureMode } from './modes/measure';
 import {
   initGuidesMode, destroyGuidesMode,
-  getGuides, setGuides, clearGuides, setSnapEnabled,
+  clearGuides, setSnapEnabled, setGuidesVisible, setGuideLabelsVisible, hydrateGuides,
 } from './modes/guides';
-import { initColorPickerMode, destroyColorPickerMode } from './modes/colorpicker';
+import { initColorPickerMode, destroyColorPickerMode, cycleColorFormat } from './modes/colorpicker';
 import { initSpacingMode, destroySpacingMode } from './modes/spacing';
+import { initAnnotateMode, destroyAnnotateMode, clearAnnotations } from './modes/annotate';
+import {
+  createPersistLayer, startPersistLayer, stopPersistLayer,
+  destroyPersistLayer, resizePersistLayer,
+} from './persist-layer';
+import { startRegionCapture, cancelRegionCapture, isRegionCaptureActive } from './region-capture';
 import { toggleShortcutsPanel, hideShortcutsPanel, isShortcutsPanelOpen } from './shortcuts-panel';
 import { toggleTokenPanel, hideTokenPanel, isTokenPanel } from './token-panel';
-import { togglePanel, hidePanel, isPanelElement } from './panel';
+import { togglePanel, hidePanel } from './panel';
 import { loadSettings, saveSetting } from './storage';
 import { initCursor, destroyCursor } from './cursor';
 import { isCalipersElement } from './utils';
+import { showErrorReport, showToast } from './labels';
 
 // ─── Local state ──────────────────────────────────────────────────────────────
 
@@ -36,6 +46,7 @@ let activeMode: Mode | null = null;
 
 function onGlobalInterceptClick(e: MouseEvent): void {
   if (isCalipersElement(e.target as Element)) return;
+  if (isRegionCaptureActive()) return;
   e.preventDefault();
   e.stopPropagation();
 }
@@ -55,6 +66,7 @@ function destroyCurrentMode(): void {
     case 'guides':      destroyGuidesMode();      break;
     case 'colorpicker': destroyColorPickerMode(); break;
     case 'spacing':     destroySpacingMode();     break;
+    case 'annotate':    destroyAnnotateMode();    break;
   }
   activeMode = null;
   disablePointerEvents();
@@ -71,6 +83,7 @@ function activateMode(mode: Mode): void {
     case 'guides':      void initGuidesMode(o, state.snapToElements); break;
     case 'colorpicker': initColorPickerMode(o);                       break;
     case 'spacing':     initSpacingMode(o);                           break;
+    case 'annotate':    initAnnotateMode(o);                          break;
   }
 }
 
@@ -86,12 +99,17 @@ async function activate(mode: Mode): Promise<void> {
   state.active = true;
   state.mode   = mode;
 
-  createOverlay();
+  const o = createOverlay();
+  createPersistLayer(o.root);
+  setGuidesVisible(state.showGuides);
+  setGuideLabelsVisible(state.showGuideLabels);
+  await hydrateGuides();
+  startPersistLayer();
   setShowRulers(state.showRulers);
   activateMode(mode);
   initCursor();
   document.addEventListener('click',   onGlobalInterceptClick, true);
-  document.addEventListener('keydown', onKeyDown);
+  document.addEventListener('keydown', onKeyDown, true);
   window.addEventListener('resize', onResize);
 }
 
@@ -100,16 +118,19 @@ function deactivate(): void {
 
   hideShortcutsPanel();
   hideTokenPanel();
+  cancelRegionCapture();
   destroyCurrentMode();
+  stopPersistLayer();
+  destroyPersistLayer();
   destroyCursor();
   removeOverlay();
 
   document.removeEventListener('click',   onGlobalInterceptClick, true);
-  document.removeEventListener('keydown', onKeyDown);
+  document.removeEventListener('keydown', onKeyDown, true);
   window.removeEventListener('resize', onResize);
 
-  state = { ...DEFAULT_STATE }; // active→false; any re-entrant deactivate() no-ops
-  hidePanel();                   // close floating panel; its DEACTIVATE msg is then a no-op
+  state = { ...DEFAULT_STATE };
+  hidePanel();
 }
 
 function switchMode(mode: Mode): void {
@@ -120,6 +141,20 @@ function switchMode(mode: Mode): void {
 
 // ─── Keyboard handler ─────────────────────────────────────────────────────────
 
+function requestScreenshot(): void {
+  chrome.runtime.sendMessage(
+    { type: 'CAPTURE_SCREENSHOT' },
+    (res: { ok?: boolean; error?: string } | undefined) => {
+      const err = chrome.runtime.lastError?.message ?? res?.error;
+      if (err) {
+        showErrorReport('Screenshot', err);
+        return;
+      }
+      showToast('Screenshot saved');
+    },
+  );
+}
+
 function onKeyDown(e: KeyboardEvent): void {
   const target = e.target as Element;
   if (
@@ -128,44 +163,69 @@ function onKeyDown(e: KeyboardEvent): void {
     (target as HTMLElement).isContentEditable
   ) return;
 
-  // Don't intercept keys while the token panel is focused
   if (isTokenPanel(target)) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+  if (isRegionCaptureActive()) {
+    // Region capture owns Esc; other keys ignored
+    return;
+  }
 
   switch (e.key) {
-    case '1': switchMode('inspect');     break;
-    case '2': switchMode('measure');     break;
-    case '3': switchMode('guides');      break;
-    case '4': switchMode('colorpicker'); break;
-    case '5': switchMode('spacing');     break;
+    case '1': e.preventDefault(); switchMode('inspect');     break;
+    case '2': e.preventDefault(); switchMode('measure');     break;
+    case '3': e.preventDefault(); switchMode('guides');      break;
+    case '4': e.preventDefault(); switchMode('colorpicker'); break;
+    case '5': e.preventDefault(); switchMode('spacing');     break;
+    case '6': e.preventDefault(); switchMode('annotate');    break;
     case 'b':
     case 'B':
+      e.preventDefault();
       state.showBoxModel = !state.showBoxModel;
       setShowBoxModel(state.showBoxModel);
       saveSetting('showBoxModel', state.showBoxModel);
       break;
     case 'r':
     case 'R':
+      e.preventDefault();
       state.showRulers = !state.showRulers;
       setShowRulers(state.showRulers);
       break;
     case 'd':
     case 'D':
+      e.preventDefault();
       toggleTokenPanel();
       break;
     case '?':
+      e.preventDefault();
       toggleShortcutsPanel();
       break;
     case 'Delete':
     case 'Backspace':
-      if (activeMode === 'guides') clearGuides();
+      if (activeMode === 'guides') {
+        e.preventDefault();
+        clearGuides();
+      } else if (activeMode === 'annotate') {
+        e.preventDefault();
+        clearAnnotations();
+      }
       break;
     case 'Escape':
+      e.preventDefault();
       if (isShortcutsPanelOpen()) hideShortcutsPanel();
       else deactivate();
       break;
     case 's':
     case 'S':
-      chrome.runtime.sendMessage({ type: 'CAPTURE_SCREENSHOT' });
+      e.preventDefault();
+      requestScreenshot();
+      break;
+    case 'f':
+    case 'F':
+      if (activeMode === 'colorpicker') {
+        e.preventDefault();
+        cycleColorFormat();
+      }
       break;
   }
 }
@@ -175,6 +235,7 @@ function onKeyDown(e: KeyboardEvent): void {
 function onResize(): void {
   const o = getOverlay();
   if (o) resizeCanvas(o.canvas);
+  resizePersistLayer();
 }
 
 // ─── Message handler ──────────────────────────────────────────────────────────
@@ -202,6 +263,12 @@ chrome.runtime.onMessage.addListener((rawMsg: unknown, _sender, sendResponse) =>
       break;
     case 'TOGGLE_GUIDES':
       state.showGuides = msg.enabled;
+      setGuidesVisible(msg.enabled);
+      sendResponse({ ok: true });
+      break;
+    case 'TOGGLE_GUIDE_LABELS':
+      state.showGuideLabels = msg.enabled;
+      setGuideLabelsVisible(msg.enabled);
       sendResponse({ ok: true });
       break;
     case 'TOGGLE_SNAP':
@@ -215,8 +282,18 @@ chrome.runtime.onMessage.addListener((rawMsg: unknown, _sender, sendResponse) =>
       setShowRulers(msg.enabled);
       sendResponse({ ok: true });
       break;
+    case 'TRIGGER_DOWNLOAD': {
+      const a = document.createElement('a');
+      a.href = msg.dataUrl;
+      a.download = msg.filename;
+      a.rel = 'noopener';
+      (document.body ?? document.documentElement).appendChild(a);
+      a.click();
+      a.remove();
+      sendResponse({ ok: true });
+      break;
+    }
     case 'SCREENSHOT_READY':
-      handleScreenshot(msg.dataUrl);
       sendResponse({ ok: true });
       break;
     case 'GET_STATE':
@@ -232,28 +309,3 @@ chrome.runtime.onMessage.addListener((rawMsg: unknown, _sender, sendResponse) =>
 
   return true;
 });
-
-// ─── Screenshot export ────────────────────────────────────────────────────────
-
-function handleScreenshot(dataUrl: string): void {
-  const a = document.createElement('a');
-  a.href = dataUrl;
-  a.download = `calipers-${Date.now()}.png`;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-
-// ─── Guides persistence across mode switches ─────────────────────────────────
-
-let _savedGuides = getGuides();
-
-(window as unknown as Record<string, unknown>)['__calipers_save_guides'] = () => {
-  _savedGuides = [...getGuides()];
-};
-(window as unknown as Record<string, unknown>)['__calipers_restore_guides'] = () => {
-  setGuides(_savedGuides);
-};
-
-void isPanelElement;

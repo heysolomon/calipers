@@ -69,14 +69,14 @@ export function drawElementHighlight(
   scale(ctx);
   ctx.globalAlpha = opacity;
 
-  // Fill
-  ctx.fillStyle = locked ? 'rgba(255,69,0,0.15)' : 'rgba(255,69,0,0.10)';
+  // Soft fill — keep the page readable
+  ctx.fillStyle = locked ? 'rgba(255,69,0,0.10)' : 'rgba(255,69,0,0.06)';
   roundedRect(ctx, rect.x, rect.y, rect.width, rect.height, 2);
   ctx.fill();
 
-  // Border — solid and defined
-  ctx.strokeStyle = locked ? '#FF4500' : 'rgba(255,69,0,0.95)';
-  ctx.lineWidth = locked ? 2 : 1.5;
+  // Quiet border
+  ctx.strokeStyle = locked ? '#FF4500' : 'rgba(255,69,0,0.75)';
+  ctx.lineWidth = locked ? 1.5 : 1;
   roundedRect(ctx, rect.x, rect.y, rect.width, rect.height, 2);
   ctx.stroke();
 
@@ -181,27 +181,6 @@ export function drawGuide(
     ctx.moveTo(position, 0);
     ctx.lineTo(position, h);
   }
-  ctx.stroke();
-}
-
-/** Draw guide handle (draggable circle at edge) */
-export function drawGuideHandle(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  hovered = false,
-): void {
-  scale(ctx);
-  const r = 5;
-
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI * 2);
-  ctx.fillStyle = hovered
-    ? 'rgba(255, 69, 0, 0.9)'
-    : 'rgba(255, 69, 0, 0.6)';
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-  ctx.lineWidth = 1;
   ctx.stroke();
 }
 

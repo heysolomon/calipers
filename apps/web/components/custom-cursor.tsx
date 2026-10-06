@@ -40,9 +40,6 @@ export function CustomCursor() {
 
   if (!enabled || overUI) return null;
 
-  const px = String(Math.max(0, Math.round(pos.x))).padStart(4, '0');
-  const py = String(Math.max(0, Math.round(pos.y))).padStart(4, '0');
-
   return (
     <div
       data-demo-ui="true"
@@ -77,25 +74,6 @@ export function CustomCursor() {
           style={{ transition: 'fill 0.12s' }}
         />
       </svg>
-
-      <div
-        style={{
-          position: 'absolute',
-          top: '12px',
-          left: '12px',
-          fontFamily: '"JetBrains Mono", "Fira Code", ui-monospace, monospace',
-          fontSize: '9px',
-          lineHeight: 1.4,
-          letterSpacing: '0.06em',
-          color: '#FF4500',
-          whiteSpace: 'nowrap',
-          userSelect: 'none',
-          fontVariantNumeric: 'tabular-nums',
-        }}
-      >
-        <div>X:{px}</div>
-        <div>Y:{py}</div>
-      </div>
     </div>
   );
 }

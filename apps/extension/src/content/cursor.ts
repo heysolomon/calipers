@@ -1,17 +1,12 @@
 /**
  * Custom crosshair cursor — replaces the native browser cursor when Calipers is active.
- * Shows a precision crosshair SVG with live X/Y coordinates, hidden when hovering
- * over any Calipers UI element.
+ * Minimal mark only (no live X/Y readout) so the page stays readable.
  */
 import { isCalipersElement } from './utils';
 
-const CURSOR_ID    = 'calipers-cursor';
-const CURSOR_X_ID  = 'calipers-cursor-x';
-const CURSOR_Y_ID  = 'calipers-cursor-y';
+const CURSOR_ID = 'calipers-cursor';
 
 let cursorEl: HTMLDivElement | null = null;
-let xEl: HTMLElement | null = null;
-let yEl: HTMLElement | null = null;
 let rafId: number | null = null;
 
 const pos = { x: -200, y: -200 };
@@ -30,13 +25,9 @@ function onMove(e: MouseEvent): void {
 }
 
 function tick(): void {
-  if (!cursorEl || !xEl || !yEl) return;
+  if (!cursorEl) return;
   cursorEl.style.left = `${pos.x}px`;
   cursorEl.style.top  = `${pos.y}px`;
-  const px = String(Math.max(0, Math.round(pos.x))).padStart(4, '0');
-  const py = String(Math.max(0, Math.round(pos.y))).padStart(4, '0');
-  xEl.textContent = `X:${px}`;
-  yEl.textContent = `Y:${py}`;
   rafId = requestAnimationFrame(tick);
 }
 
@@ -64,16 +55,10 @@ export function initCursor(): void {
       <line x1="0" y1="4"  x2="0" y2="9"  stroke="#FF4500" stroke-width="1.5" stroke-linecap="round"/>
       <circle cx="0" cy="0" r="2.5" stroke="#FF4500" stroke-width="1.5" fill="none"/>
     </svg>
-    <div style="position:absolute;top:12px;left:12px;font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace;font-size:9px;line-height:1.4;letter-spacing:0.06em;color:#FF4500;white-space:nowrap;">
-      <div id="${CURSOR_X_ID}">X:0000</div>
-      <div id="${CURSOR_Y_ID}">Y:0000</div>
-    </div>
   `;
 
   document.documentElement.appendChild(el);
   cursorEl = el;
-  xEl = document.getElementById(CURSOR_X_ID);
-  yEl = document.getElementById(CURSOR_Y_ID);
 
   document.documentElement.style.cursor = 'none';
   document.addEventListener('mousemove', onMove, { passive: true });
@@ -85,7 +70,5 @@ export function destroyCursor(): void {
   if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
   cursorEl?.remove();
   cursorEl = null;
-  xEl = null;
-  yEl = null;
   document.documentElement.style.cursor = '';
 }

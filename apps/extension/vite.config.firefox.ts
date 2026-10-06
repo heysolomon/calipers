@@ -4,10 +4,11 @@
  * Run: vite build --config vite.config.firefox.ts
  */
 import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
 export default defineConfig({
-  plugins: [],
+  plugins: [react()],
   resolve: {
     alias: {
       '@calipers/shared': resolve(__dirname, '../../packages/shared/src/index.ts'),
@@ -18,7 +19,6 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: true,
     lib: {
-      // Multi-entry: background + content scripts
       entry: {
         background: resolve(__dirname, 'src/background/index.ts'),
         content:    resolve(__dirname, 'src/content/index.ts'),
@@ -30,7 +30,6 @@ export default defineConfig({
         entryFileNames: '[name].js',
         chunkFileNames: 'chunks/[name]-[hash].js',
       },
-      // chrome.* is a global provided by the browser — don't bundle it
       external: [],
     },
   },
