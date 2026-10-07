@@ -5,8 +5,8 @@ import { useDemo, type DemoCursor } from './demo-provider';
 
 const ARROWS = 'M0 -8.5V8.5M-3.5 -5L0 -8.5L3.5 -5M-3.5 5L0 8.5L3.5 5';
 
-const GLYPH_OF: Record<DemoCursor, 'crosshair' | 'delete' | 'move' | null> = {
-  crosshair: 'crosshair', text: null, delete: 'delete', 'move-x': 'move', 'move-y': 'move',
+const GLYPH_OF: Record<DemoCursor, 'crosshair' | 'delete' | 'remove' | 'move' | null> = {
+  crosshair: 'crosshair', text: null, delete: 'delete', remove: 'remove', 'move-x': 'move', 'move-y': 'move',
 };
 
 /**
@@ -38,7 +38,7 @@ export function CustomCursor() {
 
   if (!enabled) return null;
 
-  const layer = (name: 'crosshair' | 'delete' | 'move', turn = ''): React.CSSProperties => ({
+  const layer = (name: 'crosshair' | 'delete' | 'remove' | 'move', turn = ''): React.CSSProperties => ({
     position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
     opacity: glyph === name ? 1 : 0,
     transform: `scale(${glyph === name ? 1 : 0.6})${turn}`,
@@ -73,6 +73,12 @@ export function CustomCursor() {
           <svg width="22" height="22" viewBox="-11 -11 22 22" style={{ display: 'block', overflow: 'visible', flexShrink: 0 }}>
             <circle r="9.5" fill="#FF4500" stroke="#fff" strokeWidth="1.5" />
             <path d="M-3.25 -3.25L3.25 3.25M3.25 -3.25L-3.25 3.25" stroke="#fff" strokeWidth="1.75" strokeLinecap="round" />
+          </svg>
+        </div>
+        <div style={layer('remove')}>
+          <svg width="22" height="22" viewBox="-11 -11 22 22" style={{ display: 'block', overflow: 'visible', flexShrink: 0 }}>
+            <circle r="9.5" fill="#FF4500" stroke="#fff" strokeWidth="1.5" />
+            <path d="M-4.25 0H4.25" stroke="#fff" strokeWidth="1.75" strokeLinecap="round" />
           </svg>
         </div>
         <div style={layer('move', cursor === 'move-x' ? ' rotate(90deg)' : '')}>

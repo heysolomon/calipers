@@ -4,6 +4,7 @@
  */
 import { isCalipersElement } from './utils';
 import { HIDE_CURSOR_CLASS } from './overlay';
+import { trackPointerTarget } from './pointer';
 
 const CURSOR_ID = 'calipers-cursor';
 
@@ -11,7 +12,7 @@ let cursorEl: HTMLDivElement | null = null;
 const OFFSCREEN = -200;
 
 /** What the custom cursor should look like at the current pointer position. */
-export type CursorKind = 'crosshair' | 'text' | 'delete' | 'move-x' | 'move-y';
+export type CursorKind = 'crosshair' | 'text' | 'delete' | 'remove' | 'move-x' | 'move-y';
 
 /**
  * Modes can override cursor appearance (e.g. colour picker shows a native
@@ -41,7 +42,7 @@ let shownKind: CursorKind | null = null;
 let last = { x: OFFSCREEN, y: OFFSCREEN, overUI: true };
 
 const GLYPH_OF: Record<CursorKind, string | null> = {
-  crosshair: 'crosshair', text: null, delete: 'delete', 'move-x': 'move', 'move-y': 'move',
+  crosshair: 'crosshair', text: null, delete: 'delete', remove: 'remove', 'move-x': 'move', 'move-y': 'move',
 };
 
 /** Swap the visible mark. Glyphs cross-fade and scale so a change of meaning is noticeable. */
@@ -78,6 +79,7 @@ function apply(): void {
 
 function onMove(e: MouseEvent): void {
   last = { x: e.clientX, y: e.clientY, overUI: isCalipersElement(e.target as Element) };
+  trackPointerTarget(e.target as Element);
   apply();
 }
 
@@ -130,6 +132,11 @@ export function initCursor(): void {
           <circle r="9.5" fill="#FF4500" stroke="#fff" stroke-width="1.5"/>
           <path d="M-3.25 -3.25L3.25 3.25M3.25 -3.25L-3.25 3.25" stroke="#fff" stroke-width="1.75" stroke-linecap="round"/>
         </svg>`)}
+      ${glyph('remove', false, `
+        <svg width="22" height="22" viewBox="-11 -11 22 22" style="display:block;overflow:visible;flex-shrink:0;">
+          <circle r="9.5" fill="#FF4500" stroke="#fff" stroke-width="1.5"/>
+          <path d="M-4.25 0H4.25" stroke="#fff" stroke-width="1.75" stroke-linecap="round"/>
+        </svg>`)}
       ${glyph('move', false, `
         <svg width="22" height="22" viewBox="-11 -11 22 22" style="display:block;overflow:visible;flex-shrink:0;" fill="none" stroke-linecap="round" stroke-linejoin="round">
           <path d="${ARROWS}" stroke="#fff" stroke-width="4.5"/>
@@ -150,6 +157,7 @@ export function destroyCursor(): void {
   document.removeEventListener('mousemove', onMove);
   cursorEl?.remove();
   cursorEl = null;
+  trackPointerTarget(null);
   shownKind = null;
   resolveCursor = null;
   hideNativeCursor(false);

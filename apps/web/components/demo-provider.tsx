@@ -5,7 +5,7 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 export type DemoKey = 'inspect' | 'measure' | 'guides';
 
 /** What the demo cursor should look like, set by the active tool. */
-export type DemoCursor = 'crosshair' | 'text' | 'delete' | 'move-x' | 'move-y';
+export type DemoCursor = 'crosshair' | 'text' | 'delete' | 'remove' | 'move-x' | 'move-y';
 
 interface DemoCtx {
   isOpen:    boolean;

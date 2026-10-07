@@ -553,22 +553,34 @@ function measurePair(a: DOMRect, b: DOMRect) {
 
 const LINE_S = 0.33;
 const CAP_S = 0.1;
+/** Leaving is quicker than arriving. */
+const RETRACT_S = LINE_S * 0.7;
 const STROKE = 'rgba(255,69,0,0.85)';
+const EASE_IN_OUT = [0.645, 0.045, 0.355, 1] as const;
 
 /**
  * Three beats, in the order the elements were picked: a cap opens on the first
  * element's edge, the line runs straight to the second, and when it lands the
- * cap on that edge opens out with the distance.
+ * cap on that edge opens out with the distance. When one of its elements is
+ * unpinned the line draws back into the element that is still there.
  */
-function MeasureLine({ a, b }: { a: DOMRect; b: DOMRect }) {
+function MeasureLine({ a, b, aId, wait }: { a: DOMRect; b: DOMRect; aId: number; wait: number }) {
   const reduce = useReducedMotion();
+  // Decided once: a line that replaces two removed ones waits for them to pull back.
+  const [delay] = useState(wait);
   const { x1, y1, x2, y2, gap, horizontal } = measurePair(a, b);
   const CAP = 4;
-  const t = (duration: number, delay: number) => (reduce ? { duration: 0 } : { duration, delay, ease: [0.645, 0.045, 0.355, 1] as const });
-  const cap = (x: number, y: number, delay: number) => {
+  const t = (duration: number, after: number) => (reduce ? { duration: 0 } : { duration, delay: delay + after, ease: EASE_IN_OUT });
+  const out = reduce ? { duration: 0 } : { duration: RETRACT_S, ease: EASE_IN_OUT };
+  const cap = (x: number, y: number, after: number) => {
     const from = { x1: x, y1: y, x2: x, y2: y };
     const to = horizontal ? { x1: x, y1: y - CAP, x2: x, y2: y + CAP } : { x1: x - CAP, y1: y, x2: x + CAP, y2: y };
-    return <motion.line initial={from} animate={to} transition={t(CAP_S, delay)} stroke={STROKE} strokeWidth="1.5" strokeLinecap="round" />;
+    return (
+      <motion.line
+        initial={from} animate={to} exit={{ opacity: 0, transition: { duration: 0.08 } }} transition={t(CAP_S, after)}
+        stroke={STROKE} strokeWidth="1.5" strokeLinecap="round"
+      />
+    );
   };
   return (
     <>
@@ -576,14 +588,17 @@ function MeasureLine({ a, b }: { a: DOMRect; b: DOMRect }) {
         {cap(x1, y1, 0)}
         <motion.line
           initial={{ x1, y1, x2: x1, y2: y1 }} animate={{ x1, y1, x2, y2 }} transition={t(LINE_S, 0)}
+          // `removed` is the id of the element that was unpinned: pull back towards the other one.
+          variants={{ exit: (removed: number) => ({ ...(removed === aId ? { x1: x2, y1: y2 } : { x2: x1, y2: y1 }), transition: out }) }}
+          exit="exit"
           stroke={STROKE} strokeWidth="1.5" strokeLinecap="round"
         />
         {cap(x2, y2, LINE_S)}
       </svg>
       <motion.div
         data-demo-ui="true"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-        transition={reduce ? { duration: 0 } : { duration: 0.15, delay: LINE_S }}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.08 } }}
+        transition={reduce ? { duration: 0 } : { duration: 0.15, delay: delay + LINE_S }}
         style={{ ...CHIP, left: (x1 + x2) / 2, top: (y1 + y2) / 2, transform: 'translate(-50%, -50%)' } as MotionStyle}
       >
         {Math.round(gap)}px
@@ -592,12 +607,15 @@ function MeasureLine({ a, b }: { a: DOMRect; b: DOMRect }) {
   );
 }
 
-function MeasureOverlay() {
+function MeasureOverlay({ setCursor }: { setCursor: (c: DemoCursor) => void }) {
   useViewportTick();
   const [pins, setPins] = useState<{ id: number; el: Element }[]>([]);
   const [hover, setHover] = useState<Element | null>(null);
   const [announcement, setAnnouncement] = useState('');
   const nextId = useRef(0);
+  // Which element was last unpinned, and when — its lines pull back and their replacement waits.
+  const [removedId, setRemovedId] = useState(-1);
+  const removedAt = useRef(0);
 
   useEffect(() => {
     function onMove(e: MouseEvent) {
@@ -611,8 +629,11 @@ function MeasureOverlay() {
       e.stopPropagation();
       setPins((prev) => {
         // Clicking a pinned element removes just that pin.
-        if (prev.some((p) => p.el === el)) {
+        const pinned = prev.find((p) => p.el === el);
+        if (pinned) {
           setAnnouncement('Element unpinned.');
+          setRemovedId(pinned.id);
+          removedAt.current = performance.now();
           return prev.filter((p) => p.el !== el);
         }
         // At the limit, the oldest pin makes room.
@@ -635,6 +656,12 @@ function MeasureOverlay() {
   const hoverPinned = !!hover && livePins.some((p) => p.el === hover);
   const last = rects[rects.length - 1];
 
+  // Over a pinned element the cursor becomes a minus: a click there unpins it.
+  useEffect(() => {
+    setCursor(hoverPinned ? 'remove' : 'crosshair');
+    return () => setCursor('crosshair');
+  }, [hoverPinned, setCursor]);
+
   return (
     <>
       <div className="sr-only" aria-live="polite" aria-atomic="true">{announcement}</div>
@@ -651,9 +678,14 @@ function MeasureOverlay() {
         </div>
       ))}
 
-      {livePins.slice(1).map((p, i) => (
-        <MeasureLine key={`${livePins[i]!.id}-${p.id}`} a={rects[i]!} b={rects[i + 1]!} />
-      ))}
+      <AnimatePresence custom={removedId}>
+        {livePins.slice(1).map((p, i) => (
+          <MeasureLine
+            key={`${livePins[i]!.id}-${p.id}`} a={rects[i]!} b={rects[i + 1]!} aId={livePins[i]!.id}
+            wait={performance.now() - removedAt.current < 100 ? RETRACT_S : 0}
+          />
+        ))}
+      </AnimatePresence>
 
       {/* Lettered markers, above the lines */}
       {livePins.map((p, i) => (
@@ -845,7 +877,7 @@ export function DemoOverlay() {
         ::highlight(${HIGHLIGHT_NAME}) { background-color: ${UI.accent}; color: #fff; }
       `}</style>
       {demo.inspect && <InspectOverlay setCursor={demo.setCursor} />}
-      {demo.measure && <MeasureOverlay />}
+      {demo.measure && <MeasureOverlay setCursor={demo.setCursor} />}
       {demo.guides  && <GuidesOverlay setCursor={demo.setCursor} />}
     </>
   );

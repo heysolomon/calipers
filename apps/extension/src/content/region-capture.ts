@@ -39,8 +39,9 @@ export function startRegionCapture(onFinish?: () => void): void {
   Object.assign(boxEl.style, {
     position: 'fixed',
     border: '1.5px solid #FF4500',
-    background: 'rgba(255,69,0,0.08)',
-    boxShadow: '0 0 0 9999px rgba(0,0,0,0.28)',
+    // No fill: the selection shows the page exactly as it will be captured.
+    background: 'transparent',
+    boxShadow: '0 0 0 9999px rgba(0,0,0,0.32)',
     pointerEvents: 'none',
     display: 'none',
     zIndex: '2147483646',
@@ -92,6 +93,9 @@ function onDown(e: MouseEvent): void {
   dragging = true;
   startX = e.clientX;
   startY = e.clientY;
+  // From here the box's own surround dims everything outside the selection.
+  // Keeping the full-page dim as well would darken the selection itself.
+  if (shadeEl) shadeEl.style.background = 'transparent';
   if (boxEl) {
     boxEl.style.display = 'block';
     boxEl.style.left = `${startX}px`;
@@ -162,7 +166,7 @@ async function onUp(e: MouseEvent): Promise<void> {
       showErrorReport('Region save', dl.error);
       return;
     }
-    showToast('Region saved', { type: 'success' });
+    showToast('Screenshot saved', { type: 'success' });
   } catch (err) {
     showErrorReport('Region crop', err instanceof Error ? err.message : String(err));
   }

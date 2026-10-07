@@ -144,7 +144,7 @@ Calipers is keyboard-first. Press **?** while Calipers is active to open the in-
 | Shortcut | Action |
 |---|---|
 | Click | Pin an element (up to 5: A–E) |
-| Click pinned element | Unpin just that element |
+| Click pinned element | Unpin just that element (the cursor shows a minus) |
 | Click label | Copy distance to clipboard |
 
 ## Guides mode
@@ -249,7 +249,7 @@ Alignment guides are persistent horizontal and vertical lines you can place anyw
 
 ## Moving guides
 
-Drag a guide to reposition it. With **Snap to elements** enabled, a guide being dragged snaps to nearby element edges within 8px. Placing a new guide never snaps: it lands exactly where you click.
+Drag a guide to reposition it. With **Snap to elements** enabled, both the placement preview and a guide being dragged snap to nearby element edges within 8px, and to elements you have pinned in Measure or marked in Annotate. A click places the guide exactly where the preview line is showing.
 
 ## Removing guides
 

@@ -13,6 +13,7 @@ import { BoxSpring, boxToRect } from '../motion';
 import { addRenderer, markActive } from '../frame';
 import { UI, segmentedHTML, setSegmented } from '../tokens';
 import { onPageChange } from '../page-scope';
+import { hoverSuppressed } from '../pointer';
 
 interface ColorEntry {
   label: string;
@@ -818,8 +819,17 @@ function render(): void {
   const { ctx } = overlay;
   clearCanvas(ctx);
 
-  // Hover only finds and outlines the target — details are read on click.
-  if (!state.pinned && sampleIsStale()) {
+  // On the controls, or mid-screenshot: no hover state at all. The selection stays.
+  if (hoverSuppressed()) {
+    if (state.lastRect || state.textTarget || state.hoverEl) {
+      state.textTarget = null;
+      state.hoverEl = null;
+      state.lastRect = null;
+      lastSample = { x: NaN, y: NaN, sx: NaN, sy: NaN, t: 0 };
+      syncTextHighlight();
+    }
+  } else if (!state.pinned && sampleIsStale()) {
+    // Hover only finds and outlines the target — details are read on click.
     const text = getTextRangeAtPoint(state.mouseX, state.mouseY);
     const el = text ? text.el : getElementAtPoint(state.mouseX, state.mouseY);
     state.textTarget = text;

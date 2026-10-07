@@ -12,6 +12,7 @@ import { showToast } from '../labels';
 import { BoxSpring, boxToRect } from '../motion';
 import { setSegmented, setSwatches } from '../tokens';
 import { onPageChange, createPageShelf } from '../page-scope';
+import { hoverSuppressed } from '../pointer';
 import { addRenderer, markActive } from '../frame';
 
 export type AnnotateTool = 'measure' | 'note' | 'arrow' | 'pen';
@@ -148,6 +149,21 @@ export function clearAnnotations(): void {
   state.items = [];
   if (noteLayer) noteLayer.innerHTML = '';
   showToast('Annotations cleared');
+}
+
+/** Size boxes and arrow ends in viewport space, for guides to snap to. */
+export function getAnnotationSnapRects(): Rect[] {
+  const point = (px: number, py: number): Rect => {
+    const x = toViewX(px);
+    const y = toViewY(py);
+    return { x, y, width: 0, height: 0, left: x, right: x, top: y, bottom: y };
+  };
+  const rects: Rect[] = [];
+  for (const item of state.items) {
+    if (item.kind === 'measure' && item.el.isConnected) rects.push(getElementRect(item.el));
+    else if (item.kind === 'arrow') rects.push(point(item.x1, item.y1), point(item.x2, item.y2));
+  }
+  return rects;
 }
 
 export function hasAnnotations(): boolean {
@@ -565,7 +581,7 @@ function renderInteractive(): void {
   const { ctx } = overlay;
   clearCanvas(ctx);
 
-  const hover = hoverBox.step(state.tool === 'measure' ? state.hoveredRect : null);
+  const hover = hoverBox.step(state.tool === 'measure' && !hoverSuppressed() ? state.hoveredRect : null);
   if (hover) drawMeasure(ctx, boxToRect(hover), state.color, true, hover.opacity);
   if (state.draftArrow) {
     drawArrow(

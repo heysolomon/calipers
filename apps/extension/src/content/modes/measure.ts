@@ -14,6 +14,8 @@ import { formatDistance, formatDimensions, distanceBetweenRects, isCalipersEleme
 import { BoxSpring, boxToRect, tuning } from '../motion';
 import { addRenderer, markActive } from '../frame';
 import { onPageChange, createPageShelf } from '../page-scope';
+import { setCursorResolver, refreshCursor } from '../cursor';
+import { hoverSuppressed } from '../pointer';
 
 const MAX_ELEMENTS = 5;
 const BADGES = ['A', 'B', 'C', 'D', 'E'];
@@ -56,6 +58,8 @@ export function initMeasureMode(o: OverlayElements): void {
   state.interactive = true;
   document.addEventListener('click', onClick, true);
   document.addEventListener('mousemove', onMouseMove, { passive: true });
+  // Over a pinned element the cursor becomes a minus: a click there unpins it.
+  setCursorResolver(() => (isRemovable(state.hoveredEl) ? 'remove' : 'crosshair'));
   scheduleFrame();
 }
 
@@ -64,6 +68,8 @@ export function destroyMeasureMode(): void {
   state.interactive = false;
   document.removeEventListener('click', onClick, true);
   document.removeEventListener('mousemove', onMouseMove);
+  setCursorResolver(null);
+  justPinned = null;
   stopLoop?.();
   stopLoop = null;
   state.hoveredEl = null;
@@ -83,6 +89,48 @@ onPageChange((from, to) => {
   state.lineProgress = state.pinned.slice(1).map(() => 1);
   markActive();
 });
+
+// ─── Unpinning ────────────────────────────────────────────────────────────────
+// A removed pin does not just vanish: its lines draw back into the elements
+// they came from, the reverse of how they were drawn.
+
+interface Retracting {
+  /** The end that stays: the edge of an element that is still pinned. */
+  x1: number; y1: number;
+  /** The end that pulls back: the edge of the element being removed. */
+  x2: number; y2: number;
+  progress: number;
+}
+
+/** Leaving is quicker than arriving. */
+const RETRACT_SHARE = 0.7;
+let retracting: Retracting[] = [];
+let fadingPin: { rect: Rect; progress: number } | null = null;
+
+function unpin(index: number): void {
+  const prev = state.pinned[index - 1];
+  const cur = state.pinned[index]!;
+  const next = state.pinned[index + 1];
+
+  retracting = [];
+  if (prev) {
+    const m = measurePair(prev.rect, cur.rect);
+    retracting.push({ x1: m.x1, y1: m.y1, x2: m.x2, y2: m.y2, progress: 1 });
+  }
+  if (next) {
+    // Drawn from the removed element to the next one, so it pulls back the other way.
+    const m = measurePair(cur.rect, next.rect);
+    retracting.push({ x1: m.x2, y1: m.y2, x2: m.x1, y2: m.y1, progress: 1 });
+  }
+  fadingPin = { rect: cur.rect, progress: 1 };
+
+  state.pinned.splice(index, 1);
+  // The neighbours are now joined directly; that line waits for the old ones to pull back.
+  const bridge = prev && next ? index - 1 : -1;
+  state.lineProgress = state.pinned.slice(1).map((_, i) => (i === bridge ? -RETRACT_SHARE : 1));
+  lastPaint = performance.now();
+  markActive();
+}
 
 // ─── Undo ─────────────────────────────────────────────────────────────────────
 
@@ -106,6 +154,8 @@ export function undoMeasurement(): boolean {
   if (!previous) return false;
   for (const name of knownLabelIds) removeLabel(name);
   knownLabelIds.clear();
+  retracting = [];
+  fadingPin = null;
   state.pinned = previous.filter((p) => p.el.isConnected);
   settleLines();
   markActive();
@@ -113,6 +163,8 @@ export function undoMeasurement(): boolean {
 }
 
 function resetPins(): void {
+  retracting = [];
+  fadingPin = null;
   for (const name of knownLabelIds) removeLabel(name);
   knownLabelIds.clear();
   state.pinned = [];
@@ -127,22 +179,38 @@ export function clearMeasurements(): void {
   showToast('Measurements cleared');
 }
 
+/** Boxes of the pinned elements, for guides to snap to. */
+export function getPinnedRects(): Rect[] {
+  return state.pinned.filter((p) => p.el.isConnected).map((p) => getElementRect(p.el));
+}
+
 export function hasPinnedMeasurements(): boolean {
   return state.pinned.length > 0;
+}
+
+/**
+ * The element you just pinned is still under the pointer. Like a just-placed
+ * guide, it only becomes removable once you have moved off it and come back,
+ * so a double click cannot pin and immediately unpin it.
+ */
+let justPinned: Element | null = null;
+
+function isRemovable(el: Element | null): boolean {
+  return el !== null && el !== justPinned && state.pinned.some((p) => p.el === el);
 }
 
 function onClick(e: MouseEvent): void {
   if (isCalipersElement(e.target as Element)) return;
   const el = getElementAtPoint(e.clientX, e.clientY);
-  if (!el) return;
+  if (!el || el === justPinned) return;
 
   remember();
 
   // Clicking a pinned element removes just that pin, not the whole set.
   const existing = state.pinned.findIndex((p) => p.el === el);
   if (existing >= 0) {
-    state.pinned.splice(existing, 1);
-    settleLines();
+    unpin(existing);
+    refreshCursor();
     return;
   }
 
@@ -154,6 +222,9 @@ function onClick(e: MouseEvent): void {
 
   state.pinned.push({ el, rect: getElementRect(el) });
   // The next step is said once, in a toast, instead of sitting on the page next to the measurements.
+  state.hoveredEl = el;
+  justPinned = el;
+  refreshCursor();
   if (state.pinned.length === 1) showToast('Click another element to measure');
   if (state.pinned.length >= 2) {
     state.lineProgress.push(0);
@@ -171,7 +242,9 @@ function onMouseMove(e: MouseEvent): void {
     requestAnimationFrame(() => {
       state.pending = false;
       state.hoveredEl = getElementAtPoint(state.mouseX, state.mouseY);
+      if (state.hoveredEl !== justPinned) justPinned = null;
       state.hoveredRect = state.hoveredEl ? getElementRect(state.hoveredEl) : null;
+      refreshCursor();
     });
   }
 }
@@ -240,6 +313,20 @@ export function paintPinnedMeasurements(
       state.lineProgress[i] = Math.min(1, (state.lineProgress[i] ?? 0) + inc);
       if ((state.lineProgress[i] ?? 1) < 1) markActive();
     }
+
+    // Lines of a pin that was just removed, drawing back into what they came from.
+    const dec = inc / RETRACT_SHARE;
+    retracting = retracting.filter((r) => (r.progress -= dec) > 0);
+    for (const r of retracting) drawMeasurementLine(ctx, r.x1, r.y1, r.x2, r.y2, r.progress);
+    if (fadingPin) {
+      fadingPin.progress -= dec;
+      if (fadingPin.progress <= 0) fadingPin = null;
+      else drawElementHighlight(ctx, fadingPin.rect, true, fadingPin.progress);
+    }
+    if (retracting.length > 0 || fadingPin) markActive();
+  } else {
+    retracting = [];
+    fadingPin = null;
   }
 
   const liveIds = new Set<string>();
@@ -250,7 +337,7 @@ export function paintPinnedMeasurements(
 
     // Size is shown only for the pinned element under the pointer; the rest
     // carry just their letter, so labels do not pile up over the distances.
-    if (state.interactive && state.hoveredEl === el) {
+    if (state.interactive && state.hoveredEl === el && !hoverSuppressed()) {
       const dimName = `persist-dim-${i}`;
       liveIds.add(dimName);
       knownLabelIds.add(dimName);
@@ -262,7 +349,9 @@ export function paintPinnedMeasurements(
   for (let i = 0; i < state.pinned.length - 1; i++) {
     const a = state.pinned[i]!.rect;
     const b = state.pinned[i + 1]!.rect;
-    const progress = state.lineProgress[i] ?? 1;
+    // Below zero means the line is waiting its turn.
+    const progress = Math.max(0, state.lineProgress[i] ?? 1);
+    if (progress <= 0) continue;
 
     const { x1, y1, x2, y2, distance, direction } = measurePair(a, b);
 
@@ -319,7 +408,7 @@ function renderInteractive(): void {
   clearCanvas(ctx);
 
   const isHoverPinned = state.pinned.some((p) => p.el === state.hoveredEl);
-  const box = hoverBox.step(isHoverPinned ? null : state.hoveredRect);
+  const box = hoverBox.step(isHoverPinned || hoverSuppressed() ? null : state.hoveredRect);
   if (box) drawElementHighlight(ctx, boxToRect(box), false, box.opacity);
 
   drawRulers(ctx, state.mouseX, state.mouseY);

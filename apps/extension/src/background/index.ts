@@ -5,6 +5,7 @@
 import type { Message, ExtensionState, Mode } from '@calipers/shared';
 import { DEFAULT_STATE, SETTING_STORAGE_KEYS, settingsFromStorage } from '@calipers/shared';
 import type { Settings, SettingKey } from '@calipers/shared';
+import { activeIconData, iconPath, ICON_SIZES } from './active-icon';
 
 // Per-tab state
 const tabState = new Map<number, ExtensionState>();
@@ -47,6 +48,9 @@ async function sendToContent(tabId: number, message: Message): Promise<void> {
   }
 }
 
+/** How long to wait for a freshly injected script to answer. */
+const READY_TIMEOUT_MS = 10_000;
+
 async function contentScriptAlive(tabId: number): Promise<boolean> {
   try {
     const res = (await chrome.tabs.sendMessage(tabId, { type: 'PING' } satisfies Message)) as { ok?: boolean } | undefined;
@@ -83,16 +87,21 @@ async function ensureContentScript(tabId: number): Promise<boolean> {
         });
       });
     }
-  } catch {
+  } catch (err) {
     // Browser pages (chrome://, the extension store, some PDF viewers) do not allow extensions.
+    console.warn('[Calipers] Could not inject into this tab:', err instanceof Error ? err.message : err);
     return false;
   }
 
-  // The script registers its listener a moment after it is injected.
-  for (let attempt = 0; attempt < 30; attempt++) {
+  // The script registers its listener once the page's main thread gets to it.
+  // On a heavy app that is still starting up that can take several seconds, so
+  // keep checking rather than giving up after a moment.
+  const deadline = Date.now() + READY_TIMEOUT_MS;
+  while (Date.now() < deadline) {
     if (await contentScriptAlive(tabId)) return true;
-    await new Promise((r) => setTimeout(r, 50));
+    await new Promise((r) => setTimeout(r, 100));
   }
+  console.warn(`[Calipers] Injected, but the page script did not respond within ${READY_TIMEOUT_MS / 1000}s.`);
   return false;
 }
 
@@ -104,10 +113,27 @@ function flagUnavailable(tabId: number): void {
   setTimeout(() => chrome.action.setBadgeText({ tabId, text: '' }), 2000);
 }
 
-/** Update the extension icon badge to reflect active state */
+/** Show whether Calipers is active on a tab: a dot on the toolbar icon, not a badge. */
 function updateBadge(tabId: number, active: boolean): void {
-  chrome.action.setBadgeText({ tabId, text: active ? '●' : '' });
-  chrome.action.setBadgeBackgroundColor({ tabId, color: active ? '#FF4500' : '#888888' });
+  chrome.action.setBadgeText({ tabId, text: '' });
+  void (async () => {
+    try {
+      if (active) {
+        await chrome.action.setIcon({ tabId, imageData: await activeIconData() });
+      } else {
+        await chrome.action.setIcon({
+          tabId,
+          path: Object.fromEntries(ICON_SIZES.map((size) => [size, iconPath(size)])),
+        });
+      }
+    } catch {
+      // The tab may have closed, or the icon could not be drawn — fall back to the plain badge.
+      if (active) {
+        chrome.action.setBadgeText({ tabId, text: '●' });
+        chrome.action.setBadgeBackgroundColor({ tabId, color: '#FF4500' });
+      }
+    }
+  })();
 }
 
 // ─── Keyboard command handler ─────────────────────────────────────────────────

@@ -12,6 +12,9 @@ import { addRenderer, markActive } from '../frame';
 import { setCursorResolver, refreshCursor } from '../cursor';
 import { setSegmented } from '../tokens';
 import { onPageChange } from '../page-scope';
+import { getPinnedRects } from './measure';
+import { getAnnotationSnapRects } from './annotate';
+import { hoverSuppressed } from '../pointer';
 
 export type GuidePlacement = 'both' | 'horizontal' | 'vertical';
 
@@ -372,36 +375,82 @@ function withPageHitTesting<T>(fn: () => T): T {
   }
 }
 
+/**
+ * Nearest edge to snap a guide to, within SNAP_THRESHOLD. Looks at the page's
+ * elements along the guide and at what has already been marked up: pinned
+ * measurements and annotations take part too, so guides line up with them.
+ */
+function snapPosition(
+  axis: 'horizontal' | 'vertical',
+  rawPosition: number,
+  mouseX: number,
+  mouseY: number,
+): number {
+  let best = rawPosition;
+  let minDist = SNAP_THRESHOLD + 1;
+  const consider = (edge: number): void => {
+    const d = Math.abs(edge - rawPosition);
+    if (d <= SNAP_THRESHOLD && d < minDist) {
+      minDist = d;
+      best = edge;
+    }
+  };
+
+  const candidates = withPageHitTesting(() =>
+    collectSnapCandidates(axis, rawPosition, mouseX, mouseY),
+  );
+  for (const el of candidates) {
+    const r = el.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1) continue;
+    if (r.width >= window.innerWidth - 2 && r.height >= window.innerHeight - 2) continue;
+    if (axis === 'horizontal') { consider(r.top); consider(r.bottom); }
+    else { consider(r.left); consider(r.right); }
+  }
+
+  for (const r of [...getPinnedRects(), ...getAnnotationSnapRects()]) {
+    if (axis === 'horizontal') { consider(r.top); consider(r.bottom); }
+    else { consider(r.left); consider(r.right); }
+  }
+
+  return best;
+}
+
+/** Snap for a guide being dragged; remembers the target so it can be shown. */
 function findSnapPosition(
   axis: 'horizontal' | 'vertical',
   rawPosition: number,
   mouseX: number,
   mouseY: number,
 ): number {
-  const candidates = withPageHitTesting(() =>
-    collectSnapCandidates(axis, rawPosition, mouseX, mouseY),
-  );
-
-  let best = rawPosition;
-  let minDist = SNAP_THRESHOLD + 1;
-
-  for (const el of candidates) {
-    const r = el.getBoundingClientRect();
-    if (r.width < 1 || r.height < 1) continue;
-    if (r.width >= window.innerWidth - 2 && r.height >= window.innerHeight - 2) continue;
-
-    const edges = axis === 'horizontal' ? [r.top, r.bottom] : [r.left, r.right];
-    for (const edge of edges) {
-      const d = Math.abs(edge - rawPosition);
-      if (d <= SNAP_THRESHOLD && d < minDist) {
-        minDist = d;
-        best = edge;
-      }
-    }
-  }
-
+  const best = snapPosition(axis, rawPosition, mouseX, mouseY);
   state.snapTarget = best !== rawPosition ? best : null;
   return best;
+}
+
+// ─── Placement preview ────────────────────────────────────────────────────────
+// Where a click would put a guide. It snaps as you move, and the click places
+// the guide exactly where the preview is drawn — never somewhere else.
+
+interface Preview { x: number; y: number; snappedX: boolean; snappedY: boolean }
+
+let preview: Preview = { x: 0, y: 0, snappedX: false, snappedY: false };
+let previewKey = '';
+
+function updatePreview(): Preview {
+  const { mouseX, mouseY } = state;
+  // Snapping hit-tests along the whole line, so only redo it when something moved.
+  const key = `${mouseX},${mouseY},${window.scrollX},${window.scrollY},${state.snapEnabled},${state.placement}`;
+  if (key === previewKey) return preview;
+  previewKey = key;
+
+  let x = mouseX;
+  let y = mouseY;
+  if (state.snapEnabled) {
+    if (state.placement !== 'vertical') y = snapPosition('horizontal', mouseY, mouseX, mouseY);
+    if (state.placement !== 'horizontal') x = snapPosition('vertical', mouseX, mouseX, mouseY);
+  }
+  preview = { x, y, snappedX: x !== mouseX, snappedY: y !== mouseY };
+  return preview;
 }
 
 // ─── Event handlers ───────────────────────────────────────────────────────────
@@ -475,13 +524,13 @@ function onClick(e: MouseEvent): void {
   if (state.hoveredId) return;
   if (e.button !== 0) return;
 
-  const x = e.clientX;
-  const y = e.clientY;
-  if (x < RULER_SIZE || y < RULER_SIZE) return;
+  if (e.clientX < RULER_SIZE || e.clientY < RULER_SIZE) return;
 
-  // Placement always lands exactly where you click — the live preview line
-  // tracks the raw cursor, so the committed guide must match it. Snapping
-  // still applies once a guide exists and is being dragged (see onMouseMove).
+  // Place the guide where the preview is showing it, snap included.
+  state.mouseX = e.clientX;
+  state.mouseY = e.clientY;
+  const { x, y } = updatePreview();
+
   const added: Guide[] = [];
   if (state.placement === 'both' || state.placement === 'horizontal') {
     added.push({ id: uid(), axis: 'horizontal', position: toGuidePagePos('horizontal', y) });
@@ -589,32 +638,40 @@ function render(): void {
   const overGuide = state.hoveredId !== null || state.draggingId !== null;
 
   // The placement preview would suggest a click adds a guide — over an existing one it deletes instead.
-  if (!overGuide) {
+  // A snapped line is drawn stronger so you can see it has caught an edge.
+  // No preview, readout or hint while the pointer is on the controls or a screenshot is being taken.
+  const quiet = hoverSuppressed();
+  const at = overGuide || quiet ? null : updatePreview();
+  if (at) {
     if (state.placement === 'both' || state.placement === 'horizontal') {
-      drawGuide(ctx, 'horizontal', state.mouseY, false);
+      drawGuide(ctx, 'horizontal', at.y, at.snappedY);
     }
     if (state.placement === 'both' || state.placement === 'vertical') {
-      drawGuide(ctx, 'vertical', state.mouseX, false);
+      drawGuide(ctx, 'vertical', at.x, at.snappedX);
     }
   }
 
   if (state.snapTarget !== null && dragged) drawGuide(ctx, dragged.axis, state.snapTarget, true);
 
-  if (overGuide && !moving) {
+  if (overGuide && !moving && !quiet) {
     setLabel(labelContainer, 'guide-hint', 'Click to delete · Drag to move', state.mouseX + 16, state.mouseY + 18);
   } else {
     hideLabel('guide-hint');
   }
 
-  setLabel(
-    labelContainer,
-    'crosshair-pos',
-    moving && dragged
-      ? formatDistance(dragged.position)
-      : `${Math.round(state.mouseX)}, ${Math.round(state.mouseY)}`,
-    state.mouseX + 10,
-    state.mouseY - 22,
-  );
+  if (quiet) {
+    hideLabel('crosshair-pos');
+  } else {
+    setLabel(
+      labelContainer,
+      'crosshair-pos',
+      moving && dragged
+        ? formatDistance(dragged.position)
+        : `${Math.round(at?.x ?? state.mouseX)}, ${Math.round(at?.y ?? state.mouseY)}`,
+      state.mouseX + 10,
+      state.mouseY - 22,
+    );
+  }
 
   drawRulers(ctx, state.mouseX, state.mouseY);
 }

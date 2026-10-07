@@ -5,12 +5,15 @@
  * browser captures the tab.
  */
 
+import { setCapturing } from './pointer';
+
 const CHROME_SELECTOR = [
   '#calipers-panel',
   '#calipers-toaster',
   '#calipers-cursor',
   '#calipers-dialkit',
   '#calipers-shortcuts-panel',
+  '#calipers-inspect-panel',
 ].join(',');
 
 let hidden: { el: HTMLElement; visibility: string }[] = [];
@@ -26,6 +29,8 @@ export async function withChromeHidden<T>(capture: () => Promise<T>): Promise<T>
     el.style.visibility = 'hidden';
     return { el, visibility };
   });
+  // Hover tints and preview lines are not part of what you meant to capture either.
+  setCapturing(true);
   // The capture reads what is on screen, so wait until the hidden state has actually painted.
   await nextPaint();
   try {
@@ -33,5 +38,6 @@ export async function withChromeHidden<T>(capture: () => Promise<T>): Promise<T>
   } finally {
     for (const { el, visibility } of hidden) el.style.visibility = visibility;
     hidden = [];
+    setCapturing(false);
   }
 }
