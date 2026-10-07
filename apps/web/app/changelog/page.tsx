@@ -93,13 +93,16 @@ const entries: ChangelogEntry[] = [
   },
 ];
 
+/** Formatted on the server in one locale and time zone, so the page and its hydration agree. */
+const DATE_FORMAT = new Intl.DateTimeFormat('en', { dateStyle: 'long', timeZone: 'UTC' });
+
 function SectionLabel({ label }: { label: string }): JSX.Element {
   return (
     <h3
       style={{
         fontSize: '16px',
         fontWeight: 500,
-        color: '#060606',
+        color: 'var(--text)',
         marginBottom: '4px',
         marginTop: '20px',
         scrollMarginTop: '2rem',
@@ -118,9 +121,9 @@ function VersionBadge(): JSX.Element {
         fontWeight: 500,
         padding: '2px 8px',
         borderRadius: '999px',
-        background: 'rgba(0,0,0,0.04)',
-        border: '1px solid rgba(0,0,0,0.08)',
-        color: '#121212',
+        background: 'var(--hover)',
+        border: '1px solid var(--line-soft)',
+        color: 'var(--text-body)',
         letterSpacing: '-0.01em',
       }}
     >
@@ -148,7 +151,7 @@ export default function ChangelogPage(): JSX.Element {
         <p
           style={{
             fontSize: '16px',
-            color: '#121212',
+            color: 'var(--text-body)',
             lineHeight: '25.6px',
             letterSpacing: '-0.01em',
             marginBottom: '48px',
@@ -187,7 +190,7 @@ export default function ChangelogPage(): JSX.Element {
                   flexWrap: 'wrap',
                   marginBottom: '4px',
                   paddingBottom: '12px',
-                  borderBottom: '1px solid #dedede',
+                  borderBottom: '1px solid var(--line)',
                 }}
               >
                 <h2
@@ -197,7 +200,7 @@ export default function ChangelogPage(): JSX.Element {
                     fontWeight: 500,
                     lineHeight: '29.7px',
                     letterSpacing: '-0.01em',
-                    color: '#000',
+                    color: 'var(--text)',
                   }}
                 >
                   {entry.version === 'Unreleased' ? entry.version : `v${entry.version}`}
@@ -205,13 +208,9 @@ export default function ChangelogPage(): JSX.Element {
                 {entry.date && (
                   <time
                     dateTime={entry.date}
-                    style={{ fontSize: '14px', color: '#636363' }}
+                    style={{ fontSize: '14px', color: 'var(--text-2)' }}
                   >
-                    {new Date(`${entry.date}T00:00:00`).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
+                    {DATE_FORMAT.format(new Date(`${entry.date}T00:00:00Z`))}
                   </time>
                 )}
                 {entry.preRelease && <VersionBadge />}
@@ -233,7 +232,7 @@ export default function ChangelogPage(): JSX.Element {
                             alignItems: 'flex-start',
                             gap: '10px',
                             fontSize: '16px',
-                            color: '#121212',
+                            color: 'var(--text-body)',
                             lineHeight: '25.6px',
                             letterSpacing: '-0.01em',
                             marginBottom: '2px',
@@ -245,7 +244,7 @@ export default function ChangelogPage(): JSX.Element {
                               width: '4px',
                               height: '4px',
                               borderRadius: '50%',
-                              background: '#808080',
+                              background: 'var(--text-3)',
                               flexShrink: 0,
                             }}
                           />

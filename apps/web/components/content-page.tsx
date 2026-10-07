@@ -12,7 +12,7 @@ export function sectionLabelStyle() {
     fontWeight: 500,
     lineHeight: '29.7px',
     letterSpacing: '-0.01em',
-    color: '#000',
+    color: 'var(--text)',
     marginBottom: '8px',
     marginTop: '40px',
   };
@@ -21,7 +21,7 @@ export function sectionLabelStyle() {
 export function bodyStyle() {
   return {
     fontSize: '16px',
-    color: '#121212',
+    color: 'var(--text-body)',
     lineHeight: '25.6px',
     letterSpacing: '-0.01em',
   };
@@ -51,7 +51,7 @@ export function InlineLink({ href, children }: { href: string; children: ReactNo
 /** The closing line of a page: where to get it, the way the homepage says it. */
 export function InstallCta({ label = 'Install for Chrome →' }: { label?: string }) {
   return (
-    <p style={{ ...bodyStyle(), marginTop: '40px', color: '#424242' }}>
+    <p style={{ ...bodyStyle(), marginTop: '40px', color: 'var(--text-2)' }}>
       <a href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer" className="lp-link">
         {label.replace(/\s*→$/, '')}
         <span className="sr-only"> (opens in new tab)</span>
@@ -85,18 +85,18 @@ export function ComparisonTable({ rows }: { rows: ComparisonRow[] }) {
       >
         <caption className="sr-only">Feature comparison</caption>
         <thead>
-          <tr style={{ borderBottom: '1px solid #dedede' }}>
-            <th scope="col" style={{ textAlign: 'left', padding: '8px 0', color: '#636363', fontWeight: 400 }}>Feature</th>
-            <th scope="col" style={{ textAlign: 'left', padding: '8px 12px', color: '#000', fontWeight: 500 }}>Calipers</th>
-            <th scope="col" style={{ textAlign: 'left', padding: '8px 0', color: '#636363', fontWeight: 400 }}>Alternative</th>
+          <tr style={{ borderBottom: '1px solid var(--line)' }}>
+            <th scope="col" style={{ textAlign: 'left', padding: '8px 0', color: 'var(--text-2)', fontWeight: 400 }}>Feature</th>
+            <th scope="col" style={{ textAlign: 'left', padding: '8px 12px', color: 'var(--text)', fontWeight: 500 }}>Calipers</th>
+            <th scope="col" style={{ textAlign: 'left', padding: '8px 0', color: 'var(--text-2)', fontWeight: 400 }}>Alternative</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.feature} style={{ borderBottom: '1px solid #dedede' }}>
-              <td style={{ padding: '10px 0', color: '#636363', verticalAlign: 'top' }}>{row.feature}</td>
-              <td style={{ padding: '10px 12px', color: '#000', verticalAlign: 'top' }}>{row.calipers}</td>
-              <td style={{ padding: '10px 0', color: '#121212', verticalAlign: 'top' }}>{row.alternative}</td>
+            <tr key={row.feature} style={{ borderBottom: '1px solid var(--line)' }}>
+              <td style={{ padding: '10px 0', color: 'var(--text-2)', verticalAlign: 'top' }}>{row.feature}</td>
+              <td style={{ padding: '10px 12px', color: 'var(--text)', verticalAlign: 'top' }}>{row.calipers}</td>
+              <td style={{ padding: '10px 0', color: 'var(--text-body)', verticalAlign: 'top' }}>{row.alternative}</td>
             </tr>
           ))}
         </tbody>

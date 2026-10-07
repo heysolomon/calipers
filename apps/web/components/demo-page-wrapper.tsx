@@ -24,7 +24,7 @@ export function DemoPageWrapper({ children }: { children: ReactNode }) {
   return (
     <div
       style={{
-        background: '#0f0f0f',
+        background: 'var(--frame)',
         paddingTop: isOpen ? '44px' : '0',
         transition: reduceMotion ? 'none' : `background 0.3s ease, padding-top 0.44s ${EASE}`,
         minHeight: '100vh',
@@ -39,7 +39,7 @@ export function DemoPageWrapper({ children }: { children: ReactNode }) {
           boxShadow: isOpen
             ? '0 -2px 24px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.04)'
             : 'none',
-          background: '#F7F7F7',
+          background: 'var(--bg)',
           minHeight: `calc(100vh - ${isOpen ? '44px' : '0px'})`,
           transition,
         }}
@@ -59,7 +59,7 @@ export function DemoPageWrapper({ children }: { children: ReactNode }) {
             height: `${RADIUS}px`,
             zIndex: 9998,
             pointerEvents: 'none',
-            background: `radial-gradient(circle at ${side === 'left' ? '100%' : '0'} 100%, transparent ${RADIUS - 0.5}px, #0f0f0f ${RADIUS}px)`,
+            background: `radial-gradient(circle at ${side === 'left' ? '100%' : '0'} 100%, transparent ${RADIUS - 0.5}px, var(--frame) ${RADIUS}px)`,
             opacity: isOpen ? 1 : 0,
             transition: reduceMotion ? 'none' : `opacity 0.2s ease ${isOpen ? '0.3s' : '0s'}`,
           }}

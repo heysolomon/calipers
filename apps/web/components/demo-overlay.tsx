@@ -339,6 +339,7 @@ function Section({ title, open, onToggle, summary, children }: {
 
 /** Tab row with a pill that slides to the active item. */
 function Segmented({ value, onChange }: { value: Format; onChange: (f: Format) => void }) {
+  const reduce = useReducedMotion();
   const idx = FORMATS.indexOf(value);
   return (
     <div style={{
@@ -346,10 +347,11 @@ function Segmented({ value, onChange }: { value: Format; onChange: (f: Format) =
       background: UI.track, borderRadius: 7, padding: 2, marginBottom: 6,
     }}>
       <div style={{
-        position: 'absolute', top: 2, bottom: 2, width: 'calc((100% - 4px) / 3)',
-        left: `calc(2px + ${idx} * ((100% - 4px) / 3))`,
+        position: 'absolute', top: 2, bottom: 2, left: 2, width: 'calc((100% - 4px) / 3)',
+        // Its own width is one tab, so 100% per step lands on each tab.
+        transform: `translateX(${idx * 100}%)`,
         background: UI.bg, borderRadius: 5, boxShadow: UI.shadowPill,
-        transition: `left 0.22s ${UI.easeMove}`,
+        transition: reduce ? 'none' : `transform 0.22s ${UI.easeMove}`,
       }} />
       {FORMATS.map((f) => (
         <button
@@ -894,6 +896,9 @@ const ANNO_HINT: Record<AnnoTool, string> = {
   pen: 'Drag to draw freehand',
 };
 
+/** The undo shortcut as this visitor would press it. Only read in the browser: the card renders after a click. */
+const UNDO_KEYS = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘\u00A0Z' : 'Ctrl\u00A0+\u00A0Z';
+
 const HANDLE_HIT = 9;
 const HIT_SLOP = 8;
 /** A bend this close to the straight line snaps back to straight. */
@@ -1012,8 +1017,8 @@ function Tabs<T extends string>({ label, items, value, onChange }: {
   return (
     <div role="group" aria-label={label} style={{ position: 'relative', display: 'grid', gridTemplateColumns: `repeat(${n}, 1fr)`, background: UI.track, borderRadius: 7, padding: 2 }}>
       <div style={{
-        position: 'absolute', top: 2, bottom: 2, width: `calc((100% - 4px) / ${n})`, left: `calc(2px + ${idx} * ((100% - 4px) / ${n}))`,
-        background: UI.bg, borderRadius: 5, boxShadow: UI.shadowPill, pointerEvents: 'none', transition: reduce ? 'none' : `left 0.22s ${UI.easeMove}`,
+        position: 'absolute', top: 2, bottom: 2, left: 2, width: `calc((100% - 4px) / ${n})`, transform: `translateX(${idx * 100}%)`,
+        background: UI.bg, borderRadius: 5, boxShadow: UI.shadowPill, pointerEvents: 'none', transition: reduce ? 'none' : `transform 0.22s ${UI.easeMove}`,
       }} />
       {items.map((item) => (
         <button
@@ -1336,9 +1341,9 @@ function AnnotateOverlay({ setCursor }: { setCursor: (c: DemoCursor) => void }) 
           })}
         </div>
 
-        <div style={{ marginTop: 10, fontSize: 10, color: UI.textMuted, letterSpacing: '-0.01em' }}>
-          <div style={{ color: UI.textSecondary }}>{ANNO_HINT[tool]}</div>
-          <div>Right-click deletes · ⌘Z undoes</div>
+        <div style={{ marginTop: 10, fontSize: 10, color: UI.textSecondary, letterSpacing: '-0.01em' }}>
+          <div>{ANNO_HINT[tool]}</div>
+          <div>Right-click deletes · {UNDO_KEYS} undoes</div>
         </div>
       </motion.div>
 
@@ -1387,7 +1392,7 @@ function AnnotateOverlay({ setCursor }: { setCursor: (c: DemoCursor) => void }) 
 
       {editing && (
         <input
-          data-demo-ui="true" autoFocus aria-label="Note text" value={editing.text} spellCheck={false} placeholder="Write a note…"
+          data-demo-ui="true" autoFocus name="note" autoComplete="off" aria-label="Note text" value={editing.text} spellCheck={false} placeholder="Write a note…"
           size={Math.max(12, editing.text.length + 1)}
           onChange={(e) => setEditing({ at: editing.at, text: e.target.value })}
           onKeyDown={(e) => {

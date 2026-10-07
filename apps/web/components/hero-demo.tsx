@@ -329,7 +329,7 @@ function BrowserBar({ width }: { width: number }) {
   return (
     <div style={{
       position: 'absolute', left: 0, top: 0, width, height: BAR, boxSizing: 'border-box', display: 'flex', alignItems: 'center',
-      padding: '0 12px', background: 'linear-gradient(#F7F7F7, #EFEFEF)', borderBottom: '1px solid rgba(0,0,0,0.12)', fontFamily: SYSTEM,
+      padding: '0 12px', background: 'var(--hd-bar)', borderBottom: '1px solid var(--hd-bar-line)', fontFamily: SYSTEM,
     }}>
       <div style={{ display: 'flex', gap: 6.5, marginRight: 16 }}>
         {lights.map(([fill, ring]) => (
@@ -339,11 +339,11 @@ function BrowserBar({ width }: { width: number }) {
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
         <svg {...glyph}><rect x="3" y="5" width="18" height="14" rx="3" /><path d="M9 5v14" /></svg>
         <svg {...glyph}><path d="M15 5l-7 7 7 7" /></svg>
-        <svg {...glyph} stroke="#C7C7CC"><path d="M9 5l7 7-7 7" /></svg>
+        <svg {...glyph} style={{ stroke: 'var(--hd-glyph-off)' }}><path d="M9 5l7 7-7 7" /></svg>
       </div>
       <div style={{
         position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: Math.min(250, width - 270), height: 22, borderRadius: 7,
-        background: 'rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontSize: 10.5, color: '#1C1C1E', letterSpacing: '-0.01em',
+        background: 'var(--hd-field)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontSize: 10.5, color: 'var(--hd-bar-text)', letterSpacing: '-0.01em',
       }}>
         <svg width="9" height="9" viewBox="0 0 24 24" fill="#8E8E93"><path d="M7 10V7a5 5 0 0 1 10 0v3h1a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h1zm2 0h6V7a3 3 0 0 0-6 0v3z" /></svg>
         acme.design
@@ -369,6 +369,8 @@ export function HeroDemo() {
   // Where the window sits on the stage when it is too narrow to show all of it.
   const pan = useRef(0);
   const [f, setF] = useState<Frame>(START);
+  // Colours follow the theme through CSS variables; this is only for the colour value the Inspect panel prints.
+  const [dark, setDark] = useState(false);
   // Only play while it can be seen: in the viewport and in a visible tab.
   const visible = useRef(false);
 
@@ -379,7 +381,12 @@ export function HeroDemo() {
     ro.observe(el);
     const io = new IntersectionObserver(([entry]) => { visible.current = !!entry?.isIntersecting; }, { threshold: 0.35 });
     io.observe(el);
-    return () => { ro.disconnect(); io.disconnect(); };
+    const root = document.documentElement;
+    const readTheme = (): void => setDark(root.dataset['theme'] === 'dark');
+    readTheme();
+    const mo = new MutationObserver(readTheme);
+    mo.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => { ro.disconnect(); io.disconnect(); mo.disconnect(); };
   }, []);
 
   useEffect(() => {
@@ -585,6 +592,7 @@ export function HeroDemo() {
     ...(axis === 'h' ? { left: 0, right: 0, top: at, height: 1 } : { top: 28, bottom: 0, left: at, width: 1 }),
   });
   const hoverIsPinned = !!f.hover && f.pins.some((p) => BOXES[p] === f.hover);
+  const textColour = dark ? '#a3a3a3' : '#5c5c5c';
 
   const scale = Math.max(width / W, MIN_SCALE);
   /** How much of the stage the window shows, in stage pixels. */
@@ -605,7 +613,7 @@ export function HeroDemo() {
       data-demo-ui="true"
       style={{
         position: 'relative', width: '100%', height: H * scale, overflow: 'hidden',
-        borderRadius: 10 * scale, border: '1px solid rgba(0,0,0,0.14)', background: '#fff',
+        borderRadius: 10 * scale, border: '1px solid var(--hd-edge)', background: 'var(--hd-page)',
         boxShadow: '0 18px 44px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.05)',
         userSelect: 'none', pointerEvents: 'none',
       }}
@@ -613,6 +621,8 @@ export function HeroDemo() {
       <div aria-hidden="true" style={{ position: 'absolute', left: 0, top: 0, width: view, height: H, transform: `scale(${scale})`, transformOrigin: '0 0', fontFamily: SANS,
         // The stage sets its own type; it must not pick up the page's body size, leading or tracking.
         fontSize: 16, lineHeight: 1.5, letterSpacing: 'normal', textAlign: 'left',
+        // Calipers' own UI is light in both themes, so its text is always dark; the mock page sets its own colours.
+        color: '#000',
       }}>
         <BrowserBar width={view} />
 
@@ -622,10 +632,10 @@ export function HeroDemo() {
           style={{ position: 'absolute', left: 0, top: SHIFT, width: W, height: H - SHIFT, opacity: f.fading ? 0 : 1, transition: 'opacity 0.4s ease' }}
         >
           {/* The page being worked on */}
-          <div style={{ position: 'absolute', left: HEADING.x, top: HEADING.y, width: HEADING.w, height: HEADING.h, fontFamily: '"Ashbury", Georgia, serif', fontSize: 27, fontWeight: 600, letterSpacing: '-0.03em', lineHeight: `${HEADING.h}px`, color: '#111' }}>
+          <div style={{ position: 'absolute', left: HEADING.x, top: HEADING.y, width: HEADING.w, height: HEADING.h, fontFamily: '"Ashbury", Georgia, serif', fontSize: 27, fontWeight: 600, letterSpacing: '-0.03em', lineHeight: `${HEADING.h}px`, color: 'var(--hd-ink)' }}>
             Simple pricing
           </div>
-          <div style={{ position: 'absolute', left: 56, top: 143, width: 320, fontSize: 12.5, lineHeight: '18px', color: '#5c5c5c', whiteSpace: 'nowrap' }}>
+          <div style={{ position: 'absolute', left: 56, top: 143, width: 320, fontSize: 12.5, lineHeight: '18px', color: 'var(--hd-ink-2)', whiteSpace: 'nowrap' }}>
             Start free, then pay as your{' '}
             <span style={{
               // Positioned so its box matches WORD, whatever the font metrics do.
@@ -638,14 +648,14 @@ export function HeroDemo() {
             <span style={{ position: 'absolute', left: WORD.x - 56 + WORD.w + 4, top: 0 }}>grows.</span>
           </div>
           {[CARD_A, CARD_B].map((c, i) => (
-            <div key={i} style={{ position: 'absolute', left: c.x, top: c.y, width: c.w, height: c.h, boxSizing: 'border-box', borderRadius: 8, border: '1px solid #E7E5E4', background: '#fff', padding: 12 }}>
+            <div key={i} style={{ position: 'absolute', left: c.x, top: c.y, width: c.w, height: c.h, boxSizing: 'border-box', borderRadius: 8, border: '1px solid var(--hd-card-line)', background: 'var(--hd-card)', padding: 12 }}>
               <div style={{ fontSize: 9, color: '#A3A3A3', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{i === 0 ? 'Starter' : 'Team'}</div>
-              <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.03em', margin: '5px 0 9px', color: '#111' }}>{i === 0 ? '$0' : '$12'}</div>
-              <div style={{ height: 5, width: '80%', borderRadius: 3, background: '#F0EFED', marginBottom: 5 }} />
-              <div style={{ height: 5, width: '55%', borderRadius: 3, background: '#F0EFED' }} />
+              <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.03em', margin: '5px 0 9px', color: 'var(--hd-ink)' }}>{i === 0 ? '$0' : '$12'}</div>
+              <div style={{ height: 5, width: '80%', borderRadius: 3, background: 'var(--hd-fill)', marginBottom: 5 }} />
+              <div style={{ height: 5, width: '55%', borderRadius: 3, background: 'var(--hd-fill)' }} />
             </div>
           ))}
-          <div style={{ position: 'absolute', left: CARD_C.x, top: CARD_C.y, width: CARD_C.w, height: CARD_C.h, boxSizing: 'border-box', borderRadius: 8, background: '#F5F4F1' }} />
+          <div style={{ position: 'absolute', left: CARD_C.x, top: CARD_C.y, width: CARD_C.w, height: CARD_C.h, boxSizing: 'border-box', borderRadius: 8, background: 'var(--hd-block)' }} />
 
           {/* ── Calipers, drawn over the page ── */}
 
@@ -704,7 +714,7 @@ export function HeroDemo() {
             </svg>
           )}
           {f.note && (
-            <div style={{ position: 'absolute', left: 508, top: 352, color: BLUE, fontFamily: '"Caveat", "Bradley Hand", "Segoe Print", cursive', fontSize: 16, fontWeight: 600, transform: 'rotate(-1.5deg)', whiteSpace: 'nowrap', textShadow: '0 1px 0 rgba(255,255,255,0.85)' }}>
+            <div style={{ position: 'absolute', left: 508, top: 352, color: BLUE, fontFamily: '"Caveat", "Bradley Hand", "Segoe Print", cursive', fontSize: 16, fontWeight: 600, transform: 'rotate(-1.5deg)', whiteSpace: 'nowrap', textShadow: 'var(--hd-note-shadow)' }}>
               {f.note}
             </div>
           )}
@@ -726,13 +736,13 @@ export function HeroDemo() {
                   <PanelRow label="Weight" value="400 Regular" />
                   <PanelRow label="Line height" value="18px / 1.44" />
                 </PanelSection>
-                <PanelSection title="Colours" open={f.panel === 'colours'} summary={<span style={{ width: 8, height: 8, borderRadius: '50%', background: '#5c5c5c', border: `1px solid ${BORDER}` }} />}>
+                <PanelSection title="Colours" open={f.panel === 'colours'} summary={<span style={{ width: 8, height: 8, borderRadius: '50%', background: textColour, border: `1px solid ${BORDER}` }} />}>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', height: 16, background: 'rgba(0,0,0,0.05)', borderRadius: 5, padding: 1.5, boxSizing: 'border-box', marginBottom: 5, fontSize: 7.5, fontWeight: 500 }}>
                     {['HEX', 'RGB', 'HSL'].map((t, i) => (
                       <span key={t} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, background: i === 0 ? '#fff' : 'transparent', boxShadow: i === 0 ? '0 1px 2px rgba(0,0,0,0.08)' : 'none', color: i === 0 ? '#000' : '#737373' }}>{t}</span>
                     ))}
                   </div>
-                  <PanelRow label="Color" value="#5c5c5c" swatch="#5c5c5c" />
+                  <PanelRow label="Color" value={textColour} swatch={textColour} />
                 </PanelSection>
                 <PanelSection title="Box" />
               </motion.div>

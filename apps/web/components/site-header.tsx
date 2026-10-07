@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { DemoTrigger } from './demo-trigger';
+import { ThemeToggle } from './theme-toggle';
 import { CHROME_STORE_URL, GITHUB_URL } from '../lib/site';
 import { formatCount, getChromeUsers, getGithubStars } from '../lib/stats';
 
@@ -22,7 +23,7 @@ function Stat({ href, tip, label, count, children }: {
 
 /**
  * The header every page shares: wordmark at the start; GitHub stars, Chrome Web
- * Store users and the demo control at the end.
+ * Store users, the theme button and the demo control at the end.
  */
 export async function SiteHeader({ nav = false }: { nav?: boolean }) {
   const [stars, users] = await Promise.all([getGithubStars(), getChromeUsers()]);
@@ -60,6 +61,7 @@ export async function SiteHeader({ nav = false }: { nav?: boolean }) {
           </svg>
         </Stat>
 
+        <ThemeToggle />
         <DemoTrigger variant="icon" />
       </div>
     </header>

@@ -16,7 +16,7 @@ function SectionLabel({ label }: { label: string }): JSX.Element {
         fontWeight: 500,
         lineHeight: '29.7px',
         letterSpacing: '-0.01em',
-        color: '#000',
+        color: 'var(--text)',
         marginBottom: '8px',
         marginTop: '40px',
         scrollMarginTop: '2rem',
@@ -50,32 +50,32 @@ export default function PrivacyPage(): JSX.Element {
         <h1 className="page-title">
           Privacy Policy
         </h1>
-        <p style={{ fontSize: '14px', color: '#636363', marginBottom: '8px' }}>
+        <p style={{ fontSize: '14px', color: 'var(--text-2)', marginBottom: '8px' }}>
           Last updated: June 2026
         </p>
 
         {/* Overview */}
         <SectionLabel label="Overview" />
-        <p style={{ fontSize: '16px', color: '#121212', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
+        <p style={{ fontSize: '16px', color: 'var(--text-body)', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
           Calipers is a free, open-source browser extension. This policy explains what data we collect,
           store, and transmit — which is as little as possible.
         </p>
 
         {/* Data we collect */}
         <SectionLabel label="Data we collect" />
-        <p style={{ fontSize: '16px', color: '#121212', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
+        <p style={{ fontSize: '16px', color: 'var(--text-body)', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
           We collect nothing. Calipers does not collect, store, or transmit any personally identifiable
           information, browsing history, or usage data.
         </p>
 
         {/* Local storage */}
         <SectionLabel label="Local storage" />
-        <p style={{ fontSize: '16px', color: '#121212', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
+        <p style={{ fontSize: '16px', color: 'var(--text-body)', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
           Calipers stores your preferences locally in your browser using{' '}
           <code
             style={{
-              background: 'rgba(0,0,0,0.05)',
-              border: '1px solid rgba(0,0,0,0.08)',
+              background: 'var(--hover)',
+              border: '1px solid var(--line-soft)',
               borderRadius: '3px',
               padding: '0.1em 0.35em',
               fontSize: '0.875em',
@@ -90,7 +90,7 @@ export default function PrivacyPage(): JSX.Element {
 
         {/* Permissions */}
         <SectionLabel label="Permissions" />
-        <p style={{ fontSize: '16px', color: '#121212', lineHeight: '25.6px', letterSpacing: '-0.01em', marginBottom: '12px' }}>
+        <p style={{ fontSize: '16px', color: 'var(--text-body)', lineHeight: '25.6px', letterSpacing: '-0.01em', marginBottom: '12px' }}>
           Calipers requests certain browser permissions solely to deliver its core functionality.
           No permission is used to collect or transmit data.
         </p>
@@ -102,16 +102,16 @@ export default function PrivacyPage(): JSX.Element {
                   flexShrink: 0,
                   fontSize: '13px',
                   fontFamily: "'JetBrains Mono', monospace",
-                  color: '#000',
-                  background: 'rgba(0,0,0,0.04)',
-                  border: '1px solid rgba(0,0,0,0.08)',
+                  color: 'var(--text)',
+                  background: 'var(--hover)',
+                  border: '1px solid var(--line-soft)',
                   borderRadius: '4px',
                   padding: '2px 7px',
                 }}
               >
                 {permission}
               </code>
-              <span style={{ fontSize: '16px', color: '#121212', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
+              <span style={{ fontSize: '16px', color: 'var(--text-body)', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
                 {description}
               </span>
             </div>
@@ -120,14 +120,14 @@ export default function PrivacyPage(): JSX.Element {
 
         {/* Third parties */}
         <SectionLabel label="Third parties" />
-        <p style={{ fontSize: '16px', color: '#121212', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
+        <p style={{ fontSize: '16px', color: 'var(--text-body)', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
           Calipers does not share data with any third party. There are no analytics, no tracking
           scripts, and no external services.
         </p>
 
         {/* Open source */}
         <SectionLabel label="Open source" />
-        <p style={{ fontSize: '16px', color: '#121212', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
+        <p style={{ fontSize: '16px', color: 'var(--text-body)', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
           Calipers is fully open source. You can inspect every line of code at{' '}
           <a
             href="https://github.com/heysolomon/calipers"
@@ -142,7 +142,7 @@ export default function PrivacyPage(): JSX.Element {
 
         {/* Contact */}
         <SectionLabel label="Contact" />
-        <p style={{ fontSize: '16px', color: '#121212', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
+        <p style={{ fontSize: '16px', color: 'var(--text-body)', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
           If you have questions about this policy, open an issue on{' '}
           <a
             href="https://github.com/heysolomon/calipers/issues"

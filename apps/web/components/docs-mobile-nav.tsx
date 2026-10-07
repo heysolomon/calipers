@@ -13,8 +13,8 @@ export function DocsMobileNav() {
       aria-label="Documentation"
       className="md:hidden sticky top-0 z-10 overflow-x-auto px-4 py-3"
       style={{
-        background: '#F7F7F7',
-        borderBottom: '1px solid rgba(0,0,0,0.06)',
+        background: 'var(--bg)',
+        borderBottom: '1px solid var(--line-soft)',
         WebkitOverflowScrolling: 'touch',
         touchAction: 'manipulation',
       }}
@@ -32,9 +32,9 @@ export function DocsMobileNav() {
                 padding: '5px 12px',
                 borderRadius: '999px',
                 whiteSpace: 'nowrap',
-                color: active ? '#000' : '#737373',
-                background: active ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.03)',
-                border: '1px solid rgba(0,0,0,0.06)',
+                color: active ? 'var(--text)' : 'var(--text-2)',
+                background: active ? 'var(--hover)' : 'transparent',
+                border: '1px solid var(--line-soft)',
                 fontWeight: active ? 500 : 400,
                 textDecoration: 'none',
               }}

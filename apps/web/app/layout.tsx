@@ -10,6 +10,7 @@ import { CustomCursor } from '../components/custom-cursor';
 import { AgentationWidget } from '../components/agentation-widget';
 import { JsonLd } from '../components/json-ld';
 import { SkipLink } from '../components/skip-link';
+import { THEME_SCRIPT } from '../lib/theme';
 import { SEO_KEYWORDS, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from '../lib/site';
 import type { ReactNode } from 'react';
 import './globals.css';
@@ -77,7 +78,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <JsonLd />
+        {/* The headline is set in Ashbury Medium; fetch it with the page instead of after the CSS. */}
+        <link rel="preload" as="font" type="font/ttf" href="/fonts/Ashbury-Medium.ttf" crossOrigin="anonymous" />
         <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-friendly site summary" />
       </head>
       {/* Browser extensions (Grammarly and others) add attributes to <body> before React loads. */}

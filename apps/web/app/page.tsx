@@ -28,9 +28,10 @@ const USES: { name: string; use: string; text: string; points: string[] }[] = [
 
 export default function HomePage() {
   return (
-    <main className="lp">
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
+    <div className="lp">
       <SiteHeader />
+
+      <main>
 
       {/* ── Hero ───────────────────────────────────────────────────────────── */}
       <section className="lp-hero">
@@ -71,8 +72,8 @@ export default function HomePage() {
               the value the browser is actually using.
             </p>
             <p>
-              Open it on any page and a small toolbar appears. Press 1 to 4 to switch between
-              Inspect, Measure, Guides and Annotate, and ? to see every shortcut.
+              Open it on any page and a small toolbar appears. Press <kbd>1</kbd> to <kbd>4</kbd> to
+              switch between Inspect, Measure, Guides and Annotate, and <kbd>?</kbd> to see every shortcut.
             </p>
             <p>
               It is MIT licensed, collects no data and runs entirely in your browser. Start with the{' '}
@@ -91,7 +92,7 @@ export default function HomePage() {
                 <ul>
                   {points.map((point) => (
                     <li key={point}>
-                      <img src="/icons/check.svg" alt="" width={15} height={15} />
+                      <img src="/icons/check.svg" alt="" width={15} height={15} loading="lazy" />
                       {point}
                     </li>
                   ))}
@@ -109,9 +110,11 @@ export default function HomePage() {
         </div>
       </section>
 
+      </main>
+
       <div className="lp-footer">
         <Footer />
       </div>
-    </main>
+    </div>
   );
 }

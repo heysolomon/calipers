@@ -109,6 +109,72 @@
   }
 }
 
+/* ─── Themes ─────────────────────────────────────────────────────────────────── */
+/* Every surface, line and text colour on the site comes from here. The accent
+   (#FF4500) is the same in both themes. */
+
+:root {
+  --bg: #f7f7f7;
+  --surface: #ffffff;
+  --card: #eeeeee;
+  --frame: #0f0f0f;
+  --line: #dedede;
+  --line-soft: rgba(6, 6, 6, 0.08);
+  --hover: rgba(0, 0, 0, 0.06);
+  --text: #000000;
+  --text-body: #121212;
+  --text-2: #636363;
+  --text-3: #808080;
+  --underline: #c4c4c4;
+
+  /* The scripted demo: the browser window and the page shown inside it */
+  --hd-page: #ffffff;
+  --hd-edge: rgba(0, 0, 0, 0.14);
+  --hd-bar: linear-gradient(#f7f7f7, #efefef);
+  --hd-bar-line: rgba(0, 0, 0, 0.12);
+  --hd-bar-text: #1c1c1e;
+  --hd-field: rgba(0, 0, 0, 0.06);
+  --hd-glyph-off: #c7c7cc;
+  --hd-ink: #111111;
+  --hd-ink-2: #5c5c5c;
+  --hd-card: #ffffff;
+  --hd-card-line: #e7e5e4;
+  --hd-fill: #f0efed;
+  --hd-block: #f5f4f1;
+  --hd-note-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #121212;
+  --surface: #1b1b1b;
+  --card: #1e1e1e;
+  --frame: #000000;
+  --line: #2c2c2c;
+  --line-soft: rgba(255, 255, 255, 0.09);
+  --hover: rgba(255, 255, 255, 0.08);
+  --text: #ffffff;
+  --text-body: #ededed;
+  --text-2: #a1a1a1;
+  --text-3: #7d7d7d;
+  --underline: #4d4d4d;
+
+  --hd-page: #161616;
+  --hd-edge: rgba(255, 255, 255, 0.14);
+  --hd-bar: linear-gradient(#333335, #2b2b2d);
+  --hd-bar-line: rgba(0, 0, 0, 0.6);
+  --hd-bar-text: #e5e5e7;
+  --hd-field: rgba(255, 255, 255, 0.09);
+  --hd-glyph-off: #4a4a4c;
+  --hd-ink: #f2f2f2;
+  --hd-ink-2: #a3a3a3;
+  --hd-card: #1d1d1d;
+  --hd-card-line: #303030;
+  --hd-fill: #2c2c2c;
+  --hd-block: #202020;
+  --hd-note-shadow: none;
+}
+
 /* ─── Base ───────────────────────────────────────────────────────────────────── */
 
 *,
@@ -121,6 +187,7 @@
 
 html {
   color-scheme: light;
+  background: var(--frame);
   scroll-behavior: smooth;
 }
 
@@ -139,11 +206,17 @@ html {
 }
 
 body {
-  background: #0f0f0f;
-  color: #000;
+  background: var(--frame);
+  color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Selected text: accent fill with white text, the same as a word picked in the extension. */
+::selection {
+  background: #ff4500;
+  color: #fff;
 }
 
 /* ─── Accessibility ──────────────────────────────────────────────────────────── */
@@ -182,8 +255,16 @@ body {
   border: 0;
 }
 
-a:focus-visible,
-button:focus-visible,
+/* No 300ms double-tap delay, and no grey flash on tap: every control has its own pressed state. */
+a,
+button,
+[role="switch"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+a: focus-visible,
+button: focus-visible,
 [role="switch"]:focus-visible {
   outline: 2px solid #FF4500;
   outline-offset: 2px;
@@ -195,7 +276,7 @@ button:focus-visible,
 }
 
 .site-link:hover {
-  color: #000 !important;
+  color: var(--text) !important;
 }
 
 /* Buttons */
@@ -209,15 +290,15 @@ button:focus-visible,
 }
 
 .btn-secondary {
-  color: #737373;
+  color: var(--text-2);
   background: transparent;
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--line-soft);
   transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
 }
 
 .btn-secondary:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #000;
+  background: var(--hover);
+  color: var(--text);
 }
 
 .btn-primary:active,
@@ -237,10 +318,10 @@ button:focus-visible,
 
 .lp {
   --lp-gutter: 64px;
-  --lp-line: #dedede;
+  --lp-line: var(--line);
   position: relative;
   min-height: 100vh;
-  color: #000;
+  color: var(--text);
   font-size: 16px;
   line-height: 25.6px;
   letter-spacing: -0.01em;
@@ -257,16 +338,16 @@ button:focus-visible,
 }
 
 .lp-link {
-  color: #121212;
+  color: var(--text-body);
   text-decoration: underline;
-  text-decoration-color: #c4c4c4;
+  text-decoration-color: var(--underline);
   text-decoration-thickness: from-font;
   text-underline-position: from-font;
   transition: text-decoration-color 0.15s ease;
 }
 
 .lp-link:hover {
-  text-decoration-color: #121212;
+  text-decoration-color: var(--text-body);
 }
 
 .lp-link-button {
@@ -288,10 +369,10 @@ button:focus-visible,
   border: none;
   border-radius: 4px;
   background: none;
-  color: #121212;
+  color: var(--text-body);
   cursor: pointer;
   position: relative;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, transform 0.1s ease;
 }
 
 .lp-icon-button::before {
@@ -328,6 +409,25 @@ button:focus-visible,
   }
 }
 
+/* Theme button: shows the theme a press switches to */
+.theme-toggle .theme-moon,
+:root[data-theme='dark'] .theme-toggle .theme-sun {
+  display: block;
+}
+
+.theme-toggle .theme-sun,
+:root[data-theme='dark'] .theme-toggle .theme-moon {
+  display: none;
+}
+
+/* Tile drawings take the page's neutrals; the accent and annotation blue stay as they are */
+.tile-block { fill: var(--hover); stroke: var(--line-soft); }
+.tile-chip { fill: var(--surface); stroke: var(--line-soft); }
+.tile-ink { fill: var(--text); }
+.tile-dim { fill: var(--text-2); }
+.tile-bar { fill: var(--text); }
+.tile-rule { stroke: var(--text); }
+
 /* Tooltip: the same light chip the extension uses. Add .lp-tip and a data-tip. */
 .lp-tip {
   position: relative;
@@ -339,11 +439,11 @@ button:focus-visible,
   top: calc(100% + 8px);
   right: 0;
   padding: 4px 8px;
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
   border-radius: 8px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 2px 8px rgba(0, 0, 0, 0.04);
-  color: #000;
+  color: var(--text);
   font-size: 12px;
   font-weight: 500;
   line-height: 16px;
@@ -363,7 +463,7 @@ button:focus-visible,
 
 @media (hover: hover) and (pointer: fine) {
   .lp-icon-button:hover {
-    background: rgba(0, 0, 0, 0.06);
+    background: var(--hover);
   }
 
   .lp-tip:hover::after {
@@ -371,6 +471,21 @@ button:focus-visible,
     transform: none;
     transition-delay: 0.3s;
   }
+}
+
+/* A key named in running text */
+.lp-prose kbd {
+  display: inline-block;
+  min-width: 20px;
+  padding: 0 5px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 20px;
+  text-align: center;
 }
 
 /* Hero */
@@ -398,7 +513,7 @@ button:focus-visible,
   flex-direction: column;
   gap: 16px;
   max-width: 400px;
-  color: #121212;
+  color: var(--text-body);
   text-wrap: balance;
 }
 
@@ -431,7 +546,7 @@ button:focus-visible,
 
 .lp-tile {
   padding: 4px;
-  border: 0 dashed rgba(222, 222, 222, 0.6);
+  border: 0 dashed var(--line);
 }
 
 .lp-tile:not(:nth-child(3n + 1)) {
@@ -449,14 +564,14 @@ button:focus-visible,
   justify-content: center;
   aspect-ratio: 278 / 233;
   padding: 24px 24px 40px;
-  background: #fff;
-  border: 1px solid rgba(6, 6, 6, 0.08);
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
   /* The frame's 16px radius less the 5px between its edge and the card */
   border-radius: 11px;
   box-shadow: 0 2px 1px rgba(6, 6, 6, 0.05);
-  color: #424242;
+  color: var(--text-2);
   text-decoration: none;
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s ease, transform 0.1s ease;
 }
 
 .lp-tile-art {
@@ -479,7 +594,7 @@ button:focus-visible,
 
 .lp-tile-caption kbd {
   font: inherit;
-  color: #121212;
+  color: var(--text-body);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -525,18 +640,18 @@ button:focus-visible,
   flex-direction: column;
   gap: 24px;
   padding: 24px 24px 32px;
-  background: #eee;
+  background: var(--card);
   border-radius: 16px;
 }
 
 .lp-card h3 {
   font-size: inherit;
   font-weight: 500;
-  color: #060606;
+  color: var(--text);
 }
 
 .lp-card-use {
-  color: #636363;
+  color: var(--text-2);
 }
 
 .lp-card ul {
@@ -560,7 +675,7 @@ button:focus-visible,
 
 .lp-closing {
   margin-top: 23.5px;
-  color: #424242;
+  color: var(--text-2);
   text-align: center;
 }
 
@@ -581,7 +696,7 @@ button:focus-visible,
   font-size: 14px;
   line-height: 21px;
   letter-spacing: 0;
-  color: #121212;
+  color: var(--text-body);
 }
 
 .site-wordmark {
@@ -590,7 +705,7 @@ button:focus-visible,
   font-weight: 500;
   line-height: 29.7px;
   letter-spacing: -0.01em;
-  color: #000;
+  color: var(--text);
   text-decoration: none;
 }
 
@@ -607,13 +722,13 @@ button:focus-visible,
 }
 
 .site-nav a {
-  color: #636363;
+  color: var(--text-2);
   text-decoration: none;
   transition: color 0.15s ease;
 }
 
 .site-nav a:hover {
-  color: #000;
+  color: var(--text);
 }
 
 /* An icon and a number: GitHub stars, Chrome Web Store users */
@@ -622,10 +737,13 @@ button:focus-visible,
   align-items: center;
   gap: 6px;
   height: 24px;
-  color: #121212;
+  margin: 0 -6px;
+  padding: 0 6px;
+  border-radius: 4px;
+  color: var(--text-body);
   font-variant-numeric: tabular-nums;
   text-decoration: none;
-  transition: color 0.15s ease;
+  transition: background 0.15s ease, transform 0.1s ease;
 }
 
 .site-stat svg {
@@ -634,8 +752,17 @@ button:focus-visible,
 
 @media (hover: hover) and (pointer: fine) {
   .site-stat:hover {
-    color: #636363;
+    background: var(--hover);
   }
+}
+
+.site-stat:active,
+.lp-icon-button:active {
+  transform: scale(0.96);
+}
+
+.lp-tile-card:active {
+  transform: scale(0.99);
 }
 
 /* The title of an inner page (changelog, privacy, use cases, alternatives) */
@@ -646,7 +773,7 @@ button:focus-visible,
   font-weight: 500;
   line-height: 48px;
   letter-spacing: -1px;
-  color: #000;
+  color: var(--text);
   text-wrap: balance;
 }
 
@@ -665,12 +792,13 @@ button:focus-visible,
   gap: 8px 24px;
   width: 100%;
   max-width: 1528px;
-  margin: 0 auto;
+  /* Sits at the bottom of the window on pages shorter than it */
+  margin: auto auto 0;
   padding: 40px 64px 20px;
   font-size: 14px;
   line-height: 21px;
   letter-spacing: 0;
-  color: #121212;
+  color: var(--text-body);
 }
 
 .site-footer-meta {
@@ -795,21 +923,21 @@ button:focus-visible,
 /* ─── Custom utilities ───────────────────────────────────────────────────────── */
 
 @utility text-secondary {
-  color: #737373;
+  color: var(--text-2);
 }
 
 @utility text-muted {
-  color: #D4D4D4;
+  color: var(--text-3);
 }
 
 @utility border-thin {
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--line-soft);
 }
 
 /* ─── Prose (docs / MDX) ─────────────────────────────────────────────────────── */
 
 .prose {
-  color: #737373;
+  color: var(--text-2);
   max-width: 65ch;
 }
 
@@ -817,7 +945,7 @@ button:focus-visible,
 .prose h2,
 .prose h3,
 .prose h4 {
-  color: #000;
+  color: var(--text);
   font-weight: 500;
   letter-spacing: -0.02em;
 }
@@ -848,7 +976,7 @@ button:focus-visible,
 }
 
 .prose a {
-  color: #000;
+  color: var(--text);
   text-decoration: underline;
   text-decoration-style: dotted;
 }
@@ -873,8 +1001,8 @@ button:focus-visible,
 }
 
 .prose code:not(pre code) {
-  background: rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: var(--hover);
+  border: 1px solid var(--line-soft);
   border-radius: 3px;
   padding: 0.1em 0.35em;
   font-size: 0.875em;
@@ -882,9 +1010,9 @@ button:focus-visible,
 }
 
 .prose blockquote {
-  border-left: 2px solid #000;
+  border-left: 2px solid var(--text);
   padding-left: 1rem;
-  color: #737373;
+  color: var(--text-2);
   font-style: italic;
   margin: 1.5rem 0;
 }
@@ -898,22 +1026,22 @@ button:focus-visible,
 .prose th,
 .prose td {
   padding: 0.5rem 0.75rem;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--line-soft);
   text-align: left;
 }
 
 .prose th {
-  background: rgba(0, 0, 0, 0.03);
+  background: var(--hover);
   font-weight: 500;
 }
 
 pre {
   overflow-x: auto;
   border-radius: 6px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--line-soft);
   padding: 1rem 1.25rem;
   margin: 1.25rem 0;
-  background: #fff;
+  background: var(--surface);
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.8125rem;
 }
@@ -974,7 +1102,7 @@ code {
   margin-bottom: 6px;
   font-size: 14px;
   line-height: 21px;
-  color: #636363;
+  color: var(--text-2);
 }
 
 .docs-sidebar-list {
@@ -990,7 +1118,7 @@ code {
   padding: 3px 0;
   font-size: 14px;
   line-height: 21px;
-  color: #121212;
+  color: var(--text-body);
   text-decoration: underline;
   text-decoration-color: transparent;
   text-decoration-thickness: from-font;
@@ -999,13 +1127,13 @@ code {
 }
 
 .docs-sidebar-link:hover {
-  text-decoration-color: #c4c4c4;
+  text-decoration-color: var(--underline);
 }
 
 .docs-sidebar-link.is-active {
   font-weight: 500;
-  color: #000;
-  text-decoration-color: #121212;
+  color: var(--text);
+  text-decoration-color: var(--text-body);
 }
 
 .docs-main {
@@ -1023,7 +1151,7 @@ code {
 }
 
 .docs-prose {
-  color: #121212;
+  color: var(--text-body);
   font-size: 16px;
   line-height: 25.6px;
   letter-spacing: -0.01em;
@@ -1039,7 +1167,7 @@ code {
   font-weight: 500;
   line-height: 48px;
   letter-spacing: -1px;
-  color: #000;
+  color: var(--text);
   margin: 0 0 24px;
   scroll-margin-top: 2rem;
   text-wrap: balance;
@@ -1056,7 +1184,7 @@ code {
   font-weight: 500;
   line-height: 29.7px;
   letter-spacing: -0.01em;
-  color: #000;
+  color: var(--text);
   margin: 48px 0 12px;
   scroll-margin-top: 2rem;
   text-wrap: balance;
@@ -1065,7 +1193,7 @@ code {
 .docs-prose h3 {
   font-size: 16px;
   font-weight: 500;
-  color: #060606;
+  color: var(--text);
   margin: 28px 0 4px;
   scroll-margin-top: 2rem;
 }
@@ -1093,7 +1221,7 @@ code {
 }
 
 .docs-prose li::marker {
-  color: #808080;
+  color: var(--text-3);
 }
 
 .docs-prose li:last-child {
@@ -1101,38 +1229,38 @@ code {
 }
 
 .docs-prose a {
-  color: #121212;
+  color: var(--text-body);
   text-decoration: underline;
-  text-decoration-color: #c4c4c4;
+  text-decoration-color: var(--underline);
   text-decoration-thickness: from-font;
   text-underline-position: from-font;
   transition: text-decoration-color 0.15s ease;
 }
 
 .docs-prose a:hover {
-  text-decoration-color: #121212;
+  text-decoration-color: var(--text-body);
 }
 
 .docs-prose strong {
-  color: #000;
+  color: var(--text);
   font-weight: 500;
 }
 
 .docs-prose code:not(pre code) {
-  background: #fff;
-  border: 1px solid rgba(6, 6, 6, 0.08);
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
   border-radius: 4px;
   padding: 1px 5px;
   font-size: 0.82em;
   font-family: 'JetBrains Mono', monospace;
   letter-spacing: 0;
-  color: #000;
+  color: var(--text);
 }
 
 .docs-prose pre {
   margin: 20px 0;
-  background: #fff;
-  border: 1px solid rgba(6, 6, 6, 0.08);
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
   border-radius: 0;
   box-shadow: 0 2px 1px rgba(6, 6, 6, 0.05);
   letter-spacing: 0;
@@ -1149,13 +1277,13 @@ code {
 .docs-prose th,
 .docs-prose td {
   padding: 10px 12px 10px 0;
-  border-bottom: 1px solid #dedede;
+  border-bottom: 1px solid var(--line);
   text-align: left;
   vertical-align: top;
 }
 
 .docs-prose th {
-  color: #636363;
+  color: var(--text-2);
   font-weight: 400;
 }
 
@@ -1173,7 +1301,7 @@ code {
 
 .docs-nav-card {
   padding: 24px 24px 32px;
-  background: #eee;
+  background: var(--card);
   border-radius: 16px;
 }
 

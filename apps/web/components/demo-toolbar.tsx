@@ -44,13 +44,14 @@ function ToggleSwitch({
         style={{
           position: 'absolute',
           top: '2px',
-          left: on ? '14px' : '2px',
+          left: '2px',
+          transform: `translateX(${on ? 12 : 0}px)`,
           width: '12px',
           height: '12px',
           borderRadius: '50%',
           background: '#fff',
           boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
-          transition: 'left 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
+          transition: 'transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       />
     </button>
@@ -71,7 +72,7 @@ export function DemoToolbar() {
         right: 0,
         zIndex: 9999,
         height: '44px',
-        background: '#0f0f0f',
+        background: 'var(--frame)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
