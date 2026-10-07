@@ -10,7 +10,6 @@ import { tuning } from './motion';
 const C = {
   primary: '#FF4500',
   primaryAlpha80: 'rgba(255, 69, 0, 0.8)',
-  primaryAlpha50: 'rgba(255, 69, 0, 0.5)',
 };
 
 // ─── Module state ─────────────────────────────────────────────────────────────
@@ -218,13 +217,15 @@ export function drawGuide(
   ctx: CanvasRenderingContext2D,
   axis: 'horizontal' | 'vertical',
   position: number,
-  hovered = false,
+  /** How emphasised the line is: false/0 resting, true/1 hovered or snapped, anything between while easing. */
+  emphasis: boolean | number = false,
 ): void {
   scale(ctx);
   const w = window.innerWidth;
   const h = window.innerHeight;
 
-  ctx.strokeStyle = hovered ? C.primaryAlpha80 : C.primaryAlpha50;
+  const amount = typeof emphasis === 'number' ? Math.max(0, Math.min(1, emphasis)) : emphasis ? 1 : 0;
+  ctx.strokeStyle = `rgba(255, 69, 0, ${0.5 + 0.3 * amount})`;
   ctx.lineWidth = 1;
 
   ctx.beginPath();

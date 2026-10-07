@@ -13,6 +13,7 @@ import { BoxSpring, boxToRect } from '../motion';
 import { setSegmented, setSwatches } from '../tokens';
 import { onPageChange, createPageShelf } from '../page-scope';
 import { hoverSuppressed } from '../pointer';
+import { setCursorResolver, refreshCursor } from '../cursor';
 import { addRenderer, markActive } from '../frame';
 
 export type AnnotateTool = 'measure' | 'note' | 'arrow' | 'pen';
@@ -31,6 +32,30 @@ export const ANNOTATE_COLORS = [
 
 export type AnnotateColorId = (typeof ANNOTATE_COLORS)[number]['id'];
 
+/** Note text sizes offered in the options card. */
+export const NOTE_SIZES = [
+  { id: '14', label: 'S',  px: 14 },
+  { id: '18', label: 'M',  px: 18 },
+  { id: '24', label: 'L',  px: 24 },
+  { id: '32', label: 'XL', px: 32 },
+] as const;
+const DEFAULT_NOTE_SIZE = 18;
+let noteSize: number = DEFAULT_NOTE_SIZE;
+let noteKeysExplained = false;
+
+export function getNoteSize(): number {
+  return noteSize;
+}
+
+/** Size for new notes; a note being written right now takes it straight away. */
+export function setNoteSize(px: number): void {
+  noteSize = px;
+  if (state.noteDraft) {
+    state.noteDraft.size = px;
+    state.noteDraft.el.style.fontSize = `${px}px`;
+  }
+}
+
 interface MeasureAnn {
   id: string;
   kind: 'measure';
@@ -46,6 +71,8 @@ interface NoteAnn {
   y: number;
   text: string;
   color: string;
+  /** Font size in px. Older notes without one use the default. */
+  size?: number;
 }
 
 interface ArrowAnn {
@@ -55,6 +82,8 @@ interface ArrowAnn {
   y1: number;
   x2: number;
   y2: number;
+  /** A point the arrow curves through. Absent or null for a straight arrow. */
+  bend?: { x: number; y: number } | null;
   color: string;
 }
 
@@ -80,7 +109,7 @@ interface AnnotateState {
   draftArrow: { x1: number; y1: number; x2: number; y2: number } | null;
   draftStroke: { x: number; y: number }[];
   /** Draft note stores document coords. */
-  noteDraft: { x: number; y: number; el: HTMLTextAreaElement; color: string } | null;
+  noteDraft: { x: number; y: number; el: HTMLTextAreaElement; color: string; size: number } | null;
 }
 
 const NOTE_FONT = `"Segoe Print", "Bradley Hand", "Comic Sans MS", "Apple Chancery", cursive`;
@@ -123,6 +152,10 @@ export function setAnnotateTool(tool: AnnotateTool): void {
   state.drawing = false;
   state.draftArrow = null;
   state.draftStroke = [];
+  activeArrowId = null;
+  arrowDrag = null;
+  resetNoteInteraction();
+  refreshCursor();
 }
 
 export function getAnnotateTool(): AnnotateTool {
@@ -202,6 +235,17 @@ export function initAnnotateMode(o: OverlayElements): void {
   document.addEventListener('mouseup', onMouseUp, true);
   document.addEventListener('keydown', onKeyDown, true);
   document.addEventListener('contextmenu', onContextMenu, true);
+  // Writing tools get a pen; an arrow you can grab gets a handle; otherwise the crosshair.
+  setCursorResolver(() => {
+    if (state.tool === 'note') {
+      if (overNoteDelete) return 'delete';
+      if (noteDrag || activeNoteId) return 'grab';
+      return 'pen';
+    }
+    if (state.tool === 'pen') return 'pen';
+    if (state.tool === 'arrow' && (arrowDrag || activeArrowId)) return 'grab';
+    return 'crosshair';
+  });
   scheduleFrame();
 }
 
@@ -215,6 +259,10 @@ export function destroyAnnotateMode(): void {
   document.removeEventListener('mouseup', onMouseUp, true);
   document.removeEventListener('keydown', onKeyDown, true);
   document.removeEventListener('contextmenu', onContextMenu, true);
+  setCursorResolver(null);
+  resetNoteInteraction();
+  activeArrowId = null;
+  arrowDrag = null;
   stopLoop?.();
   stopLoop = null;
   overlay = null;
@@ -222,6 +270,227 @@ export function destroyAnnotateMode(): void {
   state.drawing = false;
   state.draftArrow = null;
   state.draftStroke = [];
+}
+
+// ─── Arrows ───────────────────────────────────────────────────────────────────
+// Arrows stay editable after they are drawn, the way they are in Excalidraw:
+// drag either end to re-aim, drag the middle to bend, drag the body to move.
+// Hold Shift while drawing or re-aiming to lock to 15° steps.
+
+interface Pt { x: number; y: number }
+type ArrowPart = 'start' | 'end' | 'bend' | 'body';
+
+const HANDLE_RADIUS = 4.5;
+const HANDLE_HIT = 9;
+/** A bend this close to the straight line snaps back to straight. */
+const STRAIGHTEN_WITHIN = 6;
+const ANGLE_STEP = Math.PI / 12;
+
+/** Arrow under the pointer while the arrow tool is active. */
+let activeArrowId: string | null = null;
+let arrowDrag: { id: string; part: ArrowPart; lastX: number; lastY: number; moved: boolean } | null = null;
+
+const chordMid = (a: Pt, b: Pt): Pt => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+
+/** Control point of the quadratic curve that passes through `bend` at its midpoint. */
+function controlPoint(a: Pt, b: Pt, bend: Pt | null): Pt {
+  const m = chordMid(a, b);
+  return bend ? { x: 2 * bend.x - m.x, y: 2 * bend.y - m.y } : m;
+}
+
+function curvePoint(a: Pt, c: Pt, b: Pt, t: number): Pt {
+  const u = 1 - t;
+  return { x: u * u * a.x + 2 * u * t * c.x + t * t * b.x, y: u * u * a.y + 2 * u * t * c.y + t * t * b.y };
+}
+
+/** An arrow's points in viewport space. */
+function arrowView(item: ArrowAnn): { a: Pt; b: Pt; bend: Pt | null } {
+  return {
+    a: { x: toViewX(item.x1), y: toViewY(item.y1) },
+    b: { x: toViewX(item.x2), y: toViewY(item.y2) },
+    bend: item.bend ? { x: toViewX(item.bend.x), y: toViewY(item.bend.y) } : null,
+  };
+}
+
+function distToArrow(p: Pt, a: Pt, b: Pt, bend: Pt | null): number {
+  if (!bend) return distToSegment(p.x, p.y, a.x, a.y, b.x, b.y);
+  const c = controlPoint(a, b, bend);
+  let best = Infinity;
+  let prev = a;
+  for (let i = 1; i <= 20; i++) {
+    const next = curvePoint(a, c, b, i / 20);
+    best = Math.min(best, distToSegment(p.x, p.y, prev.x, prev.y, next.x, next.y));
+    prev = next;
+  }
+  return best;
+}
+
+/** Which part of an arrow a viewport point is on, if any. Handles win over the body. */
+function arrowPartAt(item: ArrowAnn, x: number, y: number): ArrowPart | null {
+  const { a, b, bend } = arrowView(item);
+  const near = (p: Pt): boolean => Math.hypot(p.x - x, p.y - y) <= HANDLE_HIT;
+  if (near(b)) return 'end';
+  if (near(a)) return 'start';
+  if (near(bend ?? chordMid(a, b))) return 'bend';
+  return distToArrow({ x, y }, a, b, bend) <= HIT_SLOP ? 'body' : null;
+}
+
+function arrowAt(x: number, y: number): { item: ArrowAnn; part: ArrowPart } | null {
+  for (let i = state.items.length - 1; i >= 0; i--) {
+    const item = state.items[i]!;
+    if (item.kind !== 'arrow') continue;
+    const part = arrowPartAt(item, x, y);
+    if (part) return { item, part };
+  }
+  return null;
+}
+
+/** Keep the distance, round the direction to the nearest 15°. */
+function lockAngle(from: Pt, to: Pt): Pt {
+  const len = Math.hypot(to.x - from.x, to.y - from.y);
+  const angle = Math.round(Math.atan2(to.y - from.y, to.x - from.x) / ANGLE_STEP) * ANGLE_STEP;
+  return { x: from.x + Math.cos(angle) * len, y: from.y + Math.sin(angle) * len };
+}
+
+function dragArrow(e: MouseEvent): void {
+  const drag = arrowDrag;
+  const item = drag && state.items.find((i): i is ArrowAnn => i.kind === 'arrow' && i.id === drag.id);
+  if (!drag || !item) return;
+
+  const dx = e.clientX - drag.lastX;
+  const dy = e.clientY - drag.lastY;
+  if (dx === 0 && dy === 0) return;
+  drag.lastX = e.clientX;
+  drag.lastY = e.clientY;
+  drag.moved = true;
+
+  const { a, b } = arrowView(item);
+  let p: Pt = { x: e.clientX, y: e.clientY };
+
+  if (drag.part === 'body') {
+    item.x1 += dx; item.y1 += dy; item.x2 += dx; item.y2 += dy;
+    if (item.bend) item.bend = { x: item.bend.x + dx, y: item.bend.y + dy };
+  } else if (drag.part === 'bend') {
+    const m = chordMid(a, b);
+    item.bend = Math.hypot(p.x - m.x, p.y - m.y) <= STRAIGHTEN_WITHIN ? null : { x: toPageX(p.x), y: toPageY(p.y) };
+  } else if (drag.part === 'start') {
+    if (e.shiftKey && !item.bend) p = lockAngle(b, p);
+    item.x1 = toPageX(p.x); item.y1 = toPageY(p.y);
+  } else {
+    if (e.shiftKey && !item.bend) p = lockAngle(a, p);
+    item.x2 = toPageX(p.x); item.y2 = toPageY(p.y);
+  }
+}
+
+function drawArrowHandles(ctx: CanvasRenderingContext2D, item: ArrowAnn): void {
+  const { a, b, bend } = arrowView(item);
+  ctx.save();
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = item.color;
+  const dot = (p: Pt, r: number, fill: string): void => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.stroke();
+  };
+  dot(a, HANDLE_RADIUS, '#fff');
+  dot(b, HANDLE_RADIUS, '#fff');
+  // The middle handle is filled once the arrow is bent, hollow-looking while it is still straight.
+  dot(bend ?? chordMid(a, b), HANDLE_RADIUS - 1, bend ? item.color : '#fff');
+  ctx.restore();
+}
+
+// ─── Notes ────────────────────────────────────────────────────────────────────
+// With the note tool, a note you point at can be dragged to move it, and shows
+// a small delete button on its corner.
+
+let activeNoteId: string | null = null;
+let overNoteDelete = false;
+let noteDrag: { id: string; lastX: number; lastY: number; moved: boolean } | null = null;
+/** The click that ends a drag or a delete must not also start a new note. */
+let swallowNoteClick = false;
+
+const NOTE_DELETE_R = 8;
+
+function noteRect(id: string): DOMRect | null {
+  return noteLayer?.querySelector(`[data-ann-id="${id}"]`)?.getBoundingClientRect() ?? null;
+}
+
+/** Centre of the delete button for a note's box: just outside its top-right corner. */
+function noteDeleteCentre(r: DOMRect): Pt {
+  // Kept on screen when the note runs up to the edge of the window.
+  return {
+    x: Math.min(r.right + 6, window.innerWidth - NOTE_DELETE_R - 2),
+    y: Math.max(r.top - 2, NOTE_DELETE_R + 2),
+  };
+}
+
+function noteAt(x: number, y: number): NoteAnn | null {
+  for (let i = state.items.length - 1; i >= 0; i--) {
+    const item = state.items[i]!;
+    if (item.kind !== 'note') continue;
+    const r = noteRect(item.id);
+    if (r && x >= r.left - 4 && x <= r.right + 4 && y >= r.top - 4 && y <= r.bottom + 4) return item;
+  }
+  return null;
+}
+
+/** Track which note the pointer is on, and whether it is on that note's delete button. */
+function updateNoteHover(x: number, y: number, onUi: boolean): void {
+  let id: string | null = null;
+  let onDelete = false;
+  if (!onUi) {
+    // The delete button sits outside the note's box, so check it first to keep the note active.
+    const current = activeNoteId ? noteRect(activeNoteId) : null;
+    if (current) {
+      const c = noteDeleteCentre(current);
+      onDelete = Math.hypot(x - c.x, y - c.y) <= NOTE_DELETE_R + 3;
+    }
+    id = onDelete ? activeNoteId : noteAt(x, y)?.id ?? null;
+  }
+  if (id !== activeNoteId || onDelete !== overNoteDelete) {
+    activeNoteId = id;
+    overNoteDelete = onDelete;
+    refreshCursor();
+  }
+}
+
+function drawNoteControls(ctx: CanvasRenderingContext2D, id: string): void {
+  const r = noteRect(id);
+  if (!r) return;
+  ctx.save();
+  // Outline the note you would move
+  ctx.strokeStyle = 'rgba(255, 69, 0, 0.6)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 3]);
+  ctx.beginPath();
+  ctx.roundRect(r.left - 4, r.top - 4, r.width + 8, r.height + 8, 4);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Delete button
+  const c = noteDeleteCentre(r);
+  ctx.beginPath();
+  ctx.arc(c.x, c.y, NOTE_DELETE_R, 0, Math.PI * 2);
+  ctx.fillStyle = '#FF4500';
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(c.x - 2.75, c.y - 2.75); ctx.lineTo(c.x + 2.75, c.y + 2.75);
+  ctx.moveTo(c.x + 2.75, c.y - 2.75); ctx.lineTo(c.x - 2.75, c.y + 2.75);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function resetNoteInteraction(): void {
+  activeNoteId = null;
+  overNoteDelete = false;
+  noteDrag = null;
+  swallowNoteClick = false;
 }
 
 // ─── Undo and single delete ───────────────────────────────────────────────────
@@ -262,7 +531,7 @@ function annotationAt(x: number, y: number): Annotation | null {
   for (let i = state.items.length - 1; i >= 0; i--) {
     const item = state.items[i]!;
     if (item.kind === 'arrow') {
-      if (distToSegment(px, py, item.x1, item.y1, item.x2, item.y2) <= HIT_SLOP) return item;
+      if (arrowPartAt(item, x, y)) return item;
     } else if (item.kind === 'stroke') {
       for (let j = 1; j < item.points.length; j++) {
         const a = item.points[j - 1]!;
@@ -332,7 +601,7 @@ function createNoteEl(note: NoteAnn): HTMLDivElement {
     top: `${toViewY(note.y)}px`,
     color: note.color,
     fontFamily: NOTE_FONT,
-    fontSize: '18px',
+    fontSize: `${note.size ?? DEFAULT_NOTE_SIZE}px`,
     fontWeight: '600',
     lineHeight: '1.25',
     maxWidth: '240px',
@@ -365,7 +634,7 @@ function commitNoteDraft(discardEmpty = false): void {
   if (!draft) return;
   const text = draft.el.value.trim();
   const color = draft.color;
-  const { x, y } = draft;
+  const { x, y, size } = draft;
   draft.el.remove();
   state.noteDraft = null;
   if (!text) {
@@ -373,7 +642,7 @@ function commitNoteDraft(discardEmpty = false): void {
     return;
   }
   remember();
-  state.items.push({ id: uid(), kind: 'note', x, y, text, color });
+  state.items.push({ id: uid(), kind: 'note', x, y, text, color, size });
   rebuildNoteDom();
 }
 
@@ -395,7 +664,7 @@ function startNoteAt(clientX: number, clientY: number): void {
     resize: 'both',
     color,
     fontFamily: NOTE_FONT,
-    fontSize: '18px',
+    fontSize: `${noteSize}px`,
     fontWeight: '600',
     lineHeight: '1.25',
     background: 'rgba(255,255,255,0.92)',
@@ -409,7 +678,12 @@ function startNoteAt(clientX: number, clientY: number): void {
   });
   noteLayer.style.pointerEvents = 'none';
   noteLayer.appendChild(ta);
-  state.noteDraft = { x, y, el: ta, color };
+  state.noteDraft = { x, y, el: ta, color, size: noteSize };
+  // Said once: how to finish or abandon a note from the keyboard.
+  if (!noteKeysExplained) {
+    noteKeysExplained = true;
+    showToast('Enter to save · Esc to cancel', 3500);
+  }
   ta.style.pointerEvents = 'all';
   requestAnimationFrame(() => ta.focus());
 
@@ -457,6 +731,8 @@ function onKeyDown(e: KeyboardEvent): void {
 
 function syncToolUi(): void {
   setSegmented(document, 'annotate-tool', state.tool);
+  const sizeRow = document.querySelector<HTMLElement>('[data-note-size-row]');
+  if (sizeRow) sizeRow.style.display = state.tool === 'note' ? 'block' : 'none';
 }
 
 function syncColorUi(): void {
@@ -471,6 +747,9 @@ function onClick(e: MouseEvent): void {
   if (state.tool === 'note') {
     e.preventDefault();
     e.stopPropagation();
+    // The end of a move or delete, or a click on an existing note, is not a request for a new one.
+    if (swallowNoteClick) { swallowNoteClick = false; return; }
+    if (noteAt(e.clientX, e.clientY)) return;
     startNoteAt(e.clientX, e.clientY - 8);
     return;
   }
@@ -494,11 +773,37 @@ function onClick(e: MouseEvent): void {
 }
 
 function onMouseDown(e: MouseEvent): void {
+  swallowNoteClick = false;
   if (isCalipersElement(e.target as Element)) return;
   if (e.button !== 0) return;
 
+  if (state.tool === 'note' && activeNoteId && !state.noteDraft) {
+    e.preventDefault();
+    swallowNoteClick = true;
+    remember();
+    if (overNoteDelete) {
+      state.items = state.items.filter((i) => i.id !== activeNoteId);
+      rebuildNoteDom();
+      activeNoteId = null;
+      overNoteDelete = false;
+      refreshCursor();
+      markActive();
+    } else {
+      noteDrag = { id: activeNoteId, lastX: e.clientX, lastY: e.clientY, moved: false };
+    }
+    return;
+  }
+
   if (state.tool === 'arrow') {
     e.preventDefault();
+    // On an existing arrow: grab it. Anywhere else: start a new one.
+    const hit = arrowAt(e.clientX, e.clientY);
+    if (hit) {
+      remember();
+      arrowDrag = { id: hit.item.id, part: hit.part, lastX: e.clientX, lastY: e.clientY, moved: false };
+      activeArrowId = hit.item.id;
+      return;
+    }
     state.drawing = true;
     state.draftArrow = { x1: e.clientX, y1: e.clientY, x2: e.clientX, y2: e.clientY };
   } else if (state.tool === 'pen') {
@@ -512,10 +817,39 @@ function onMouseMove(e: MouseEvent): void {
   state.mouseX = e.clientX;
   state.mouseY = e.clientY;
 
-  if (state.drawing && state.tool === 'arrow' && state.draftArrow) {
-    state.draftArrow.x2 = e.clientX;
-    state.draftArrow.y2 = e.clientY;
+  if (arrowDrag) {
+    dragArrow(e);
     return;
+  }
+  if (noteDrag) {
+    const drag = noteDrag;
+    const note = state.items.find((i): i is NoteAnn => i.kind === 'note' && i.id === drag.id);
+    if (note && (e.clientX !== drag.lastX || e.clientY !== drag.lastY)) {
+      note.x += e.clientX - drag.lastX;
+      note.y += e.clientY - drag.lastY;
+      drag.lastX = e.clientX;
+      drag.lastY = e.clientY;
+      drag.moved = true;
+    }
+    return;
+  }
+  if (state.tool === 'note' && !state.noteDraft) {
+    updateNoteHover(e.clientX, e.clientY, isCalipersElement(e.target as Element));
+  }
+  if (state.drawing && state.tool === 'arrow' && state.draftArrow) {
+    const from = { x: state.draftArrow.x1, y: state.draftArrow.y1 };
+    const to = e.shiftKey ? lockAngle(from, { x: e.clientX, y: e.clientY }) : { x: e.clientX, y: e.clientY };
+    state.draftArrow.x2 = to.x;
+    state.draftArrow.y2 = to.y;
+    return;
+  }
+  if (state.tool === 'arrow') {
+    const over = isCalipersElement(e.target as Element) ? null : arrowAt(e.clientX, e.clientY);
+    const id = over?.item.id ?? null;
+    if (id !== activeArrowId) {
+      activeArrowId = id;
+      refreshCursor();
+    }
   }
   if (state.drawing && state.tool === 'pen') {
     state.draftStroke.push({ x: e.clientX, y: e.clientY });
@@ -531,6 +865,17 @@ function onMouseMove(e: MouseEvent): void {
 }
 
 function onMouseUp(e: MouseEvent): void {
+  if (arrowDrag) {
+    // A press that never moved changed nothing, so it should not cost an undo step.
+    if (!arrowDrag.moved) history.pop();
+    arrowDrag = null;
+    return;
+  }
+  if (noteDrag) {
+    if (!noteDrag.moved) history.pop();
+    noteDrag = null;
+    return;
+  }
   if (!state.drawing) return;
   state.drawing = false;
 
@@ -586,10 +931,21 @@ function renderInteractive(): void {
   if (state.draftArrow) {
     drawArrow(
       ctx,
-      state.draftArrow.x1, state.draftArrow.y1,
-      state.draftArrow.x2, state.draftArrow.y2,
+      { x: state.draftArrow.x1, y: state.draftArrow.y1 },
+      { x: state.draftArrow.x2, y: state.draftArrow.y2 },
+      null,
       state.color,
     );
+  }
+  // Outline and delete button for the note you are on or dragging
+  const shownNote = noteDrag?.id ?? activeNoteId;
+  if (state.tool === 'note' && shownNote && !hoverSuppressed()) drawNoteControls(ctx, shownNote);
+
+  // Handles for the arrow you are on or dragging
+  const shownId = arrowDrag?.id ?? activeArrowId;
+  if (state.tool === 'arrow' && shownId && !hoverSuppressed()) {
+    const shown = state.items.find((i): i is ArrowAnn => i.kind === 'arrow' && i.id === shownId);
+    if (shown) drawArrowHandles(ctx, shown);
   }
   if (state.draftStroke.length > 1) {
     drawStroke(ctx, state.draftStroke, state.color);
@@ -613,12 +969,8 @@ export function paintAnnotations(
     if (item.kind === 'measure') {
       drawMeasure(ctx, getElementRect(item.el), item.color, false);
     } else if (item.kind === 'arrow') {
-      drawArrow(
-        ctx,
-        toViewX(item.x1), toViewY(item.y1),
-        toViewX(item.x2), toViewY(item.y2),
-        item.color,
-      );
+      const { a, b, bend } = arrowView(item);
+      drawArrow(ctx, a, b, bend, item.color);
     } else if (item.kind === 'stroke') {
       drawStroke(
         ctx,
@@ -705,10 +1057,9 @@ function drawDimLine(
 
 function drawArrow(
   ctx: CanvasRenderingContext2D,
-  x1: number,
-  y1: number,
-  x2: number,
-  y2: number,
+  a: Pt,
+  b: Pt,
+  bend: Pt | null,
   color: string,
 ): void {
   ctx.save();
@@ -719,25 +1070,22 @@ function drawArrow(
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
-  const mx = (x1 + x2) / 2;
-  const my = (y1 + y2) / 2;
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  const len = Math.hypot(dx, dy) || 1;
-  const ox = (-dy / len) * Math.min(28, len * 0.18);
-  const oy = (dx / len) * Math.min(28, len * 0.18);
-
+  // Straight unless it has been bent; a bent arrow curves through its bend point.
+  const c = controlPoint(a, b, bend);
   ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.quadraticCurveTo(mx + ox, my + oy, x2, y2);
+  ctx.moveTo(a.x, a.y);
+  if (bend) ctx.quadraticCurveTo(c.x, c.y, b.x, b.y);
+  else ctx.lineTo(b.x, b.y);
   ctx.stroke();
 
-  const angle = Math.atan2(y2 - (my + oy), x2 - (mx + ox));
+  // The head follows the direction the line arrives from.
+  const from = bend ? c : a;
+  const angle = Math.atan2(b.y - from.y, b.x - from.x);
   const head = 10;
   ctx.beginPath();
-  ctx.moveTo(x2, y2);
-  ctx.lineTo(x2 - head * Math.cos(angle - 0.4), y2 - head * Math.sin(angle - 0.4));
-  ctx.lineTo(x2 - head * Math.cos(angle + 0.4), y2 - head * Math.sin(angle + 0.4));
+  ctx.moveTo(b.x, b.y);
+  ctx.lineTo(b.x - head * Math.cos(angle - 0.4), b.y - head * Math.sin(angle - 0.4));
+  ctx.lineTo(b.x - head * Math.cos(angle + 0.4), b.y - head * Math.sin(angle + 0.4));
   ctx.closePath();
   ctx.fill();
   ctx.restore();

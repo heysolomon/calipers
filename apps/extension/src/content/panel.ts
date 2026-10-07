@@ -32,6 +32,9 @@ import {
   getAnnotateTool,
   setAnnotateColor,
   getAnnotateColor,
+  NOTE_SIZES,
+  getNoteSize,
+  setNoteSize,
   ANNOTATE_COLORS,
   type AnnotateTool,
 } from './modes/annotate';
@@ -164,6 +167,11 @@ function annotateToolsHTML(active: AnnotateTool, activeColor: string): string {
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding:0 3px;height:26px;">
         ${ANNOTATE_COLORS.map((c) => swatchHTML('annotate-color', c.hex, c.label, c.hex.toLowerCase() === activeColor.toLowerCase())).join('')}
       </div>
+
+      <!-- Text size, shown only for the note tool -->
+      <div data-note-size-row style="display:${active === 'note' ? 'block' : 'none'};margin-top:10px;">
+        ${segmentedHTML('note-size', NOTE_SIZES.map((n) => ({ id: n.id, label: n.label, title: `${n.px}px` })), String(getNoteSize()))}
+      </div>
     </div>
   `;
 }
@@ -173,6 +181,15 @@ function updateAnnotateUi(tool: AnnotateTool, color: string): void {
   if (!panelEl) return;
   setSegmented(panelEl, 'annotate-tool', tool);
   setSwatches(panelEl, 'annotate-color', color);
+
+  // The size row comes and goes with the note tool; keep the card inset as its height changes.
+  const sizeRow = panelEl.querySelector<HTMLElement>('[data-note-size-row]');
+  const show = tool === 'note';
+  if (sizeRow && (sizeRow.style.display !== 'none') !== show) {
+    const prevBox = snapshotPanelBox();
+    sizeRow.style.display = show ? 'block' : 'none';
+    schedulePanelReadjust(prevBox);
+  }
 }
 
 const GUIDE_PLACEMENTS: { id: GuidePlacement; label: string; key: string }[] = [
@@ -264,25 +281,40 @@ function classifyToken(name: string, value: string): Token['type'] {
 function extractTokens(): Token[] {
   const tokens: Token[] = [];
   const seen = new Set<string>();
+  const add = (name: string, raw: string): void => {
+    const value = raw.trim();
+    if (!name.startsWith('--') || !value || seen.has(name)) return;
+    seen.add(name);
+    tokens.push({ name, value, type: classifyToken(name, value) });
+  };
 
-  for (let i = 0; i < document.styleSheets.length; i++) {
-    let sheet: CSSStyleSheet | undefined;
-    try { sheet = document.styleSheets[i]; } catch { continue; }
-    if (!sheet?.cssRules) continue;
-    for (let j = 0; j < sheet.cssRules.length; j++) {
-      const rule = sheet.cssRules[j] as CSSStyleRule;
-      if (!rule.style) continue;
-      for (let k = 0; k < rule.style.length; k++) {
-        const prop = rule.style[k];
-        if (!prop || !prop.startsWith('--')) continue;
-        if (seen.has(prop)) continue;
-        seen.add(prop);
-        const value = rule.style.getPropertyValue(prop).trim();
-        if (!value) continue;
-        tokens.push({ name: prop, value, type: classifyToken(prop, value) });
-      }
+  // Rules can be nested inside @media, @supports and @layer blocks.
+  const walk = (rules: CSSRuleList): void => {
+    for (const rule of Array.from(rules)) {
+      const style = (rule as CSSStyleRule).style as CSSStyleDeclaration | undefined;
+      if (style) for (const prop of Array.from(style)) add(prop, style.getPropertyValue(prop));
+      const nested = (rule as CSSGroupingRule).cssRules as CSSRuleList | undefined;
+      if (nested?.length) walk(nested);
+    }
+  };
+
+  for (const sheet of Array.from(document.styleSheets)) {
+    // Reading a stylesheet served from another origin throws. Skip it rather
+    // than let one CDN stylesheet stop the whole panel from opening.
+    try { walk(sheet.cssRules); } catch { /* unreadable — covered below where possible */ }
+  }
+
+  // Tokens defined in unreadable stylesheets still apply to the page, so pick
+  // up whatever is set on the root and body from their computed values.
+  for (const el of [document.documentElement, document.body]) {
+    const map = (el as Element & { computedStyleMap?: () => Iterable<[string, Iterable<{ toString(): string }>]> })
+      ?.computedStyleMap?.();
+    if (!map) continue;
+    for (const [name, values] of map) {
+      if (name.startsWith('--')) add(name, Array.from(values).map((v) => v.toString()).join(' '));
     }
   }
+
   return tokens.sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -1076,6 +1108,14 @@ function wireEvents(panel: HTMLElement): void {
       setAnnotateTool(tool);
       const wrap = panel.querySelector<HTMLElement>('[data-annotate-tools]');
       if (wrap) updateAnnotateUi(tool, getAnnotateColor());
+      return;
+    }
+
+    const noteSizeBtn = target.closest('[data-note-size]') as HTMLElement | null;
+    if (noteSizeBtn) {
+      const id = noteSizeBtn.dataset['noteSize'] ?? '';
+      setNoteSize(Number(id));
+      setSegmented(panel, 'note-size', id);
       return;
     }
 

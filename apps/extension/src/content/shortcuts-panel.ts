@@ -12,7 +12,7 @@ const PANEL_ID = 'calipers-shortcuts-panel';
 const BACKDROP_CSS = `
   position: fixed;
   inset: 0;
-  z-index: 2147483645;
+  z-index: 2147483647;
   background: rgba(0, 0, 0, 0.12);
   display: flex;
   align-items: center;
@@ -134,6 +134,12 @@ function buildHTML(): string {
       ${row(['N'], 'Note tool — click to write')}
       ${row(['A'], 'Arrow tool — drag to draw')}
       ${row(['P'], 'Pen tool — freehand')}
+      ${row(['Drag an arrow'], 'Ends re-aim, middle bends, body moves')}
+      ${row(['⇧'], 'Hold while drawing an arrow to lock the angle')}
+      ${row(['Drag a note'], 'Move it; its corner button deletes it')}
+      ${row(['Enter'], 'Save the note you are writing')}
+      ${row(['Esc'], 'Cancel the note you are writing')}
+      ${row(['Right-click'], 'Remove one annotation')}
       ${row(['⇧', '1–8'], 'Pick annotation colour')}
       ${row(['Del'], 'Clear all annotations')}
       ${row(['S'], 'Export annotated view as PNG')}

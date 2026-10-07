@@ -111,7 +111,8 @@ async function activate(mode: Mode): Promise<void> {
     void import('./dev-dials').then((m) => m.mountDevDials());
   }
   document.addEventListener('click',   onGlobalInterceptClick, true);
-  document.addEventListener('keydown', onKeyDown, true);
+  // On window, so Calipers sees a key before the page's own document-level shortcuts do.
+  window.addEventListener('keydown', onKeyDown, true);
   window.addEventListener('resize', onResize);
 }
 
@@ -131,7 +132,7 @@ function deactivate(): void {
   removeOverlay();
 
   document.removeEventListener('click',   onGlobalInterceptClick, true);
-  document.removeEventListener('keydown', onKeyDown, true);
+  window.removeEventListener('keydown', onKeyDown, true);
   window.removeEventListener('resize', onResize);
 
   state = { ...DEFAULT_STATE };
@@ -193,6 +194,15 @@ function requestScreenshot(): void {
   });
 }
 
+/**
+ * Take a key for Calipers. Many sites have their own single-key shortcuts
+ * ("?" for help, digits, "s", "d"…); without this both would react.
+ */
+function claim(e: KeyboardEvent): void {
+  e.preventDefault();
+  e.stopPropagation();
+}
+
 function onKeyDown(e: KeyboardEvent): void {
   if (retireIfOrphaned()) return;
   const target = e.target as Element;
@@ -211,8 +221,7 @@ function onKeyDown(e: KeyboardEvent): void {
       activeMode === 'measure' ? undoMeasurement() :
       activeMode === 'annotate' ? undoAnnotation() : false;
     if (undone) {
-      e.preventDefault();
-      e.stopPropagation();
+      claim(e);
       if (activeMode !== 'guides') showToast('Undone');
     }
     return;
@@ -224,52 +233,55 @@ function onKeyDown(e: KeyboardEvent): void {
     return;
   }
 
-  switch (e.key) {
-    case '1': e.preventDefault(); switchModeFromKey('inspect');  break;
-    case '2': e.preventDefault(); switchModeFromKey('measure');  break;
-    case '3': e.preventDefault(); switchModeFromKey('guides');   break;
-    case '4': e.preventDefault(); switchModeFromKey('annotate'); break;
+  // Some keyboard layouts report Shift+/ as "/" rather than "?".
+  const pressed = e.code === 'Slash' && e.shiftKey ? '?' : e.key;
+
+  switch (pressed) {
+    case '1': claim(e); switchModeFromKey('inspect');  break;
+    case '2': claim(e); switchModeFromKey('measure');  break;
+    case '3': claim(e); switchModeFromKey('guides');   break;
+    case '4': claim(e); switchModeFromKey('annotate'); break;
     case 'r':
     case 'R':
-      e.preventDefault();
+      claim(e);
       toggleRulersFromKey();
       break;
     case 'd':
     case 'D':
-      e.preventDefault();
+      claim(e);
       toggleTokenPanel();
       break;
     case '?':
-      e.preventDefault();
+      claim(e);
       toggleShortcutsPanel();
       break;
     case 'Delete':
     case 'Backspace':
       if (activeMode === 'guides') {
-        e.preventDefault();
+        claim(e);
         // Over a guide, remove just that one; otherwise clear them all (both are undoable).
         if (!deleteHoveredGuide()) {
           clearGuides();
           showToast('Guides cleared');
         }
       } else if (activeMode === 'annotate') {
-        e.preventDefault();
+        claim(e);
         clearAnnotations();
       }
       break;
     case 'Escape':
-      e.preventDefault();
+      claim(e);
       dismissTopmost();
       break;
     case 's':
     case 'S':
-      e.preventDefault();
+      claim(e);
       requestScreenshot();
       break;
     case 'f':
     case 'F':
       if (activeMode === 'inspect') {
-        e.preventDefault();
+        claim(e);
         cycleColorFormat();
       }
       break;
@@ -306,7 +318,7 @@ function retireIfOrphaned(): boolean {
   if (contextAlive()) return false;
   try { deactivate(); } catch { /* best effort — the extension APIs are gone */ }
   document.removeEventListener('click', onGlobalInterceptClick, true);
-  document.removeEventListener('keydown', onKeyDown, true);
+  window.removeEventListener('keydown', onKeyDown, true);
   return true;
 }
 

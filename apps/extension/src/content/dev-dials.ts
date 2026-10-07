@@ -35,6 +35,7 @@ export function mountDevDials(): void {
       selectedFill: [tuning.selectedFillAlpha, 0, 0.5, 0.01],
     },
     lineDraw: [tuning.lineDraw, 0, 1.2, 0.01],
+    snapSettle: [tuning.snapSettle, 0, 0.6, 0.01],
   });
 
   const unsubscribe = kit.subscribe((v) => {
@@ -45,6 +46,7 @@ export function mountDevDials(): void {
     tuning.strokeAlpha = v.highlight.stroke;
     tuning.selectedFillAlpha = v.highlight.selectedFill;
     tuning.lineDraw = v.lineDraw;
+    tuning.snapSettle = v.snapSettle;
 
     const s = v.hover;
     if (s.type === 'spring') {

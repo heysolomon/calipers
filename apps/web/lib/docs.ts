@@ -321,13 +321,15 @@ Annotate mode lets you mark up the page you are looking at, then capture it with
 Switch to Annotate mode with \`4\`, then pick a tool in the options card or by key:
 
 - **Size** (\`M\`) — click an element to add its width and height.
-- **Note** (\`N\`) — click to write a note.
-- **Arrow** (\`A\`) — drag to draw an arrow.
+- **Note** (\`N\`) — click to write a note. \`Enter\` saves it, \`Esc\` cancels. Pick the text size (S, M, L, XL) in the options card.
+- **Arrow** (\`A\`) — drag to draw an arrow. Hold \`Shift\` to lock the angle to 15° steps.
 - **Pen** (\`P\`) — draw freehand.
 
 ## Editing
 
-- Right-click an annotation to remove it.
+- **Arrows** stay editable: drag either end to re-aim it, drag the middle to bend it into a curve, or drag the line to move it.
+- **Notes** can be dragged to move them; pointing at one shows a delete button on its corner.
+- Right-click any annotation to remove it.
 - \`Del\` / \`Backspace\` clears all annotations.
 - \`Cmd+Z\` / \`Ctrl+Z\` undoes the last change.
 

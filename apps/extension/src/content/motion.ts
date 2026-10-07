@@ -23,6 +23,8 @@ export const tuning = {
   strokeAlpha: 0.75,
   /** Fill once an element is clicked or pinned — visibly darker than hover. */
   selectedFillAlpha: 0.14,
+  /** Seconds for a guide to settle onto (or let go of) an edge it snaps to. */
+  snapSettle: 0.16,
   /** Seconds for a measurement line to draw from the first element to the second. */
   lineDraw: 0.42,
 };
@@ -138,4 +140,70 @@ export function springFromDuration(visualDuration: number, bounce: number): Spri
   const stiffness = root * root;
   const damping = 2 * Math.min(1, Math.max(0.05, 1 - bounce)) * Math.sqrt(stiffness);
   return { stiffness, damping, mass: 1 };
+}
+
+/**
+ * Eases a line into and out of a snap, without ever lagging the pointer.
+ *
+ * While nothing changes about what the line is attached to, it sits exactly on
+ * its target. When that changes — it catches an edge, lets go of one, or moves
+ * to another — it glides to the new position instead of jumping. The glide is
+ * exponential: quick to leave, gentle to arrive, and it can be interrupted at
+ * any point without a visible restart, which a fixed-duration curve cannot do.
+ */
+export class SnapEase {
+  private shown: number | null = null;
+  private key: number | null = null;
+  private attached = true;
+  private glow = 0;
+  private last = 0;
+
+  reset(): void {
+    this.shown = null;
+    this.attached = true;
+    this.glow = 0;
+  }
+
+  /**
+   * @param target  where the line belongs right now
+   * @param snapKey what it is snapped to (the edge position), or null when it is following the pointer
+   * @returns the position to draw at, and 0–1 for how strongly to draw it
+   */
+  step(target: number, snapKey: number | null, now = performance.now()): { at: number; glow: number } {
+    const dt = Math.min(0.05, (now - this.last) / 1000);
+    this.last = now;
+    const goalGlow = snapKey === null ? 0 : 1;
+
+    const still = !tuning.enabled || tuning.snapSettle <= 0 || prefersReducedMotion();
+    if (this.shown === null || still) {
+      this.shown = target;
+      this.key = snapKey;
+      this.attached = true;
+      this.glow = goalGlow;
+      return { at: target, glow: goalGlow };
+    }
+
+    if (snapKey !== this.key) {
+      this.key = snapKey;
+      this.attached = false;
+    }
+
+    // About four time-constants to settle, so the constant is a quarter of the settle time.
+    const k = 1 - Math.exp(-dt / (tuning.snapSettle / 4));
+    this.glow += (goalGlow - this.glow) * k;
+    if (Math.abs(goalGlow - this.glow) < 0.02) this.glow = goalGlow;
+
+    if (this.attached) {
+      this.shown = target;
+    } else {
+      this.shown += (target - this.shown) * k;
+      if (Math.abs(target - this.shown) < 0.25) {
+        this.shown = target;
+        this.attached = true;
+      }
+    }
+
+    if (!this.attached || this.glow !== goalGlow) markActive();
+    return { at: this.shown, glow: this.glow };
+  }
 }

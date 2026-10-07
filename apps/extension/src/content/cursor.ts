@@ -12,7 +12,7 @@ let cursorEl: HTMLDivElement | null = null;
 const OFFSCREEN = -200;
 
 /** What the custom cursor should look like at the current pointer position. */
-export type CursorKind = 'crosshair' | 'text' | 'delete' | 'remove' | 'move-x' | 'move-y';
+export type CursorKind = 'crosshair' | 'text' | 'delete' | 'remove' | 'pen' | 'grab' | 'move-x' | 'move-y';
 
 /**
  * Modes can override cursor appearance (e.g. colour picker shows a native
@@ -42,7 +42,7 @@ let shownKind: CursorKind | null = null;
 let last = { x: OFFSCREEN, y: OFFSCREEN, overUI: true };
 
 const GLYPH_OF: Record<CursorKind, string | null> = {
-  crosshair: 'crosshair', text: null, delete: 'delete', remove: 'remove', 'move-x': 'move', 'move-y': 'move',
+  crosshair: 'crosshair', text: null, delete: 'delete', remove: 'remove', pen: 'pen', grab: 'grab', 'move-x': 'move', 'move-y': 'move',
 };
 
 /** Swap the visible mark. Glyphs cross-fade and scale so a change of meaning is noticeable. */
@@ -136,6 +136,18 @@ export function initCursor(): void {
         <svg width="22" height="22" viewBox="-11 -11 22 22" style="display:block;overflow:visible;flex-shrink:0;">
           <circle r="9.5" fill="#FF4500" stroke="#fff" stroke-width="1.5"/>
           <path d="M-4.25 0H4.25" stroke="#fff" stroke-width="1.75" stroke-linecap="round"/>
+        </svg>`)}
+      ${glyph('pen', false, `
+        <!-- Pencil with its tip exactly on the pointer -->
+        <svg width="18" height="18" viewBox="-9 -9 18 18" style="display:block;overflow:visible;flex-shrink:0;" stroke-linejoin="round" stroke-linecap="round">
+          <path d="M0 0L1.3 -4.4L10.2 -13.3a1.9 1.9 0 0 1 2.7 0l0.4 0.4a1.9 1.9 0 0 1 0 2.7L4.4 -1.3Z" fill="#fff" stroke="#fff" stroke-width="4"/>
+          <path d="M0 0L1.3 -4.4L10.2 -13.3a1.9 1.9 0 0 1 2.7 0l0.4 0.4a1.9 1.9 0 0 1 0 2.7L4.4 -1.3Z" fill="#fff" stroke="#FF4500" stroke-width="1.5"/>
+          <path d="M8.4 -11.5L11.5 -8.4" stroke="#FF4500" stroke-width="1.5"/>
+        </svg>`)}
+      ${glyph('grab', false, `
+        <svg width="18" height="18" viewBox="-9 -9 18 18" style="display:block;overflow:visible;flex-shrink:0;">
+          <circle r="6.5" fill="#fff"/>
+          <circle r="5" fill="#fff" stroke="#FF4500" stroke-width="1.75"/>
         </svg>`)}
       ${glyph('move', false, `
         <svg width="22" height="22" viewBox="-11 -11 22 22" style="display:block;overflow:visible;flex-shrink:0;" fill="none" stroke-linecap="round" stroke-linejoin="round">

@@ -9,6 +9,7 @@ import { setLabel, hideLabel, removeLabel, showToast } from '../labels';
 import { formatDistance, uid, isCalipersElement, toPageX, toPageY, toViewX, toViewY } from '../utils';
 import { loadGuides, saveGuides, guidePageKey } from '../storage';
 import { addRenderer, markActive } from '../frame';
+import { SnapEase } from '../motion';
 import { setCursorResolver, refreshCursor } from '../cursor';
 import { setSegmented } from '../tokens';
 import { onPageChange } from '../page-scope';
@@ -279,7 +280,14 @@ export function paintPlacedGuides(
   for (const guide of state.guides) {
     const hovered = guide.id === state.hoveredId || guide.id === state.draggingId;
     const viewPos = guideViewPos(guide);
-    drawGuide(ctx, guide.axis, viewPos, hovered);
+    // A guide being dragged eases onto and off the edges it snaps to. Its stored
+    // position is already the snapped one; only what is drawn is smoothed.
+    if (guide.id === state.draggingId && press?.moved) {
+      const line = dragEase.step(viewPos, state.snapTarget);
+      drawGuide(ctx, guide.axis, line.at, Math.max(line.glow, 0.6));
+    } else {
+      drawGuide(ctx, guide.axis, viewPos, hovered);
+    }
 
     const labelName = `persist-guide-${guide.id}`;
     if (!state.showLabels) continue;
@@ -434,6 +442,11 @@ function findSnapPosition(
 interface Preview { x: number; y: number; snappedX: boolean; snappedY: boolean }
 
 let preview: Preview = { x: 0, y: 0, snappedX: false, snappedY: false };
+
+// Snapping is eased, not jumped: one smoother per preview line, one for a guide being dragged.
+const previewEaseX = new SnapEase();
+const previewEaseY = new SnapEase();
+const dragEase = new SnapEase();
 let previewKey = '';
 
 function updatePreview(): Preview {
@@ -590,6 +603,7 @@ function onMouseDown(e: MouseEvent): void {
 
 function onMouseUp(): void {
   if (!state.draggingId) return;
+  dragEase.reset();
   const guide = state.guides.find((g) => g.id === state.draggingId);
   const p = press;
   press = null;
@@ -643,15 +657,20 @@ function render(): void {
   const quiet = hoverSuppressed();
   const at = overGuide || quiet ? null : updatePreview();
   if (at) {
+    // Each line glides onto an edge it catches and off one it lets go of.
     if (state.placement === 'both' || state.placement === 'horizontal') {
-      drawGuide(ctx, 'horizontal', at.y, at.snappedY);
+      const line = previewEaseY.step(at.y, at.snappedY ? at.y : null);
+      drawGuide(ctx, 'horizontal', line.at, line.glow);
     }
     if (state.placement === 'both' || state.placement === 'vertical') {
-      drawGuide(ctx, 'vertical', at.x, at.snappedX);
+      const line = previewEaseX.step(at.x, at.snappedX ? at.x : null);
+      drawGuide(ctx, 'vertical', line.at, line.glow);
     }
+  } else {
+    // Hidden: start fresh next time instead of gliding in from where it last was.
+    previewEaseX.reset();
+    previewEaseY.reset();
   }
-
-  if (state.snapTarget !== null && dragged) drawGuide(ctx, dragged.axis, state.snapTarget, true);
 
   if (overGuide && !moving && !quiet) {
     setLabel(labelContainer, 'guide-hint', 'Click to delete · Drag to move', state.mouseX + 16, state.mouseY + 18);
