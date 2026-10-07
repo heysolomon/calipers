@@ -75,7 +75,7 @@ Raval is MIT-licensed and fully open source. No account required. No data collec
 Install Raval and bring pixel-perfect precision to every webpage you work on.
 
 Website: https://raval.solomonakuson.com
-GitHub: https://github.com/heysolomon/calipers
+GitHub: https://github.com/heysolomon/raval
 ```
 
 ## Category

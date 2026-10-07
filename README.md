@@ -8,9 +8,9 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-install-blue?style=flat-square&logo=google-chrome)](https://chromewebstore.google.com/detail/raval/anocimjcbeijomifkdcdkafdjphcdale)
-[![GitHub Stars](https://img.shields.io/github/stars/heysolomon/calipers?style=flat-square&color=4A9EFF)](https://github.com/heysolomon/calipers/stargazers)
-[![GitHub Issues](https://img.shields.io/github/issues/heysolomon/calipers?style=flat-square)](https://github.com/heysolomon/calipers/issues)
-[![Contributors](https://img.shields.io/github/contributors/heysolomon/calipers?style=flat-square)](https://github.com/heysolomon/calipers/graphs/contributors)
+[![GitHub Stars](https://img.shields.io/github/stars/heysolomon/raval?style=flat-square&color=4A9EFF)](https://github.com/heysolomon/raval/stargazers)
+[![GitHub Issues](https://img.shields.io/github/issues/heysolomon/raval?style=flat-square)](https://github.com/heysolomon/raval/issues)
+[![Contributors](https://img.shields.io/github/contributors/heysolomon/raval?style=flat-square)](https://github.com/heysolomon/raval/graphs/contributors)
 
 </div>
 
@@ -47,8 +47,8 @@ Also available: [companion website & docs](https://raval.solomonakuson.com) · [
 
 ```bash
 # 1. Clone
-git clone https://github.com/heysolomon/calipers.git
-cd calipers
+git clone https://github.com/heysolomon/raval.git
+cd raval
 
 # 2. Install dependencies
 pnpm install
@@ -122,20 +122,20 @@ After running the extension dev server, load `apps/extension/dist/` as an unpack
 
 Contributions of all kinds are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, branch naming conventions, commit format, and the PR process.
 
-Good first issues are labelled [`good first issue`](https://github.com/heysolomon/calipers/labels/good%20first%20issue).
+Good first issues are labelled [`good first issue`](https://github.com/heysolomon/raval/labels/good%20first%20issue).
 
 ---
 
 ## Roadmap
 
-See [ROADMAP.md](ROADMAP.md) for planned features, or track progress on the [GitHub Projects board](https://github.com/heysolomon/calipers/projects).
+See [ROADMAP.md](ROADMAP.md) for planned features, or track progress on the [GitHub Projects board](https://github.com/heysolomon/raval/projects).
 
 ---
 
 ## Community
 
-- **Bugs & features:** [GitHub Issues](https://github.com/heysolomon/calipers/issues)
-- **Discussion:** [GitHub Discussions](https://github.com/heysolomon/calipers/discussions)
+- **Bugs & features:** [GitHub Issues](https://github.com/heysolomon/raval/issues)
+- **Discussion:** [GitHub Discussions](https://github.com/heysolomon/raval/discussions)
 - **Website & docs:** [raval.solomonakuson.com](https://raval.solomonakuson.com)
 
 ---

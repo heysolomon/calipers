@@ -25,7 +25,7 @@ Raval is a browser extension for designers and frontend developers who need pixe
 
 - Chrome Web Store: https://chromewebstore.google.com/detail/raval/anocimjcbeijomifkdcdkafdjphcdale
 - Website: https://raval.solomonakuson.com
-- GitHub (open source, MIT): https://github.com/heysolomon/calipers
+- GitHub (open source, MIT): https://github.com/heysolomon/raval
 
 ## How it compares
 

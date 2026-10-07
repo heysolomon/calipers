@@ -70,7 +70,7 @@ Raval is available as a Chrome extension from the Web Store, or you can build it
 
 \`\`\`bash
 git clone ${GITHUB_URL}.git
-cd calipers
+cd raval
 pnpm install
 pnpm build --filter=@raval/extension
 \`\`\`
@@ -444,7 +444,7 @@ All contributions are welcome — code, documentation, bug reports, feature requ
 
 \`\`\`bash
 git clone ${GITHUB_URL}.git
-cd calipers
+cd raval
 pnpm install
 pnpm dev --filter=@raval/extension
 \`\`\`

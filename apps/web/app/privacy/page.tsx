@@ -130,12 +130,12 @@ export default function PrivacyPage(): JSX.Element {
         <p style={{ fontSize: '16px', color: 'var(--text-body)', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
           Raval is fully open source. You can inspect every line of code at{' '}
           <a
-            href="https://github.com/heysolomon/calipers"
+            href="https://github.com/heysolomon/raval"
             target="_blank"
             rel="noopener noreferrer"
             className="lp-link"
           >
-            github.com/heysolomon/calipers
+            github.com/heysolomon/raval
           </a>{' '}
           and verify these claims yourself.
         </p>
@@ -145,7 +145,7 @@ export default function PrivacyPage(): JSX.Element {
         <p style={{ fontSize: '16px', color: 'var(--text-body)', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
           If you have questions about this policy, open an issue on{' '}
           <a
-            href="https://github.com/heysolomon/calipers/issues"
+            href="https://github.com/heysolomon/raval/issues"
             target="_blank"
             rel="noopener noreferrer"
             className="lp-link"

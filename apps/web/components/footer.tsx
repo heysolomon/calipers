@@ -6,7 +6,7 @@ const LINKS = [
   { label: 'Alternatives', href: '/alternatives/page-ruler' },
   { label: 'Changelog',    href: '/changelog' },
   { label: 'Privacy',      href: '/privacy' },
-  { label: 'GitHub',       href: 'https://github.com/heysolomon/calipers', external: true },
+  { label: 'GitHub',       href: 'https://github.com/heysolomon/raval', external: true },
 ] as const;
 
 export function Footer() {
