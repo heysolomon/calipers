@@ -37,42 +37,39 @@ Raval — Measure & Inspect Web Pages
 ## Short description (max 132 characters)
 
 ```
-Measure pixel distances, inspect element sizes, and check alignment on any webpage. Free, open source.
+Measure, inspect and annotate any webpage: sizes, gaps, fonts, colours and guides. Free and open source.
 ```
 
 ## Detailed description
 
 ```
-Raval is a free, open-source Chrome extension for designers and frontend developers who need pixel-perfect measurements on live web pages.
+Raval is a free, open-source Chrome extension for looking closely at any webpage. Open it on a page and you can read sizes, measure gaps, check fonts and colours, line things up with guides, and mark up what you find. No screenshots, no switching apps, no digging through DevTools.
 
-Measure spacing, inspect dimensions, and verify alignment — without screenshots, without switching apps, and without digging through DevTools.
+Raval used to be called Calipers. It is the same extension with a new name, and your saved guides and settings carry over.
 
-━━━ MEASURE DISTANCE BETWEEN ELEMENTS ━━━
-Click two elements and instantly see the pixel gap between their closest edges. Pin up to 5 elements and measure every pair at once. Copy any value to your clipboard with one click.
+INSPECT
+Hover over anything to see its width and height. Click a piece of text or an element to see its font, size, weight and line height, its colours in HEX, RGB or HSL, and its margin, padding, border and corner radius. Click any value to copy it.
 
-━━━ INSPECT ELEMENT DIMENSIONS ━━━
-Hover over any element to see its exact width × height. View typography details, CSS selector path, and distances to the viewport edges — all overlaid on the page.
+MEASURE
+Click one element, then another, and Raval shows the gap between them in pixels. Pin up to five at a time to check a whole row or column. Click a pinned element again to remove it.
 
-━━━ ALIGNMENT GUIDES ━━━
-Drop horizontal and vertical guide lines anywhere on the page. Drag them into position with snap-to-element-edge support. Guides persist across sessions so you can switch modes without losing your layout.
+GUIDES
+Place horizontal and vertical guides anywhere on the page. They snap to the edges of nearby elements. Click a guide to delete it, or drag it to move it. Guides are saved for each page, so they are still there when you come back.
 
-━━━ BOX MODEL OVERLAY ━━━
-Visualise margin, padding, border, and content as colour-coded rings directly on the element. Toggle on/off with a single keystroke.
+ANNOTATE
+Mark up the page as you review it: size callouts, notes, arrows you can bend, and a freehand pen, in a choice of colours. Right-click anything to remove it.
 
-━━━ MORE TOOLS ━━━
-• Colour picker — sample and copy colours as HEX, RGB, or HSL
-• Spacing grid — show all gaps between sibling elements at once
-• Design tokens — extract CSS custom properties and export as JSON
-• Screenshot export — capture the viewport with measurements baked in
-• Ruler overlay — pixel rulers along viewport edges with crosshair
+ALSO INCLUDED
+• Screenshots: save the whole view or just a region, with your measurements and notes on it
+• Design tokens: list a page's CSS custom properties and export them as JSON
+• Rulers: pixel rulers along the edges of the window
+• Undo: Cmd/Ctrl+Z works in Measure, Guides and Annotate
 
-━━━ KEYBOARD-FIRST ━━━
-Every action has a shortcut. Switch modes with 1–5, toggle overlays with B, export screenshots with S, and deactivate with Esc. Built for speed.
+KEYBOARD SHORTCUTS
+Open Raval with Alt+Shift+C (Option+Shift+C on a Mac), or click its icon. Press 1 to 4 to switch between Inspect, Measure, Guides and Annotate, S for a screenshot, ? to see every shortcut, and Esc to close.
 
-━━━ FREE & OPEN SOURCE ━━━
-Raval is MIT-licensed and fully open source. No account required. No data collection. Your preferences are stored locally in your browser.
-
-Install Raval and bring pixel-perfect precision to every webpage you work on.
+FREE AND OPEN SOURCE
+Raval is MIT licensed. There is no account and no data collection. Your settings and guides are stored only in your browser.
 
 Website: https://raval.solomonakuson.com
 GitHub: https://github.com/heysolomon/raval
