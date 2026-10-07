@@ -35,8 +35,8 @@ export default function FrontendQaPage() {
         in pixels. Click the label to copy the value to your clipboard.
       </BodyText>
       <BodyText>
-        For broader checks, use Spacing Grid mode (5) to see all gaps between sibling elements at once. Toggle
-        the box model overlay (B) to verify padding and margin values match the design system.
+        For broader checks, pin up to five elements in Measure mode to see every gap between them at once. Click
+        an element in Inspect mode to verify its padding and margin values match the design system.
       </BodyText>
 
       <SectionLabel label="Before you ship" />

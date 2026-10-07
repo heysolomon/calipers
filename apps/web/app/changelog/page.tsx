@@ -26,11 +26,15 @@ const SECTION_ORDER: SectionName[] = ['Added', 'Changed', 'Fixed', 'Removed'];
 
 const entries: ChangelogEntry[] = [
   {
-    version: 'Unreleased',
+    version: '0.2.0',
     date: null,
     preRelease: true,
     sections: {
       Added: [
+        'Inspect details — click text or an element for its typography, colours, and box values, each in a collapsible section',
+        'Undo — Cmd/Ctrl+Z reverses changes in Measure, Guides, and Annotate',
+        'Guides — click a guide to delete it, drag to move it; guides are now kept per page',
+        'Toolbar — a single compact bar with options that open on demand',
         'Annotate mode — notebook-style UI critique with size callouts, notes, arrows, freehand, and PNG export',
         'Canvas layers — guides and measurements stay visible across mode switches until cleared',
         'Guide placement — choose Both, Horizontal only, or Vertical only (H / V / C)',
@@ -43,7 +47,17 @@ const entries: ChangelogEntry[] = [
         'Accessibility auditing — contrast ratio checker and touch target size validator (WCAG 2.1 AA/AAA)',
         'Changelog diff mode — visually compare how element sizes changed between two page snapshots',
       ],
+      Changed: [
+        'Colours is now part of Inspect, and Spacing grid is removed in favour of Measure; modes are Inspect, Measure, Guides, Annotate on keys 1–4',
+        'The box model overlay on the page is replaced by the Box section in Inspect details',
+        'Highlights, tabs, tooltips, and notifications share one lighter design',
+        'Calipers redraws only while something is happening, and the cursor and labels move without forcing layout',
+        'Screenshots no longer include the Calipers toolbar, cursor, or notifications',
+      ],
       Fixed: [
+        'Clicking the extension icon now works in tabs that were open before Calipers was installed or updated',
+        'Number-key mode shortcuts now update the toolbar',
+        'Guides no longer appear on other sites or pages',
         'Guides cleared with right-click, Del/Backspace, or Clear all now stay deleted after reopening Calipers',
       ],
     },

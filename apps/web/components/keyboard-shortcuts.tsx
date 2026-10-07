@@ -7,14 +7,13 @@ const shortcuts = [
   { keys: ['1'], description: 'Switch to Inspect mode' },
   { keys: ['2'], description: 'Switch to Measure mode' },
   { keys: ['3'], description: 'Switch to Guides mode' },
-  { keys: ['4'], description: 'Switch to Colour picker mode' },
-  { keys: ['5'], description: 'Switch to Spacing grid mode' },
-  { keys: ['B'], description: 'Toggle box model overlay' },
+  { keys: ['4'], description: 'Switch to Annotate mode' },
+  { keys: ['R'], description: 'Toggle rulers' },
   { keys: ['D'], description: 'Open design token panel' },
-  { keys: ['C'], description: 'Copy current measurement' },
+  { keys: ['⌘', 'Z'], description: 'Undo in Measure, Guides, and Annotate', platform: '/ Ctrl+Z' },
   { keys: ['S'], description: 'Take screenshot' },
   { keys: ['?'], description: 'Show all shortcuts' },
-  { keys: ['Esc'], description: 'Deactivate / cancel' },
+  { keys: ['Esc'], description: 'Close what is open, then Calipers' },
 ];
 
 export function KeyboardShortcuts() {

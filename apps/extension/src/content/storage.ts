@@ -1,12 +1,13 @@
 /**
  * Chrome storage helpers — persist guides, panel position, and settings across sessions.
  */
-import type { Guide } from '@calipers/shared';
+import type { Guide, Settings, SettingKey } from '@calipers/shared';
+import { SETTING_STORAGE_KEYS, settingsFromStorage } from '@calipers/shared';
+import { pageId } from './page-scope';
 
-const KEY_GUIDES     = 'calipers_guides_doc';
-const KEY_GUIDES_LEGACY = 'calipers_guides';
-const KEY_BOX_MODEL  = 'calipers_show_box_model';
-const KEY_SNAP       = 'calipers_snap_to_elements';
+const KEY_GUIDES_PAGE = 'calipers_guides:';
+/** Pre-per-page lists shared by every site. */
+const KEYS_GUIDES_GLOBAL = ['calipers_guides_doc', 'calipers_guides'];
 const KEY_PANEL_POS  = 'calipers_panel_pos';
 
 export interface PanelPosition {
@@ -15,26 +16,31 @@ export interface PanelPosition {
 }
 
 // ─── Guides ───────────────────────────────────────────────────────────────────
+// Guides belong to the page they were drawn on. Each page gets its own storage
+// entry, so nothing drawn on one site or route shows up on another.
 
-export function loadGuides(): Promise<Guide[]> {
+export function guidePageKey(): string {
+  return `${KEY_GUIDES_PAGE}${pageId()}`;
+}
+
+export function loadGuides(pageKey: string): Promise<Guide[]> {
   return new Promise((resolve) => {
-    chrome.storage.local.get([KEY_GUIDES, KEY_GUIDES_LEGACY], (result) => {
-      const modern = result[KEY_GUIDES] as Guide[] | undefined;
-      if (modern) {
-        resolve(modern);
-        return;
+    chrome.storage.local.get([pageKey, ...KEYS_GUIDES_GLOBAL], (result) => {
+      // Older versions kept one list for every site. It cannot be attributed
+      // to a page, so it is dropped rather than shown everywhere.
+      if (KEYS_GUIDES_GLOBAL.some((k) => result[k] != null)) {
+        void chrome.storage.local.remove(KEYS_GUIDES_GLOBAL);
       }
-      // Drop legacy viewport-space guides — positions would be wrong after scroll.
-      if (result[KEY_GUIDES_LEGACY] != null) {
-        void chrome.storage.local.remove(KEY_GUIDES_LEGACY);
-      }
-      resolve([]);
+      const guides = result[pageKey] as Guide[] | undefined;
+      resolve(Array.isArray(guides) ? guides : []);
     });
   });
 }
 
-export function saveGuides(guides: Guide[]): Promise<void> {
-  return chrome.storage.local.set({ [KEY_GUIDES]: guides });
+export function saveGuides(pageKey: string, guides: Guide[]): Promise<void> {
+  // No guides, no entry — pages you only visited leave nothing behind.
+  if (guides.length === 0) return chrome.storage.local.remove(pageKey);
+  return chrome.storage.local.set({ [pageKey]: guides });
 }
 
 // ─── Panel position ───────────────────────────────────────────────────────────
@@ -64,18 +70,14 @@ export function savePanelPosition(pos: PanelPosition): void {
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
 
-export function loadSettings(): Promise<{ showBoxModel: boolean; snapToElements: boolean }> {
+export function loadSettings(): Promise<Settings> {
   return new Promise((resolve) => {
-    chrome.storage.local.get([KEY_BOX_MODEL, KEY_SNAP], (result) => {
-      resolve({
-        showBoxModel:    (result[KEY_BOX_MODEL] as boolean | undefined) ?? false,
-        snapToElements:  (result[KEY_SNAP]      as boolean | undefined) ?? true,
-      });
+    chrome.storage.local.get(Object.values(SETTING_STORAGE_KEYS), (result) => {
+      resolve(settingsFromStorage(result));
     });
   });
 }
 
-export function saveSetting(key: 'showBoxModel' | 'snapToElements', value: boolean): void {
-  const storageKey = key === 'showBoxModel' ? KEY_BOX_MODEL : KEY_SNAP;
-  void chrome.storage.local.set({ [storageKey]: value });
+export function saveSetting(key: SettingKey, value: boolean): void {
+  void chrome.storage.local.set({ [SETTING_STORAGE_KEYS[key]]: value });
 }

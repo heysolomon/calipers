@@ -6,9 +6,13 @@
 import type { Rect } from '@calipers/shared';
 import type { OverlayElements } from '../overlay';
 import { getElementAtPoint, getElementRect } from '../detector';
-import { clearCanvas, drawRulers } from '../renderer';
+import { clearCanvas, drawRulers, drawElementHighlight } from '../renderer';
 import { isCalipersElement, uid, toPageX, toPageY, toViewX, toViewY } from '../utils';
 import { showToast } from '../labels';
+import { BoxSpring, boxToRect } from '../motion';
+import { setSegmented, setSwatches } from '../tokens';
+import { onPageChange, createPageShelf } from '../page-scope';
+import { addRenderer, markActive } from '../frame';
 
 export type AnnotateTool = 'measure' | 'note' | 'arrow' | 'pen';
 
@@ -69,7 +73,6 @@ interface AnnotateState {
   hoveredRect: Rect | null;
   mouseX: number;
   mouseY: number;
-  rafId: number | null;
   drawing: boolean;
   interactive: boolean;
   /** Drafts use viewport coords while drawing. */
@@ -89,7 +92,6 @@ const state: AnnotateState = {
   hoveredRect: null,
   mouseX: 0,
   mouseY: 0,
-  rafId: null,
   drawing: false,
   interactive: false,
   draftArrow: null,
@@ -98,6 +100,8 @@ const state: AnnotateState = {
 };
 
 let overlay: OverlayElements | null = null;
+let stopLoop: (() => void) | null = null;
+const hoverBox = new BoxSpring();
 let noteLayer: HTMLDivElement | null = null;
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -140,6 +144,7 @@ export function getAnnotateColor(): string {
 
 export function clearAnnotations(): void {
   commitNoteDraft(true);
+  if (state.items.length > 0) remember();
   state.items = [];
   if (noteLayer) noteLayer.innerHTML = '';
   showToast('Annotations cleared');
@@ -180,6 +185,7 @@ export function initAnnotateMode(o: OverlayElements): void {
   document.addEventListener('mousemove', onMouseMove, { passive: false });
   document.addEventListener('mouseup', onMouseUp, true);
   document.addEventListener('keydown', onKeyDown, true);
+  document.addEventListener('contextmenu', onContextMenu, true);
   scheduleFrame();
 }
 
@@ -192,14 +198,102 @@ export function destroyAnnotateMode(): void {
   document.removeEventListener('mousemove', onMouseMove);
   document.removeEventListener('mouseup', onMouseUp, true);
   document.removeEventListener('keydown', onKeyDown, true);
-  if (state.rafId !== null) cancelAnimationFrame(state.rafId);
-  state.rafId = null;
+  document.removeEventListener('contextmenu', onContextMenu, true);
+  stopLoop?.();
+  stopLoop = null;
   overlay = null;
   state.hoveredRect = null;
   state.drawing = false;
   state.draftArrow = null;
   state.draftStroke = [];
 }
+
+// ─── Undo and single delete ───────────────────────────────────────────────────
+
+const HISTORY_LIMIT = 50;
+const history: Annotation[][] = [];
+
+/** Snapshot the annotations before changing them. */
+function remember(): void {
+  history.push([...state.items]);
+  if (history.length > HISTORY_LIMIT) history.shift();
+}
+
+/** Step back one change. Returns false when there is nothing to undo. */
+export function undoAnnotation(): boolean {
+  const previous = history.pop();
+  if (!previous) return false;
+  state.items = previous.filter((i) => i.kind !== 'measure' || i.el.isConnected);
+  rebuildNoteDom();
+  markActive();
+  return true;
+}
+
+const HIT_SLOP = 8;
+
+function distToSegment(px: number, py: number, x1: number, y1: number, x2: number, y2: number): number {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len2 = dx * dx + dy * dy;
+  const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / len2));
+  return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+}
+
+/** Topmost annotation under a viewport point, if any. */
+function annotationAt(x: number, y: number): Annotation | null {
+  const px = toPageX(x);
+  const py = toPageY(y);
+  for (let i = state.items.length - 1; i >= 0; i--) {
+    const item = state.items[i]!;
+    if (item.kind === 'arrow') {
+      if (distToSegment(px, py, item.x1, item.y1, item.x2, item.y2) <= HIT_SLOP) return item;
+    } else if (item.kind === 'stroke') {
+      for (let j = 1; j < item.points.length; j++) {
+        const a = item.points[j - 1]!;
+        const b = item.points[j]!;
+        if (distToSegment(px, py, a.x, a.y, b.x, b.y) <= HIT_SLOP) return item;
+      }
+    } else if (item.kind === 'note') {
+      const r = noteLayer?.querySelector(`[data-ann-id="${item.id}"]`)?.getBoundingClientRect();
+      if (r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return item;
+    } else {
+      const r = getElementRect(item.el);
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return item;
+    }
+  }
+  return null;
+}
+
+/** Right-click removes the one annotation under the pointer. */
+function onContextMenu(e: MouseEvent): void {
+  if (isCalipersElement(e.target as Element)) return;
+  const item = annotationAt(e.clientX, e.clientY);
+  if (!item) return;
+  e.preventDefault();
+  e.stopPropagation();
+  remember();
+  state.items = state.items.filter((i) => i !== item);
+  rebuildNoteDom();
+  markActive();
+}
+
+// ─── Page scope ───────────────────────────────────────────────────────────────
+// Annotations stay with the page they were made on, and come back if you
+// return to it during the same visit.
+
+const annotationShelf = createPageShelf<Annotation>();
+onPageChange((from, to) => {
+  commitNoteDraft(true);
+  history.length = 0;
+  const leaving = state.items;
+  state.items = annotationShelf
+    .swap(from, to, leaving)
+    .filter((i) => i.kind !== 'measure' || i.el.isConnected);
+  state.draftArrow = null;
+  state.draftStroke = [];
+  state.drawing = false;
+  rebuildNoteDom();
+});
 
 // ─── Note DOM ─────────────────────────────────────────────────────────────────
 
@@ -262,6 +356,7 @@ function commitNoteDraft(discardEmpty = false): void {
     if (!discardEmpty) return;
     return;
   }
+  remember();
   state.items.push({ id: uid(), kind: 'note', x, y, text, color });
   rebuildNoteDom();
 }
@@ -345,21 +440,11 @@ function onKeyDown(e: KeyboardEvent): void {
 }
 
 function syncToolUi(): void {
-  document.querySelectorAll<HTMLElement>('[data-annotate-tool]').forEach((btn) => {
-    const active = btn.dataset['annotateTool'] === state.tool;
-    btn.style.background = active ? '#fff' : 'transparent';
-    btn.style.color = active ? '#000' : '#737373';
-    btn.style.boxShadow = active ? '0 1px 2px rgba(0,0,0,0.12)' : 'none';
-  });
+  setSegmented(document, 'annotate-tool', state.tool);
 }
 
 function syncColorUi(): void {
-  document.querySelectorAll<HTMLElement>('[data-annotate-color]').forEach((btn) => {
-    const active = btn.dataset['annotateColor']?.toLowerCase() === state.color.toLowerCase();
-    btn.style.outline = active ? '2px solid #000' : '2px solid transparent';
-    btn.style.outlineOffset = '1px';
-    btn.style.transform = active ? 'scale(1.08)' : 'scale(1)';
-  });
+  setSwatches(document, 'annotate-color', state.color);
 }
 
 function onClick(e: MouseEvent): void {
@@ -383,9 +468,11 @@ function onClick(e: MouseEvent): void {
       (i) => i.kind === 'measure' && i.el === el,
     );
     if (existing >= 0) {
+      remember();
       state.items.splice(existing, 1);
       return;
     }
+    remember();
     state.items.push({ id: uid(), kind: 'measure', el, color: state.color });
   }
 }
@@ -434,6 +521,7 @@ function onMouseUp(e: MouseEvent): void {
   if (state.tool === 'arrow' && state.draftArrow) {
     const { x1, y1, x2, y2 } = state.draftArrow;
     if (Math.hypot(x2 - x1, y2 - y1) > 8) {
+      remember();
       state.items.push({
         id: uid(),
         kind: 'arrow',
@@ -448,6 +536,7 @@ function onMouseUp(e: MouseEvent): void {
   }
 
   if (state.tool === 'pen' && state.draftStroke.length > 1) {
+    remember();
     state.items.push({
       id: uid(),
       kind: 'stroke',
@@ -466,10 +555,8 @@ function onMouseUp(e: MouseEvent): void {
 
 function scheduleFrame(): void {
   if (!overlay || !state.interactive) return;
-  state.rafId = requestAnimationFrame(() => {
-    renderInteractive();
-    scheduleFrame();
-  });
+  stopLoop?.();
+  stopLoop = addRenderer(renderInteractive);
 }
 
 /** Ephemeral hover + drafts while annotate mode is active. */
@@ -478,9 +565,8 @@ function renderInteractive(): void {
   const { ctx } = overlay;
   clearCanvas(ctx);
 
-  if (state.hoveredRect && state.tool === 'measure') {
-    drawMeasure(ctx, state.hoveredRect, state.color, true);
-  }
+  const hover = hoverBox.step(state.tool === 'measure' ? state.hoveredRect : null);
+  if (hover) drawMeasure(ctx, boxToRect(hover), state.color, true, hover.opacity);
   if (state.draftArrow) {
     drawArrow(
       ctx,
@@ -532,15 +618,13 @@ function drawMeasure(
   rect: Rect,
   color: string,
   preview: boolean,
+  opacity = 1,
 ): void {
-  ctx.save();
-  ctx.strokeStyle = hexToRgba(color, 0.95);
-  ctx.fillStyle = hexToRgba(color, 0.12);
-  ctx.lineWidth = preview ? 1.25 : 1.5;
-  ctx.setLineDash(preview ? [4, 3] : []);
+  // Same hover → selected treatment as the other modes, in the annotation colour.
+  drawElementHighlight(ctx, rect, !preview, opacity, color);
 
-  ctx.fillRect(rect.left, rect.top, rect.width, rect.height);
-  ctx.strokeRect(rect.left + 0.5, rect.top + 0.5, rect.width - 1, rect.height - 1);
+  ctx.save();
+  ctx.globalAlpha = opacity;
 
   const hx = rect.right + 14;
   drawDimLine(ctx, hx, rect.top, hx, rect.bottom, String(Math.round(rect.height)), 'v', color);

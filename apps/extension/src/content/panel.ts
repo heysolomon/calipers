@@ -17,8 +17,15 @@ import {
   clearGuides,
   setGuidePlacement,
   getGuidePlacement,
+  setGuidesVisible,
+  setGuideLabelsVisible,
+  setSnapEnabled,
   type GuidePlacement,
 } from './modes/guides';
+import { setShowRulers } from './renderer';
+import { markActive } from './frame';
+import { withChromeHidden } from './capture-chrome';
+import type { SettingKey } from '@calipers/shared';
 import {
   clearAnnotations,
   setAnnotateTool,
@@ -29,13 +36,16 @@ import {
   type AnnotateTool,
 } from './modes/annotate';
 import { clearMeasurements } from './modes/measure';
-import { startRegionCapture } from './region-capture';
-import { loadPanelPosition, savePanelPosition, type PanelPosition } from './storage';
+import { startRegionCapture, cancelRegionCapture, isRegionCaptureActive } from './region-capture';
+import { loadPanelPosition, savePanelPosition, saveSetting, type PanelPosition } from './storage';
+import { UI, segmentedHTML, setSegmented, swatchHTML, setSwatches } from './tokens';
 
 const PANEL_ID = 'calipers-panel';
-/** Fixed popup width — mode/tool changes grow height only, never width. */
-const PANEL_WIDTH = 280;
-const TOKENS_WIDTH = PANEL_WIDTH;
+/** Estimate used only before the toolbar has been measured; the real width follows its buttons. */
+const PANEL_WIDTH = 316;
+/** Sub-cards are narrower than the toolbar and hang from its right edge, under the buttons that open them. */
+const TRAY_WIDTH = 228;
+const TOKENS_WIDTH = 280;
 const TOKENS_VIEW_HEIGHT = 374;
 /** Consistent inset from every viewport edge. */
 const PANEL_INSET = 16;
@@ -43,15 +53,15 @@ const PANEL_INSET = 16;
 // ─── Theme tokens ─────────────────────────────────────────────────────────────
 
 const T = {
-  bg:            '#ffffff',
-  border:        'rgba(0, 0, 0, 0.08)',
-  borderSubtle:  'rgba(0, 0, 0, 0.06)',
-  textPrimary:   '#000',
-  textSecondary: '#737373',
-  textMuted:     '#A3A3A3',
-  accent:        '#FF4500',
-  accentTint:    'rgba(255, 69, 0, 0.12)',
-  shadow:        '0 2px 8px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04)',
+  bg:            UI.bg,
+  border:        UI.border,
+  borderSubtle:  UI.borderSubtle,
+  textPrimary:   UI.textPrimary,
+  textSecondary: UI.textSecondary,
+  textMuted:     UI.textMuted,
+  accent:        UI.accent,
+  accentTint:    UI.accentTint,
+  shadow:        UI.shadow,
 };
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -59,7 +69,7 @@ const T = {
 const PANEL_CSS = `
   position: fixed;
   z-index: 2147483647;
-  width: ${PANEL_WIDTH}px;
+  width: max-content;
   max-width: calc(100vw - ${PANEL_INSET * 2}px);
   box-sizing: border-box;
   background: transparent;
@@ -73,7 +83,7 @@ const PANEL_CSS = `
   user-select: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  animation: calipers-panel-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: calipers-panel-in 0.25s cubic-bezier(0.34, 1.2, 0.64, 1) both;
   overflow: visible;
 `;
 
@@ -91,37 +101,39 @@ const RUBBER_DIM = 180;
 
 const KEYFRAMES = `
   @keyframes calipers-panel-in {
-    from { opacity: 0; transform: scale(0.92) translateY(-8px); }
+    from { opacity: 0; transform: scale(0.95) translateY(-6px); }
     to   { opacity: 1; transform: scale(1)    translateY(0);    }
   }
   @keyframes calipers-panel-out {
     from { opacity: 1; transform: scale(1)    translateY(0);    }
-    to   { opacity: 0; transform: scale(0.92) translateY(-8px); }
+    to   { opacity: 0; transform: scale(0.95) translateY(-6px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #calipers-panel, #calipers-panel * { animation: none !important; transition: none !important; }
   }
 `;
 
 // ─── Logo SVG (inline) ────────────────────────────────────────────────────────
 
-const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 256 256"><path d="M 256 256 L 128 256 L 0 128 L 128 128 Z M 256 128 L 128 128 L 0 0 L 128 0 Z" fill="currentColor"></path></svg>`;
-
-/** Six-dot grip — visible drag affordance in the panel header. */
-const GRIP_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="16" viewBox="0 0 12 16" fill="currentColor" aria-hidden="true"><circle cx="3" cy="2.5" r="1.4"/><circle cx="9" cy="2.5" r="1.4"/><circle cx="3" cy="8" r="1.4"/><circle cx="9" cy="8" r="1.4"/><circle cx="3" cy="13.5" r="1.4"/><circle cx="9" cy="13.5" r="1.4"/></svg>`;
+const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 256 256"><path d="M 256 256 L 128 256 L 0 128 L 128 128 Z M 256 128 L 128 128 L 0 0 L 128 0 Z" fill="currentColor"></path></svg>`;
 
 // ─── Mode icons (Hugeicons stroke style) ──────────────────────────────────────
 
-const SVG_ATTRS = `xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"`;
+const SVG_ATTRS = `xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"`;
 
 const MODE_ICONS: Record<string, string> = {
   inspect:     `<svg ${SVG_ATTRS}><path d="M5 3l5.5 17 2.5-5.5L18.5 12 5 3z"/><path d="M13 14.5l4.5 4.5"/></svg>`,
   measure:     `<svg ${SVG_ATTRS}><rect x="2" y="8" width="20" height="8" rx="1.5"/><line x1="6" y1="8" x2="6" y2="13"/><line x1="10" y1="8" x2="10" y2="11.5"/><line x1="14" y1="8" x2="14" y2="11.5"/><line x1="18" y1="8" x2="18" y2="13"/></svg>`,
   guides:      `<svg ${SVG_ATTRS}><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/><circle cx="12" cy="12" r="2.5"/></svg>`,
-  colorpicker: `<svg ${SVG_ATTRS}><path d="M14.5 6.5l3-3c.8-.8 2.2-.8 3 0 .8.8.8 2.2 0 3l-3 3"/><path d="M14.5 6.5L7 14l-3 3-.5 3.5 3.5-.5 3-3 7.5-7.5-3-3z"/><line x1="3.5" y1="20.5" x2="5.5" y2="18.5"/></svg>`,
-  spacing:     `<svg ${SVG_ATTRS}><line x1="4" y1="4" x2="4" y2="20"/><line x1="20" y1="4" x2="20" y2="20"/><rect x="8" y="8" width="8" height="8" rx="1.5"/><line x1="4" y1="12" x2="8" y2="12"/><line x1="16" y1="12" x2="20" y2="12"/></svg>`,
   annotate:    `<svg ${SVG_ATTRS}><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`,
 };
 
 const SCREENSHOT_ICON = `<svg ${SVG_ATTRS}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`;
 const REGION_ICON = `<svg ${SVG_ATTRS}><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>`;
+
+const SETTINGS_ICON = `<svg ${SVG_ATTRS}><path d="M4 8h2.75M11.25 8H20M4 16h8.75M17.25 16H20"/><circle cx="9" cy="8" r="2.25"/><circle cx="15" cy="16" r="2.25"/></svg>`;
+const MORE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5.5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18.5" cy="12" r="1.6"/></svg>`;
+const CLOSE_ICON = `<svg ${SVG_ATTRS}><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>`;
 
 // ─── Progressive disclosure — mode-contextual settings ────────────────────────
 
@@ -131,11 +143,9 @@ interface SettingDef {
 }
 
 const MODE_SETTINGS: Record<Mode, SettingDef[]> = {
-  inspect:     [{ id: 'boxModel', label: 'Box model'       }, { id: 'rulers', label: 'Rulers' }],
-  measure:     [{ id: 'boxModel', label: 'Box model'       }, { id: 'rulers', label: 'Rulers' }],
+  inspect:     [{ id: 'rulers',   label: 'Rulers'          }],
+  measure:     [{ id: 'rulers',   label: 'Rulers'          }],
   guides:      [{ id: 'guides', label: 'Show guides' }, { id: 'guideLabels', label: 'Show positions' }, { id: 'snap', label: 'Snap to elements' }, { id: 'rulers', label: 'Rulers' }],
-  colorpicker: [{ id: 'rulers',   label: 'Rulers'          }],
-  spacing:     [{ id: 'rulers',   label: 'Rulers'          }],
   annotate:    [{ id: 'rulers',   label: 'Rulers'          }],
 };
 
@@ -149,32 +159,20 @@ const ANNOTATE_TOOLS: { id: AnnotateTool; label: string; key: string }[] = [
 function annotateToolsHTML(active: AnnotateTool, activeColor: string): string {
   return `
     <div style="margin-bottom:4px;">
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:rgba(0,0,0,0.06);border-radius:7px;padding:3px;">
-        ${ANNOTATE_TOOLS.map((t) => {
-          const on = t.id === active;
-          return `<button data-annotate-tool="${t.id}" title="${t.label} (${t.key})" style="
-            padding:6px 0;border:none;border-radius:5px;cursor:pointer;font-family:inherit;
-            font-size:10px;font-weight:500;letter-spacing:-0.01em;outline:none;
-            background:${on ? '#fff' : 'transparent'};
-            color:${on ? T.textPrimary : T.textSecondary};
-            box-shadow:${on ? '0 1px 2px rgba(0,0,0,0.12)' : 'none'};
-          ">${t.label}</button>`;
-        }).join('')}
-      </div>
+      ${segmentedHTML('annotate-tool', ANNOTATE_TOOLS.map((t) => ({ id: t.id, label: t.label, title: `${t.label} (${t.key})` })), active)}
 
-      <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px;">
-        ${ANNOTATE_COLORS.map((c) => {
-          const on = c.hex.toLowerCase() === activeColor.toLowerCase();
-          return `<button data-annotate-color="${c.hex}" title="${c.label}" aria-label="${c.label}" aria-pressed="${on}" style="
-            width:18px;height:18px;border-radius:50%;border:1px solid rgba(0,0,0,0.12);
-            background:${c.hex};cursor:pointer;padding:0;outline:2px solid ${on ? '#000' : 'transparent'};
-            outline-offset:1px;transform:${on ? 'scale(1.08)' : 'scale(1)'};
-            transition:transform 0.12s ease, outline-color 0.12s ease;
-          "></button>`;
-        }).join('')}
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding:0 3px;height:26px;">
+        ${ANNOTATE_COLORS.map((c) => swatchHTML('annotate-color', c.hex, c.label, c.hex.toLowerCase() === activeColor.toLowerCase())).join('')}
       </div>
     </div>
   `;
+}
+
+/** Update the annotate controls in place so the tab pill slides instead of being rebuilt. */
+function updateAnnotateUi(tool: AnnotateTool, color: string): void {
+  if (!panelEl) return;
+  setSegmented(panelEl, 'annotate-tool', tool);
+  setSwatches(panelEl, 'annotate-color', color);
 }
 
 const GUIDE_PLACEMENTS: { id: GuidePlacement; label: string; key: string }[] = [
@@ -183,55 +181,16 @@ const GUIDE_PLACEMENTS: { id: GuidePlacement; label: string; key: string }[] = [
   { id: 'vertical',   label: 'V only', key: 'V' },
 ];
 
-const TAB_LAYOUT_EASE = 'cubic-bezier(0.4, 0, 0.2, 1)';
-
-function guidePlacementIndicatorLeft(index: number): string {
-  return `calc(3px + ${index} * ((100% - 6px) / 3))`;
-}
-
 function guideToolsHTML(active: GuidePlacement): string {
-  const idx = Math.max(0, GUIDE_PLACEMENTS.findIndex((t) => t.id === active));
   return `
     <div style="margin-bottom:4px;">
-      <div data-guide-placement-bar style="
-        position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:0;
-        background:rgba(0,0,0,0.06);border-radius:7px;padding:3px;
-      ">
-        <div data-guide-placement-indicator style="
-          position:absolute;top:3px;bottom:3px;
-          width:calc((100% - 6px) / 3);left:${guidePlacementIndicatorLeft(idx)};
-          background:#fff;border-radius:5px;
-          box-shadow:0 1px 2px rgba(0,0,0,0.12);
-          pointer-events:none;
-          transition:left 0.22s ${TAB_LAYOUT_EASE};
-        "></div>
-        ${GUIDE_PLACEMENTS.map((t) => {
-          const on = t.id === active;
-          return `<button data-guide-placement="${t.id}" title="${t.label} (${t.key})" aria-pressed="${on}" style="
-            position:relative;z-index:1;padding:6px 0;border:none;border-radius:5px;cursor:pointer;
-            font-family:inherit;font-size:10px;font-weight:500;letter-spacing:-0.01em;outline:none;
-            background:transparent;color:${on ? T.textPrimary : T.textSecondary};
-            transition:color 0.22s ${TAB_LAYOUT_EASE};
-          ">${t.label}</button>`;
-        }).join('')}
-      </div>
+      ${segmentedHTML('guide-placement', GUIDE_PLACEMENTS.map((t) => ({ id: t.id, label: t.label, title: `${t.label} (${t.key})` })), active)}
     </div>
   `;
 }
 
 function updateGuidePlacementUi(placement: GuidePlacement): void {
-  if (!panelEl) return;
-  const idx = Math.max(0, GUIDE_PLACEMENTS.findIndex((t) => t.id === placement));
-  const indicator = panelEl.querySelector<HTMLElement>('[data-guide-placement-indicator]');
-  if (indicator) {
-    indicator.style.transition = prefersReducedMotion() ? 'none' : `left 0.22s ${TAB_LAYOUT_EASE}`;
-    indicator.style.left = guidePlacementIndicatorLeft(idx);
-  }
-  panelEl.querySelectorAll<HTMLElement>('[data-guide-placement]').forEach((btn) => {
-    const on = btn.dataset['guidePlacement'] === placement;
-    btn.style.color = on ? T.textPrimary : T.textSecondary;
-    btn.setAttribute('aria-pressed', String(on));
-  });
+  if (panelEl) setSegmented(panelEl, 'guide-placement', placement);
 }
 
 // ─── Token types ──────────────────────────────────────────────────────────────
@@ -258,6 +217,10 @@ let panelEl: HTMLElement | null = null;
 let localState: ExtensionState   = { ...DEFAULT_STATE };
 let currentView: 'main' | 'tokens' = 'main';
 let moreMenuOpen = false;
+/** Settings card visibility. Hidden at rest; opens on demand or for modes with tools. */
+let trayOpen = false;
+/** The user's own choice, restored when leaving a mode that forces the card open. */
+let trayPinned = false;
 let allTokens: Token[]            = [];
 let activeTokenFilter: TokenFilter = 'all';
 let onDocPointerDown: ((e: MouseEvent) => void) | null = null;
@@ -272,7 +235,6 @@ function sendMsg(msg: Message): Promise<ExtensionState> {
 
 function getSettingValue(state: ExtensionState, id: string): boolean {
   switch (id) {
-    case 'boxModel':    return state.showBoxModel;
     case 'guides':      return state.showGuides;
     case 'guideLabels': return state.showGuideLabels;
     case 'rulers':      return state.showRulers;
@@ -281,9 +243,9 @@ function getSettingValue(state: ExtensionState, id: string): boolean {
   }
 }
 
-function trayVisibleFor(mode: Mode): boolean {
-  // Every mode has at least one setting; annotate/guides also show tool pickers.
-  return Boolean(MODE_SETTINGS[mode]?.length) || mode === 'annotate' || mode === 'guides';
+/** Annotate and guides have tool pickers you need in reach, so their card opens with the mode. */
+function modeNeedsTools(mode: Mode): boolean {
+  return mode === 'annotate' || mode === 'guides';
 }
 
 // ─── Token extraction ─────────────────────────────────────────────────────────
@@ -335,7 +297,7 @@ function exportTokensJson(): void {
   a.style.display = 'none';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  showToast('Exported tokens.json');
+  showToast('Exported tokens.json', { type: 'success' });
 }
 
 // ─── HTML builders ────────────────────────────────────────────────────────────
@@ -378,32 +340,25 @@ function settingRowHTML(def: SettingDef, checked: boolean, isLast: boolean): str
 function toolBtnStyle(active: boolean): string {
   return `
     position:relative;display:inline-flex;align-items:center;justify-content:center;
-    width:26px;height:26px;padding:0;border:none;border-radius:6px;
+    width:28px;height:28px;padding:0;border:none;border-radius:8px;
     background:${active ? T.accentTint : 'transparent'};
     color:${active ? T.accent : T.textSecondary};
     cursor:pointer;font-family:inherit;outline:none;flex-shrink:0;
-    transition:background 0.15s ease, color 0.15s ease;
+    transition:background 0.15s ease, color 0.15s ease, transform 0.1s ease;
   `;
 }
 
 function modeBtnHTML(id: Mode, label: string, shortcut: number, active: boolean): string {
   const icon = MODE_ICONS[id] ?? label;
-  return `<button data-mode="${id}" title="${label} (${shortcut})" aria-pressed="${active}" style="${toolBtnStyle(active)}">
-    ${icon}
-    <span style="
-      position:absolute;bottom:1px;right:2px;font-size:7px;font-weight:600;
-      line-height:1;color:${active ? T.accent : T.textMuted};pointer-events:none;
-      letter-spacing:-0.02em;
-    ">${shortcut}</span>
-  </button>`;
+  return `<button data-mode="${id}" data-tip="${label}" data-tip-key="${shortcut}" aria-label="${label}" aria-pressed="${active}" style="${toolBtnStyle(active)}">${icon}</button>`;
 }
 
-function actionBtnHTML(action: string, title: string, icon: string): string {
-  return `<button data-action="${action}" title="${title}" style="${toolBtnStyle(false)}">${icon}</button>`;
+function actionBtnHTML(action: string, label: string, icon: string, extraAttrs = ''): string {
+  return `<button data-action="${action}" data-tip="${label}" aria-label="${label}" ${extraAttrs} style="${toolBtnStyle(false)}">${icon}</button>`;
 }
 
 function dividerHTML(): string {
-  return `<div style="width:1px;height:16px;background:${T.border};margin:0 2px;flex-shrink:0;"></div>`;
+  return `<div style="width:1px;height:14px;background:${T.border};margin:0 4px;flex-shrink:0;"></div>`;
 }
 
 function surfaceCSS(extra = ''): string {
@@ -441,7 +396,7 @@ function moreMenuHTML(): string {
   `;
   return `
     <div data-more-menu style="
-      display:none;position:absolute;top:calc(100% + 6px);right:0;z-index:2;
+      display:none;position:absolute;top:calc(100% + 10px);right:0;z-index:2;
       min-width:180px;padding:4px 0;${surfaceCSS()}
     ">
       <button data-action="clear-guides" style="${item}">Clear guides</button>
@@ -462,88 +417,70 @@ function buildPanelHTML(state: ExtensionState): string {
     { id: 'inspect',     label: 'Inspect',  key: 1 },
     { id: 'measure',     label: 'Measure',  key: 2 },
     { id: 'guides',      label: 'Guides',   key: 3 },
-    { id: 'colorpicker', label: 'Colours',  key: 4 },
-    { id: 'spacing',     label: 'Spacing',  key: 5 },
-    { id: 'annotate',    label: 'Annotate', key: 6 },
+    { id: 'annotate',    label: 'Annotate', key: 4 },
   ];
-
-  const showTray = trayVisibleFor(state.mode);
 
   return `
     <style>${KEYFRAMES}</style>
     <div data-panel-root style="display:flex;flex-direction:column;align-items:stretch;gap:8px;">
 
-      <!-- Unified popup card -->
-      <div data-main-card style="
-        position:relative;display:flex;flex-direction:column;
-        width:100%;box-sizing:border-box;overflow:visible;${surfaceCSS()}
+      <!-- Toolbar pill — everything at rest lives in this one row; drag from any gap -->
+      <div data-main-card data-drag-handle style="
+        position:relative;display:flex;align-items:center;gap:0;
+        width:100%;height:40px;box-sizing:border-box;padding:0 6px;overflow:visible;
+        cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;
+        ${surfaceCSS('border-radius:20px;')}
       ">
-        <!-- Drag header (grip + brand) -->
-        <div data-drag-handle title="Drag to move" style="
-          display:flex;align-items:center;gap:8px;
-          padding:10px 10px 8px 12px;cursor:grab;touch-action:none;
-          -webkit-user-select:none;user-select:none;
-        ">
-          <span style="
-            display:inline-flex;align-items:center;justify-content:center;
-            width:18px;height:20px;color:${T.textMuted};flex-shrink:0;
-            pointer-events:none;
-          " aria-hidden="true">${GRIP_SVG}</span>
-          <span style="
-            display:inline-flex;align-items:center;gap:6px;
-            color:${T.textPrimary};pointer-events:none;flex:1;min-width:0;
-          ">
-            <span style="display:inline-flex;opacity:0.85;">${LOGO_SVG}</span>
-            <span style="font-size:12px;font-weight:600;letter-spacing:-0.03em;">Calipers</span>
-          </span>
-          <button data-action="close" title="Close" style="
-            display:inline-flex;align-items:center;justify-content:center;
-            width:28px;height:28px;padding:0;border:none;border-radius:7px;
-            background:transparent;color:${T.textMuted};cursor:pointer;
-            font-family:inherit;font-size:18px;line-height:1;outline:none;flex-shrink:0;
-          ">×</button>
+        <span aria-hidden="true" style="
+          display:inline-flex;align-items:center;justify-content:center;
+          width:22px;height:28px;color:${T.textPrimary};flex-shrink:0;pointer-events:none;
+        ">${LOGO_SVG}</span>
+
+        ${dividerHTML()}
+
+        <div data-toolbar style="display:flex;align-items:center;gap:0;flex-shrink:0;">
+          ${modes.map(({ id, label, key }) => modeBtnHTML(id, label, key, state.mode === id)).join('')}
         </div>
 
-        <div style="height:1px;background:${T.borderSubtle};margin:0 10px;flex-shrink:0;"></div>
+        ${dividerHTML()}
 
-        <!-- Mode + capture toolbar — single row, never wraps the ⋯ menu -->
-        <div data-toolbar style="
-          display:flex;align-items:center;gap:1px;padding:6px 6px;flex-wrap:nowrap;
-        ">
-          <div style="display:flex;align-items:center;gap:0;flex-shrink:0;">
-            ${modes.map(({ id, label, key }) => modeBtnHTML(id, label, key, state.mode === id)).join('')}
-          </div>
-
-          ${dividerHTML()}
-
-          <div style="display:flex;align-items:center;gap:0;flex-shrink:0;">
-            ${actionBtnHTML('screenshot', 'Screenshot', SCREENSHOT_ICON)}
-            ${actionBtnHTML('region', 'Region capture', REGION_ICON)}
-          </div>
-
-          ${dividerHTML()}
-
-          <div style="position:relative;display:flex;align-items:center;flex-shrink:0;margin-left:auto;">
-            <button data-action="toggle-more" title="More" aria-expanded="false" style="${toolBtnStyle(false)}">
-              <span style="font-size:16px;line-height:1;font-weight:600;letter-spacing:0.02em;">⋯</span>
-            </button>
-            ${moreMenuHTML()}
-          </div>
+        <div style="display:flex;align-items:center;gap:0;flex-shrink:0;">
+          ${actionBtnHTML('screenshot', 'Screenshot', SCREENSHOT_ICON)}
+          ${actionBtnHTML('region', 'Region capture', REGION_ICON)}
         </div>
 
-        <!-- Contextual options / tools (inside the popup) -->
-        <div data-tray style="
-          display:${showTray ? 'block' : 'none'};
-          padding:4px 14px 12px;border-top:1px solid ${T.borderSubtle};
-        ">
-          ${trayContentHTML(state)}
+        ${dividerHTML()}
+
+        <div style="position:relative;display:flex;align-items:center;gap:0;flex-shrink:0;">
+          ${actionBtnHTML('toggle-tray', 'Options', SETTINGS_ICON, `aria-expanded="${trayOpen}"`)}
+          ${actionBtnHTML('toggle-more', 'More', MORE_ICON, 'aria-expanded="false"')}
+          ${actionBtnHTML('close', 'Close', CLOSE_ICON)}
+          ${moreMenuHTML()}
         </div>
+
+        <div data-tooltip role="tooltip" style="
+          display:none;position:absolute;left:0;top:calc(100% + 10px);z-index:3;
+          padding:4px 8px;border-radius:${UI.radiusChip}px;background:${T.bg};color:${T.textPrimary};
+          border:1px solid ${T.border};box-shadow:${UI.shadowSm};
+          font-size:11px;font-weight:500;letter-spacing:-0.01em;white-space:nowrap;pointer-events:none;
+        "></div>
+      </div>
+
+      <!-- Options card — hidden at rest, opens on demand -->
+      <div data-tray data-open="${trayOpen}" style="
+        display:${trayOpen ? 'block' : 'none'};
+        align-self:flex-end;width:${TRAY_WIDTH}px;max-width:100%;box-sizing:border-box;
+        padding:8px 12px 10px;transform-origin:top right;
+        ${surfaceCSS('border-radius:14px;')}
+      ">
+        ${trayContentHTML(state)}
       </div>
 
       <!-- Tokens card (lazy-filled) -->
       <div data-tokens-card style="
-        display:none;width:${TOKENS_WIDTH}px;height:${TOKENS_VIEW_HEIGHT}px;
-        overflow:hidden;${surfaceCSS()}
+        display:none;align-self:flex-end;width:${TOKENS_WIDTH}px;max-width:100%;
+        height:${TOKENS_VIEW_HEIGHT}px;box-sizing:border-box;transform-origin:top right;
+        overflow:hidden;${surfaceCSS('border-radius:14px;')}
       "></div>
 
     </div>
@@ -582,25 +519,7 @@ function buildTokensViewElement(): HTMLElement {
     </div>
     <div style="height:1px;background:${T.borderSubtle};flex-shrink:0;"></div>
     <div style="padding:8px 14px;flex-shrink:0;">
-      <div data-token-filter-bar style="position:relative;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(0,0,0,0.06);border-radius:7px;padding:2px;gap:0;">
-        <div data-token-filter-indicator style="
-          position:absolute;top:2px;bottom:2px;
-          width:calc((100% - 4px) / 5);left:calc(2px + 0 * ((100% - 4px) / 5));
-          background:#fff;border-radius:5px;
-          box-shadow:0 1px 2px rgba(0,0,0,0.12);
-          pointer-events:none;
-          transition:left 0.22s cubic-bezier(0.4,0,0.2,1);
-        "></div>
-        ${TOKEN_FILTERS.map((f) => `
-          <button data-token-filter="${f}" style="
-            position:relative;z-index:1;display:flex;align-items:center;justify-content:center;
-            padding:4px 0;height:24px;background:transparent;border:none;border-radius:5px;
-            color:${f === 'all' ? T.textPrimary : T.textSecondary};cursor:pointer;
-            font-family:inherit;font-size:10px;font-weight:500;outline:none;letter-spacing:-0.01em;
-            transition:color 0.22s cubic-bezier(0.4,0,0.2,1);
-          ">${TOKEN_FILTER_LABELS[f]}</button>
-        `).join('')}
-      </div>
+      ${segmentedHTML('token-filter', TOKEN_FILTERS.map((f) => ({ id: f, label: TOKEN_FILTER_LABELS[f] })), 'all')}
     </div>
     <div style="height:1px;background:${T.borderSubtle};flex-shrink:0;"></div>
     <div data-token-rows style="overflow-y:auto;flex:1;padding:4px 0;"></div>
@@ -615,8 +534,6 @@ function setToolBtnActive(btn: HTMLElement, active: boolean): void {
   btn.style.background = active ? T.accentTint : 'transparent';
   btn.style.color = active ? T.accent : T.textSecondary;
   btn.setAttribute('aria-pressed', String(active));
-  const badge = btn.querySelector<HTMLElement>('span');
-  if (badge) badge.style.color = active ? T.accent : T.textMuted;
 }
 
 function updateModeOnly(mode: Mode): void {
@@ -649,11 +566,85 @@ function updateModeOnly(mode: Mode): void {
   schedulePanelReadjust(prevBox);
 }
 
-function updateTrayVisibility(mode: Mode): void {
-  if (!panelEl || currentView !== 'main') return;
+/** Shared enter/exit: fade + 4px slide + slight scale and blur. Exit is quicker than enter. */
+const PRESENCE_EASE = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+const PRESENCE_IN_MS = 160;
+const PRESENCE_OUT_MS = 120;
+const presenceTimers = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
+
+function setPresence(el: HTMLElement, open: boolean, onHidden?: () => void): void {
+  const pending = presenceTimers.get(el);
+  if (pending) clearTimeout(pending);
+  const wasOpen = el.dataset['open'] === 'true' && el.style.display !== 'none';
+  el.dataset['open'] = String(open);
+  const hidden = 'translateY(-4px) scale(0.98)';
+
+  if (prefersReducedMotion()) {
+    el.style.transition = 'none';
+    el.style.opacity = '1';
+    el.style.transform = 'none';
+    el.style.filter = 'none';
+    el.style.display = open ? 'block' : 'none';
+    if (!open) onHidden?.();
+    return;
+  }
+
+  if (open) {
+    el.style.display = 'block';
+    if (!wasOpen) {
+      el.style.transition = 'none';
+      el.style.opacity = '0';
+      el.style.transform = hidden;
+      el.style.filter = 'blur(2px)';
+      void el.offsetHeight;
+    }
+    el.style.transition = ['opacity', 'transform', 'filter']
+      .map((p) => `${p} ${PRESENCE_IN_MS}ms ${PRESENCE_EASE}`).join(',');
+    el.style.opacity = '1';
+    el.style.transform = 'translateY(0) scale(1)';
+    el.style.filter = 'blur(0)';
+    el.style.pointerEvents = 'auto';
+    return;
+  }
+
+  if (el.style.display === 'none') { onHidden?.(); return; }
+  el.style.transition = ['opacity', 'transform', 'filter']
+    .map((p) => `${p} ${PRESENCE_OUT_MS}ms ${PRESENCE_EASE}`).join(',');
+  el.style.opacity = '0';
+  el.style.transform = hidden;
+  el.style.filter = 'blur(2px)';
+  el.style.pointerEvents = 'none';
+  presenceTimers.set(el, setTimeout(() => {
+    el.style.display = 'none';
+    onHidden?.();
+  }, PRESENCE_OUT_MS));
+}
+
+/** Show or hide the options card to match `trayOpen`, keeping the panel inset as its height changes. */
+function applyTray(): void {
+  if (!panelEl) return;
   const tray = panelEl.querySelector<HTMLElement>('[data-tray]');
+  const btn = panelEl.querySelector<HTMLElement>('[data-action="toggle-tray"]');
+  if (btn) {
+    btn.setAttribute('aria-expanded', String(trayOpen));
+    setToolBtnActive(btn, trayOpen);
+    btn.removeAttribute('aria-pressed');
+  }
   if (!tray) return;
-  tray.style.display = trayVisibleFor(mode) ? 'block' : 'none';
+
+  const show = trayOpen && currentView === 'main';
+  const prevBox = snapshotPanelBox();
+  if (show) {
+    setPresence(tray, true);
+    schedulePanelReadjust(prevBox);
+  } else {
+    setPresence(tray, false, () => schedulePanelReadjust(prevBox));
+  }
+}
+
+function updateTrayVisibility(mode: Mode): void {
+  trayOpen = trayPinned || modeNeedsTools(mode);
+  applyTray();
 }
 
 function updateToggleOnly(id: string, checked: boolean): void {
@@ -678,15 +669,7 @@ function updateSettingRows(mode: Mode): void {
 }
 
 function updateTokenFilter(filter: TokenFilter): void {
-  if (!panelEl) return;
-  const filterIdx = TOKEN_FILTERS.indexOf(filter);
-
-  const indicator = panelEl.querySelector<HTMLElement>('[data-token-filter-indicator]');
-  if (indicator) indicator.style.left = `calc(2px + ${filterIdx} * ((100% - 4px) / 5))`;
-
-  panelEl.querySelectorAll<HTMLElement>('[data-token-filter]').forEach((btn) => {
-    btn.style.color = btn.dataset['tokenFilter'] === filter ? T.textPrimary : T.textSecondary;
-  });
+  if (panelEl) setSegmented(panelEl, 'token-filter', filter);
 }
 
 function renderTokenRows(): void {
@@ -738,16 +721,35 @@ function renderTokenRows(): void {
     row.addEventListener('mouseleave', () => { row.style.background = ''; });
     row.addEventListener('click', async () => {
       await copyToClipboard(token.value);
-      showToast(`Copied ${token.name}`);
+      showToast(`Copied ${token.name}`, { type: 'success' });
     });
 
     rows.appendChild(row);
   }
 }
 
+/** What each settings toggle controls. */
+const TOGGLES: Record<string, {
+  key: SettingKey;
+  message: 'TOGGLE_GUIDES' | 'TOGGLE_GUIDE_LABELS' | 'TOGGLE_RULERS' | 'TOGGLE_SNAP';
+  apply: (enabled: boolean) => void;
+}> = {
+  guides:      { key: 'showGuides',      message: 'TOGGLE_GUIDES',       apply: setGuidesVisible },
+  guideLabels: { key: 'showGuideLabels', message: 'TOGGLE_GUIDE_LABELS', apply: setGuideLabelsVisible },
+  rulers:      { key: 'showRulers',      message: 'TOGGLE_RULERS',       apply: setShowRulers },
+  snap:        { key: 'snapToElements',  message: 'TOGGLE_SNAP',         apply: setSnapEnabled },
+};
+
+/** Switches the mode inside this page. Provided by the content script entry point. */
+let switchModeLocally: ((mode: Mode) => void) | null = null;
+
+export function registerModeSwitcher(fn: (mode: Mode) => void): void {
+  switchModeLocally = fn;
+}
+
 // ─── More menu ────────────────────────────────────────────────────────────────
 
-const MORE_MENU_GAP = 6;
+const MORE_MENU_GAP = 10;
 
 function positionMoreMenu(menu: HTMLElement, btn: HTMLElement): void {
   // Reset so we measure the natural size, then pick a side that fits.
@@ -799,13 +801,19 @@ function setMoreMenuOpen(open: boolean): void {
   const menu = panelEl.querySelector<HTMLElement>('[data-more-menu]');
   const btn  = panelEl.querySelector<HTMLElement>('[data-action="toggle-more"]');
   if (menu) {
-    if (open && btn) positionMoreMenu(menu, btn);
-    else menu.style.display = 'none';
+    if (open && btn) {
+      positionMoreMenu(menu, btn);
+      menu.dataset['open'] = 'false';
+      menu.style.transformOrigin = menu.style.top === 'auto' ? 'bottom right' : 'top right';
+    }
+    setPresence(menu, open);
   }
   if (btn) {
     btn.setAttribute('aria-expanded', String(open));
     setToolBtnActive(btn, open);
+    btn.removeAttribute('aria-pressed');
   }
+  if (open) hideTooltip();
 }
 
 // ─── View switching (tokens card below toolbar) ───────────────────────────────
@@ -842,12 +850,13 @@ function switchView(view: 'main' | 'tokens'): void {
     renderTokenRows();
     updateTokenFilter('all');
 
-    if (tray) tray.style.display = 'none';
-    card.style.display = 'block';
+    if (tray) { tray.style.display = 'none'; tray.dataset['open'] = 'false'; }
+    setPresence(card, true);
   } else {
     currentView = 'main';
     card.style.display = 'none';
-    updateTrayVisibility(localState.mode);
+    card.dataset['open'] = 'false';
+    applyTray();
   }
 
   schedulePanelReadjust(prevBox);
@@ -865,14 +874,21 @@ function wireHover(
   el.addEventListener('mouseleave', () => Object.assign(el.style, leave));
 }
 
+function isBtnOn(btn: HTMLElement): boolean {
+  return btn.getAttribute('aria-pressed') === 'true' || btn.getAttribute('aria-expanded') === 'true';
+}
+
 function wireIconHover(btn: HTMLElement): void {
   btn.addEventListener('mouseenter', () => {
-    if (btn.getAttribute('aria-pressed') === 'true' || btn.getAttribute('aria-expanded') === 'true') return;
+    showTooltipFor(btn);
+    if (isBtnOn(btn)) return;
     btn.style.background = 'rgba(0,0,0,0.05)';
     btn.style.color = T.textPrimary;
   });
   btn.addEventListener('mouseleave', () => {
-    if (btn.getAttribute('aria-pressed') === 'true' || btn.getAttribute('aria-expanded') === 'true') {
+    hideTooltip(true);
+    btn.style.transform = '';
+    if (isBtnOn(btn)) {
       btn.style.background = T.accentTint;
       btn.style.color = T.accent;
       return;
@@ -880,19 +896,79 @@ function wireIconHover(btn: HTMLElement): void {
     btn.style.background = 'transparent';
     btn.style.color = T.textSecondary;
   });
+  // Press feedback
+  btn.addEventListener('mousedown', () => { btn.style.transform = 'scale(0.92)'; hideTooltip(); });
+  btn.addEventListener('mouseup', () => { btn.style.transform = ''; });
+}
+
+// ─── Tooltips ─────────────────────────────────────────────────────────────────
+// The first one waits so it never gets in the way; while you keep moving along
+// the toolbar the next ones appear immediately.
+
+const TOOLTIP_DELAY_MS = 850;
+const TOOLTIP_WARM_MS = 400;
+let tooltipTimer: ReturnType<typeof setTimeout> | null = null;
+let tooltipWarmUntil = 0;
+
+function showTooltipFor(btn: HTMLElement): void {
+  const label = btn.dataset['tip'];
+  if (!panelEl || !label || moreMenuOpen) return;
+  const tip = panelEl.querySelector<HTMLElement>('[data-tooltip]');
+  const card = panelEl.querySelector<HTMLElement>('[data-main-card]');
+  if (!tip || !card) return;
+
+  if (tooltipTimer) clearTimeout(tooltipTimer);
+  const warm = performance.now() < tooltipWarmUntil || tip.style.display === 'block';
+
+  const reveal = (): void => {
+    const key = btn.dataset['tipKey'];
+    tip.textContent = label;
+    if (key) {
+      const kbd = document.createElement('span');
+      kbd.textContent = key;
+      kbd.style.cssText = `margin-left:8px;color:${T.textMuted};font-variant-numeric:tabular-nums;`;
+      tip.appendChild(kbd);
+    }
+
+    tip.style.display = 'block';
+    const cardRect = card.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+    const above = window.innerHeight - cardRect.bottom < tip.offsetHeight + 18;
+    tip.style.top = above ? 'auto' : 'calc(100% + 10px)';
+    tip.style.bottom = above ? 'calc(100% + 10px)' : 'auto';
+    const centre = btnRect.left + btnRect.width / 2 - cardRect.left;
+    const half = tip.offsetWidth / 2;
+    const left = Math.min(Math.max(centre - half, 0), cardRect.width - tip.offsetWidth);
+    tip.style.left = `${left}px`;
+    tip.style.transformOrigin = `${centre - left}px ${above ? '100%' : '0'}`;
+
+    if (warm || prefersReducedMotion()) {
+      tip.style.transition = 'none';
+    } else {
+      tip.style.transition = 'none';
+      tip.style.opacity = '0';
+      tip.style.transform = 'scale(0.95)';
+      void tip.offsetHeight;
+      tip.style.transition = 'opacity 135ms ease, transform 135ms ease';
+    }
+    tip.style.opacity = '1';
+    tip.style.transform = 'scale(1)';
+  };
+
+  if (warm) reveal();
+  else tooltipTimer = setTimeout(reveal, TOOLTIP_DELAY_MS);
+}
+
+function hideTooltip(keepWarm = false): void {
+  if (tooltipTimer) { clearTimeout(tooltipTimer); tooltipTimer = null; }
+  const tip = panelEl?.querySelector<HTMLElement>('[data-tooltip]');
+  if (!tip) return;
+  if (keepWarm && tip.style.display === 'block') tooltipWarmUntil = performance.now() + TOOLTIP_WARM_MS;
+  tip.style.display = 'none';
 }
 
 function wireEvents(panel: HTMLElement): void {
-  panel.querySelectorAll<HTMLElement>('[data-mode], [data-action="screenshot"], [data-action="region"], [data-action="toggle-more"]').forEach(wireIconHover);
-
-  const closeBtn = panel.querySelector<HTMLElement>('[data-action="close"]');
-  if (closeBtn) {
-    wireHover(
-      closeBtn,
-      { background: 'rgba(0,0,0,0.06)', color: T.textPrimary },
-      { background: 'transparent', color: T.textMuted },
-    );
-  }
+  panel.querySelectorAll<HTMLElement>('[data-mode], [data-main-card] [data-tip]').forEach(wireIconHover);
 
   panel.querySelectorAll<HTMLElement>('[data-action="clear-guides"],[data-action="clear-measurements"],[data-action="clear-annotations"],[data-action="tokens"]').forEach((btn) => {
     wireHover(btn, { background: 'rgba(0,0,0,0.04)', color: T.textPrimary }, { background: 'transparent', color: T.textSecondary });
@@ -918,6 +994,16 @@ function wireEvents(panel: HTMLElement): void {
       return;
     }
 
+    if (target.closest('[data-action="toggle-tray"]')) {
+      trayOpen = !trayOpen;
+      // In a tool mode the card opens by itself, so closing it there is a
+      // one-off — only remember the choice made in ordinary modes.
+      if (!modeNeedsTools(localState.mode)) trayPinned = trayOpen;
+      if (currentView === 'tokens') switchView('main');
+      applyTray();
+      return;
+    }
+
     if (target.closest('[data-action="screenshot"]')) {
       const btn = panel.querySelector<HTMLElement>('[data-action="screenshot"]');
       if (btn) {
@@ -925,13 +1011,13 @@ function wireEvents(panel: HTMLElement): void {
         btn.style.cursor = 'default';
         btn.setAttribute('aria-busy', 'true');
       }
-      const res = await new Promise<{ ok?: boolean; error?: string }>((resolve) => {
+      const res = await withChromeHidden(() => new Promise<{ ok?: boolean; error?: string }>((resolve) => {
         chrome.runtime.sendMessage({ type: 'CAPTURE_SCREENSHOT' }, (r) => {
           const err = chrome.runtime.lastError?.message;
           if (err) resolve({ error: err });
           else resolve((r as { ok?: boolean; error?: string }) ?? { ok: true });
         });
-      });
+      }));
       if (btn) {
         btn.style.opacity = '1';
         btn.style.cursor = 'pointer';
@@ -940,7 +1026,7 @@ function wireEvents(panel: HTMLElement): void {
       if (res.error) {
         showErrorReport('Screenshot', res.error);
       } else {
-        showToast('Screenshot saved');
+        showToast('Screenshot saved', { type: 'success' });
       }
       return;
     }
@@ -952,8 +1038,16 @@ function wireEvents(panel: HTMLElement): void {
     }
     if (target.closest('[data-action="export-tokens"]')) { exportTokensJson(); return; }
 
-    if (target.closest('[data-action="region"]')) {
-      startRegionCapture();
+    // Region capture is a toggle: click again to back out of selection mode.
+    const regionBtn = target.closest('[data-action="region"]') as HTMLElement | null;
+    if (regionBtn) {
+      if (isRegionCaptureActive()) {
+        cancelRegionCapture();
+        showToast('Region capture cancelled');
+      } else {
+        setToolBtnActive(regionBtn, true);
+        startRegionCapture(() => setToolBtnActive(regionBtn, false));
+      }
       return;
     }
 
@@ -981,7 +1075,7 @@ function wireEvents(panel: HTMLElement): void {
       const tool = annToolBtn.dataset['annotateTool'] as AnnotateTool;
       setAnnotateTool(tool);
       const wrap = panel.querySelector<HTMLElement>('[data-annotate-tools]');
-      if (wrap) wrap.innerHTML = annotateToolsHTML(tool, getAnnotateColor());
+      if (wrap) updateAnnotateUi(tool, getAnnotateColor());
       return;
     }
 
@@ -991,7 +1085,7 @@ function wireEvents(panel: HTMLElement): void {
       if (hex) {
         setAnnotateColor(hex);
         const wrap = panel.querySelector<HTMLElement>('[data-annotate-tools]');
-        if (wrap) wrap.innerHTML = annotateToolsHTML(getAnnotateTool(), hex);
+        if (wrap) updateAnnotateUi(getAnnotateTool(), hex);
       }
       return;
     }
@@ -1014,7 +1108,9 @@ function wireEvents(panel: HTMLElement): void {
         localState = await sendMsg({ type: 'ACTIVATE', mode });
         localState.active = true;
       } else {
-        localState = await sendMsg({ type: 'SWITCH_MODE', mode });
+        // Switch immediately; the background is told afterwards and its echo is a no-op.
+        switchModeLocally?.(mode);
+        void sendMsg({ type: 'SWITCH_MODE', mode });
       }
       localState.mode = mode;
       updateModeOnly(mode);
@@ -1031,47 +1127,18 @@ function wireEvents(panel: HTMLElement): void {
       return;
     }
 
-    // Toggle switches
+    // Toggle switches — applied here and now. Waiting for the background's reply
+    // made them lag whenever its worker had gone to sleep.
     const toggleBtn = target.closest('[data-toggle]') as HTMLElement | null;
-    if (toggleBtn) {
-      const id = toggleBtn.dataset['toggle'];
-      switch (id) {
-        case 'boxModel': {
-          const next = !localState.showBoxModel;
-          localState = await sendMsg({ type: 'TOGGLE_BOX_MODEL', enabled: next });
-          localState.showBoxModel = next;
-          updateToggleOnly('boxModel', next);
-          break;
-        }
-        case 'guides': {
-          const next = !localState.showGuides;
-          localState = await sendMsg({ type: 'TOGGLE_GUIDES', enabled: next });
-          localState.showGuides = next;
-          updateToggleOnly('guides', next);
-          break;
-        }
-        case 'guideLabels': {
-          const next = !localState.showGuideLabels;
-          localState = await sendMsg({ type: 'TOGGLE_GUIDE_LABELS', enabled: next });
-          localState.showGuideLabels = next;
-          updateToggleOnly('guideLabels', next);
-          break;
-        }
-        case 'rulers': {
-          const next = !localState.showRulers;
-          localState = await sendMsg({ type: 'TOGGLE_RULERS', enabled: next });
-          localState.showRulers = next;
-          updateToggleOnly('rulers', next);
-          break;
-        }
-        case 'snap': {
-          const next = !localState.snapToElements;
-          localState = await sendMsg({ type: 'TOGGLE_SNAP', enabled: next });
-          localState.snapToElements = next;
-          updateToggleOnly('snap', next);
-          break;
-        }
-      }
+    const setting = toggleBtn ? TOGGLES[toggleBtn.dataset['toggle'] ?? ''] : undefined;
+    if (toggleBtn && setting) {
+      const next = !localState[setting.key];
+      localState[setting.key] = next;
+      updateToggleOnly(toggleBtn.dataset['toggle']!, next);
+      setting.apply(next);
+      saveSetting(setting.key, next);
+      markActive();
+      void sendMsg({ type: setting.message, enabled: next });
     }
   });
 }
@@ -1516,10 +1583,14 @@ export async function showPanel(): Promise<void> {
     localState.active = true;
   }
 
+  trayOpen = trayPinned || modeNeedsTools(localState.mode);
+
   const panel = document.createElement('div');
   panel.id = PANEL_ID;
   panel.setAttribute('style', PANEL_CSS);
   panel.innerHTML = buildPanelHTML(localState);
+  const trayBtn = panel.querySelector<HTMLElement>('[data-action="toggle-tray"]');
+  if (trayBtn && trayOpen) { trayBtn.style.background = T.accentTint; trayBtn.style.color = T.accent; }
 
   // Position before paint: saved spot, or default top-center
   const saved = await loadPanelPosition();
@@ -1561,6 +1632,7 @@ export function hidePanel(): void {
   if (!panelEl) return;
 
   cancelPanelSpring();
+  hideTooltip();
   void sendMsg({ type: 'DEACTIVATE' });
 
   currentView       = 'main';
@@ -1591,6 +1663,28 @@ export function isPanelOpen(): boolean {
 export function isPanelElement(el: Element | null): boolean {
   if (!el) return false;
   return el.id === PANEL_ID || el.closest(`#${PANEL_ID}`) !== null;
+}
+
+/** Show a mode change that happened outside the toolbar (keyboard shortcut). */
+export function reflectMode(mode: Mode): void {
+  if (!panelEl) return;
+  localState.mode = mode;
+  if (currentView === 'tokens') switchView('main');
+  updateModeOnly(mode);
+}
+
+/** Show a setting change that happened outside the toolbar (keyboard shortcut). */
+export function reflectSetting(key: 'showRulers', value: boolean): void {
+  localState[key] = value;
+  updateToggleOnly('rulers', value);
+}
+
+/** Close whatever is temporarily open on the toolbar. Returns false when there was nothing to close. */
+export function closeTransientPanelUi(): boolean {
+  if (!panelEl) return false;
+  if (moreMenuOpen) { setMoreMenuOpen(false); return true; }
+  if (currentView === 'tokens') { switchView('main'); return true; }
+  return false;
 }
 
 // ─── Token panel compatibility API ───────────────────────────────────────────

@@ -10,7 +10,7 @@ const MODE_ROWS: SectionRow[] = [
     id: 'inspect',
     leftBadge: '1',
     left: 'Inspect',
-    right: 'Dimensions, box model, CSS path, typography & viewport distances',
+    right: 'Hover for size; click for typography, colours & box values',
   },
   {
     id: 'measure',
@@ -22,27 +22,21 @@ const MODE_ROWS: SectionRow[] = [
     id: 'guides',
     leftBadge: '3',
     left: 'Guides',
-    right: 'Draggable guides with snap-to-element edges, persisted across sessions',
+    right: 'Click to place, click to delete, drag to move — saved per page',
   },
   {
-    id: 'colour',
+    id: 'annotate',
     leftBadge: '4',
-    left: 'Colour Picker',
-    right: 'Sample element colours and copy as HEX, RGB, or HSL',
-  },
-  {
-    id: 'spacing-grid',
-    leftBadge: '5',
-    left: 'Spacing Grid',
-    right: 'Show all gaps between sibling elements at once',
+    left: 'Annotate',
+    right: 'Size callouts, notes, arrows & freehand strokes on the page',
   },
 ];
 
 const TOOL_ROWS: SectionRow[] = [
   {
     id: 'box-model',
-    left: 'Box model overlay',
-    right: 'Colour-coded margin / border / padding / content rings on any element',
+    left: 'Box values',
+    right: 'Margin, border, padding & radius of any element, one click to copy',
   },
   {
     id: 'ruler',
@@ -61,18 +55,18 @@ const TOOL_ROWS: SectionRow[] = [
   },
   {
     id: 'typography',
-    left: 'Typography inspector',
-    right: 'Font family, size, weight, line-height, and letter-spacing for text nodes',
+    left: 'Typography & colours',
+    right: 'Font, size, weight, line height, letter spacing; colours as HEX, RGB or HSL',
   },
   {
-    id: 'viewport',
-    left: 'Viewport distances',
-    right: 'Dashed lines from element edges to viewport edges with px labels',
+    id: 'undo',
+    left: 'Undo',
+    right: 'Reverse any change in Measure, Guides & Annotate',
   },
   {
-    id: 'element-path',
-    left: 'Element path',
-    right: 'CSS selector breadcrumb of the hovered element shown inline',
+    id: 'region-capture',
+    left: 'Region capture',
+    right: 'Drag a rectangle to save just that part of the page',
   },
   {
     id: 'multi',
@@ -82,8 +76,8 @@ const TOOL_ROWS: SectionRow[] = [
 ];
 
 const SHORTCUT_ROWS: SectionRow[] = [
-  { id: 'modes', left: 'Switch mode', right: '1 – 5', rightIsKbd: true, rowPadding: '7px 0' },
-  { id: 'box', left: 'Toggle box model', right: 'B', rightIsKbd: true, rowPadding: '7px 0' },
+  { id: 'modes', left: 'Switch mode', right: '1 – 4', rightIsKbd: true, rowPadding: '7px 0' },
+  { id: 'undo', left: 'Undo', right: '⌘Z', rightIsKbd: true, rowPadding: '7px 0' },
   { id: 'tokens', left: 'Open design tokens', right: 'D', rightIsKbd: true, rowPadding: '7px 0' },
   {
     id: 'screenshot',
@@ -161,9 +155,9 @@ export default function HomePage() {
             letterSpacing: '-0.01em',
           }}
         >
-          Precision measurement for the web. A free, open-source browser extension with five
-          measurement modes, a colour picker, design token extraction, typography inspection, and
-          more — with pixel-perfect accuracy.
+          Precision measurement for the web. A free, open-source browser extension with four
+          modes for inspecting, measuring, aligning, and annotating — plus typography, colours,
+          and design tokens, with pixel-perfect accuracy.
         </p>
 
         {/* CTA */}

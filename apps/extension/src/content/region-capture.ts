@@ -2,6 +2,7 @@
  * Drag a rectangle on the page, then crop a visible-tab capture to that region.
  */
 import { showErrorReport, showToast } from './labels';
+import { withChromeHidden } from './capture-chrome';
 
 let active = false;
 let dragging = false;
@@ -9,14 +10,17 @@ let startX = 0;
 let startY = 0;
 let boxEl: HTMLDivElement | null = null;
 let shadeEl: HTMLDivElement | null = null;
+let onEnd: (() => void) | null = null;
 
 export function isRegionCaptureActive(): boolean {
   return active;
 }
 
-export function startRegionCapture(): void {
+/** `onFinish` runs once selection mode ends, whether it captured or was cancelled. */
+export function startRegionCapture(onFinish?: () => void): void {
   if (active) return;
   active = true;
+  onEnd = onFinish ?? null;
   dragging = false;
 
   shadeEl = document.createElement('div');
@@ -67,6 +71,9 @@ function teardown(): void {
   boxEl?.remove();
   shadeEl = null;
   boxEl = null;
+  const done = onEnd;
+  onEnd = null;
+  done?.();
 }
 
 function onKey(e: KeyboardEvent): void {
@@ -120,19 +127,18 @@ async function onUp(e: MouseEvent): Promise<void> {
   teardown();
 
   if (w < 8 || h < 8) {
-    showToast('Region too small');
+    showToast('Region too small', { type: 'error' });
     return;
   }
 
-  showToast('Capturing region…');
-
-  const capture = await new Promise<{ ok?: boolean; dataUrl?: string; error?: string }>((resolve) => {
+  // No "capturing" toast: it would be on screen, and in the image, when the tab is captured.
+  const capture = await withChromeHidden(() => new Promise<{ ok?: boolean; dataUrl?: string; error?: string }>((resolve) => {
     chrome.runtime.sendMessage({ type: 'CAPTURE_VISIBLE' }, (r) => {
       const err = chrome.runtime.lastError?.message;
       if (err) resolve({ error: err });
       else resolve((r as { ok?: boolean; dataUrl?: string; error?: string }) ?? {});
     });
-  });
+  }));
 
   if (capture.error || !capture.dataUrl) {
     showErrorReport('Region capture', capture.error ?? 'no image returned from captureVisibleTab');
@@ -156,7 +162,7 @@ async function onUp(e: MouseEvent): Promise<void> {
       showErrorReport('Region save', dl.error);
       return;
     }
-    showToast('Region saved');
+    showToast('Region saved', { type: 'success' });
   } catch (err) {
     showErrorReport('Region crop', err instanceof Error ? err.message : String(err));
   }

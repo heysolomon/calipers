@@ -1,79 +1,87 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
-import { useDemo } from './demo-provider';
+import { useDemo, type DemoCursor } from './demo-provider';
 
+const ARROWS = 'M0 -8.5V8.5M-3.5 -5L0 -8.5L3.5 -5M-3.5 5L0 8.5L3.5 5';
+
+const GLYPH_OF: Record<DemoCursor, 'crosshair' | 'delete' | 'move' | null> = {
+  crosshair: 'crosshair', text: null, delete: 'delete', 'move-x': 'move', 'move-y': 'move',
+};
+
+/**
+ * The demo's cursor, matching the extension: a crosshair that pops into a
+ * delete badge over a guide and into arrows while one is dragged, and steps
+ * aside for the browser's own text cursor over words.
+ */
 export function CustomCursor() {
-  const { anyTool } = useDemo();
+  const { anyTool, cursor } = useDemo();
   const reduceMotion = useReducedMotion();
-  const [pos, setPos] = useState({ x: -200, y: -200 });
-  const [active, setActive] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
   const [overUI, setOverUI] = useState(false);
 
   const enabled = anyTool && !reduceMotion;
+  const glyph = GLYPH_OF[cursor];
+  const showMark = enabled && !overUI && glyph !== null;
 
   useEffect(() => {
-    if (!enabled) {
-      document.body.style.cursor = '';
-      return;
-    }
-
+    if (!enabled) return;
     function onMove(e: MouseEvent) {
-      setPos({ x: e.clientX, y: e.clientY });
+      // Written straight to the element: a transform, no re-render, no layout.
+      if (ref.current) ref.current.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
       const el = e.target as HTMLElement | null;
-      const onDemoUI = !!el?.closest?.('[data-demo-ui="true"]');
-      setOverUI(onDemoUI);
-      document.body.style.cursor = onDemoUI ? '' : 'none';
-      const isInteractive = !!el?.closest?.('a, button, [role="button"], input, select, textarea');
-      setActive(isInteractive);
+      setOverUI(!!el?.closest?.('[data-demo-ui="true"]'));
     }
-
     document.addEventListener('mousemove', onMove, { passive: true });
-    document.body.style.cursor = 'none';
-
-    return () => {
-      document.removeEventListener('mousemove', onMove);
-      document.body.style.cursor = '';
-      setPos({ x: -200, y: -200 });
-    };
+    return () => document.removeEventListener('mousemove', onMove);
   }, [enabled]);
 
-  if (!enabled || overUI) return null;
+  if (!enabled) return null;
+
+  const layer = (name: 'crosshair' | 'delete' | 'move', turn = ''): React.CSSProperties => ({
+    position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    opacity: glyph === name ? 1 : 0,
+    transform: `scale(${glyph === name ? 1 : 0.6})${turn}`,
+    // Slight overshoot so a change of meaning reads as a "pop"
+    transition: 'opacity 0.14s ease-out, transform 0.18s cubic-bezier(0.34, 1.4, 0.64, 1)',
+  });
 
   return (
-    <div
-      data-demo-ui="true"
-      aria-hidden="true"
-      style={{
-        position: 'fixed',
-        left: pos.x,
-        top: pos.y,
-        transform: 'translate(-50%, -50%)',
-        pointerEvents: 'none',
-        zIndex: 99999,
-      }}
-    >
-      <svg
+    <>
+      {/* Links and buttons set their own cursor, which would otherwise show next to the mark. */}
+      {showMark && <style>{`body, body * { cursor: none !important; }`}</style>}
+      <div
+        ref={ref}
+        data-demo-ui="true"
         aria-hidden="true"
-        width="18"
-        height="18"
-        viewBox="-9 -9 18 18"
-        style={{ display: 'block', overflow: 'visible' }}
+        style={{
+          position: 'fixed', left: 0, top: 0, width: 18, height: 18, margin: '-9px 0 0 -9px',
+          transform: 'translate3d(-200px, -200px, 0)', willChange: 'transform',
+          pointerEvents: 'none', zIndex: 99999, visibility: showMark ? 'visible' : 'hidden',
+        }}
       >
-        <line x1="-9" y1="0" x2="-4" y2="0" stroke="#FF4500" strokeWidth="1.5" strokeLinecap="round" />
-        <line x1="4"  y1="0" x2="9"  y2="0" stroke="#FF4500" strokeWidth="1.5" strokeLinecap="round" />
-        <line x1="0" y1="-9" x2="0" y2="-4" stroke="#FF4500" strokeWidth="1.5" strokeLinecap="round" />
-        <line x1="0" y1="4"  x2="0" y2="9"  stroke="#FF4500" strokeWidth="1.5" strokeLinecap="round" />
-        <circle
-          cx="0"
-          cy="0"
-          r="2.5"
-          stroke="#FF4500"
-          strokeWidth="1.5"
-          fill={active ? '#FF4500' : 'none'}
-          style={{ transition: 'fill 0.12s' }}
-        />
-      </svg>
-    </div>
+        <div style={layer('crosshair')}>
+          <svg width="18" height="18" viewBox="-9 -9 18 18" style={{ display: 'block', overflow: 'visible' }}>
+            <line x1="-9" y1="0" x2="-4" y2="0" stroke="#FF4500" strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="4" y1="0" x2="9" y2="0" stroke="#FF4500" strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="0" y1="-9" x2="0" y2="-4" stroke="#FF4500" strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="0" y1="4" x2="0" y2="9" stroke="#FF4500" strokeWidth="1.5" strokeLinecap="round" />
+            <circle cx="0" cy="0" r="2.5" stroke="#FF4500" strokeWidth="1.5" fill="none" />
+          </svg>
+        </div>
+        <div style={layer('delete')}>
+          <svg width="22" height="22" viewBox="-11 -11 22 22" style={{ display: 'block', overflow: 'visible', flexShrink: 0 }}>
+            <circle r="9.5" fill="#FF4500" stroke="#fff" strokeWidth="1.5" />
+            <path d="M-3.25 -3.25L3.25 3.25M3.25 -3.25L-3.25 3.25" stroke="#fff" strokeWidth="1.75" strokeLinecap="round" />
+          </svg>
+        </div>
+        <div style={layer('move', cursor === 'move-x' ? ' rotate(90deg)' : '')}>
+          <svg width="22" height="22" viewBox="-11 -11 22 22" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', overflow: 'visible', flexShrink: 0 }}>
+            <path d={ARROWS} stroke="#fff" strokeWidth="4.5" />
+            <path d={ARROWS} stroke="#FF4500" strokeWidth="1.75" />
+          </svg>
+        </div>
+      </div>
+    </>
   );
 }

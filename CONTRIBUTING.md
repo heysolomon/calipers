@@ -41,13 +41,15 @@ The project is a pnpm monorepo with three packages:
 
 **Extension internals:**
 
-- `src/background/index.ts` — Service worker. Handles keyboard shortcuts, routes messages between popup and content script, manages per-tab state.
-- `src/content/` — Content script. Injected into every page. Creates the canvas overlay, detects elements, draws highlights and measurement lines.
-  - `overlay.ts` — Creates/destroys the `<canvas>` and label container.
+- `src/background/index.ts` — Service worker. Handles the toggle shortcut and icon click, injects the content script into tabs that do not have it yet, keeps per-tab state, and takes screenshots.
+- `src/content/` — Content script. Injected into every page; everything you see is drawn from here in plain TypeScript.
+  - `index.ts` — Entry point: activation, mode switching, keyboard shortcuts, messages.
+  - `panel.ts` — The in-page toolbar and its option cards. There is no browser-action popup.
+  - `modes/` — One file per mode: inspect, measure, guides, annotate.
+  - `overlay.ts`, `persist-layer.ts`, `renderer.ts` — The canvases and all canvas drawing.
+  - `frame.ts`, `motion.ts` — On-demand rendering and the shared hover animation.
+  - `tokens.ts` — Shared design values and the segmented control.
   - `detector.ts` — `elementFromPoint` + `getBoundingClientRect` + `getComputedStyle`.
-  - `renderer.ts` — All canvas drawing logic.
-  - `modes/` — Isolated logic for each mode (inspect, measure, guides).
-- `src/popup/` — React popup UI. Communicates with the background via `chrome.runtime.sendMessage`.
 
 When you add a new feature, decide which layer it belongs to, then wire up the message types in `packages/shared/src/messages.ts` if cross-layer communication is needed.
 
@@ -86,9 +88,8 @@ PRs that introduce new user-facing behaviour should include a short description 
 
 - **TypeScript strict mode** throughout — no `any`, no type assertions without justification.
 - **Prettier** for formatting (`pnpm format`), **ESLint** for lint (`pnpm lint`).
-- Content script code is vanilla TypeScript — no React, no heavy dependencies.
-- Popup code is React + Tailwind CSS.
-- Keep the content script under ~30 KB (unminified). Profile before adding imports.
+- Extension code is vanilla TypeScript — no React, no heavy dependencies.
+- The content script loads on every page, so keep it lean. Check the build size before adding an import, and load anything development-only on demand.
 
 ## Reporting Bugs
 

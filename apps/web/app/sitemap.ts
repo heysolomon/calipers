@@ -14,7 +14,6 @@ const ROUTES: Array<{
   { path: '/docs/features/measure-mode', changeFrequency: 'monthly', priority: 0.8 },
   { path: '/docs/features/guides', changeFrequency: 'monthly', priority: 0.8 },
   { path: '/docs/features/color-picker', changeFrequency: 'monthly', priority: 0.8 },
-  { path: '/docs/features/spacing-grid', changeFrequency: 'monthly', priority: 0.8 },
   { path: '/docs/features/box-model', changeFrequency: 'monthly', priority: 0.8 },
   { path: '/docs/features/rulers', changeFrequency: 'monthly', priority: 0.7 },
   { path: '/docs/features/design-tokens', changeFrequency: 'monthly', priority: 0.7 },

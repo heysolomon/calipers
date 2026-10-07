@@ -2,13 +2,11 @@
 import { useDemo, type DemoKey } from './demo-provider';
 import { useReducedMotion } from 'framer-motion';
 
+// The same modes as the extension. Colours and box values are part of Inspect.
 const TOOLS: { key: DemoKey; label: string }[] = [
-  { key: 'inspect',     label: 'Inspect'    },
-  { key: 'measure',     label: 'Measure'    },
-  { key: 'guides',      label: 'Guides'     },
-  { key: 'colorpicker', label: 'Colours'    },
-  { key: 'spacing',     label: 'Spacing'    },
-  { key: 'boxmodel',    label: 'Box Model'  },
+  { key: 'inspect', label: 'Inspect' },
+  { key: 'measure', label: 'Measure' },
+  { key: 'guides',  label: 'Guides'  },
 ];
 
 function ToggleSwitch({

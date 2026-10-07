@@ -4,26 +4,34 @@
 import type { Rect, BoxModel, BoxModelValues } from '@calipers/shared';
 import { domRectToRect, parsePx, isCalipersElement } from './utils';
 
+const HIT_MEMO_MS = 100;
+let memo: { x: number; y: number; sx: number; sy: number; t: number; el: Element | null } | null = null;
+
 /** Get the deepest non-Calipers element at the given viewport coordinates */
 export function getElementAtPoint(x: number, y: number): Element | null {
-  // We must disable pointer-events on BOTH the root div and the canvas child.
-  // Setting the root alone isn't enough: a child with an explicit inline
-  // pointer-events value overrides the parent's `none` in CSS.
-  const root = document.getElementById('calipers-overlay-root');
+  // Pointer rarely moves between consecutive frames — reuse the last answer briefly.
+  const now = performance.now();
+  if (
+    memo && memo.x === x && memo.y === y &&
+    memo.sx === window.scrollX && memo.sy === window.scrollY &&
+    now - memo.t < HIT_MEMO_MS && (memo.el === null || memo.el.isConnected)
+  ) {
+    return memo.el;
+  }
+
+  // The overlay is normally click-through already. Only toggle pointer-events
+  // (a style write that forces a recalc) in the rare case the canvas is interactive.
   const canvas = document.getElementById('calipers-canvas-overlay');
+  const prev = canvas?.style.pointerEvents ?? '';
+  const mustToggle = canvas !== null && prev !== 'none';
+  if (mustToggle) canvas.style.pointerEvents = 'none';
 
-  const prevRootPE = root?.style.pointerEvents ?? '';
-  const prevCanvasPE = canvas?.style.pointerEvents ?? '';
+  const hit = document.elementFromPoint(x, y);
 
-  if (root) root.style.pointerEvents = 'none';
-  if (canvas) canvas.style.pointerEvents = 'none';
+  if (mustToggle) canvas.style.pointerEvents = prev;
 
-  const el = document.elementFromPoint(x, y);
-
-  if (root) root.style.pointerEvents = prevRootPE;
-  if (canvas) canvas.style.pointerEvents = prevCanvasPE;
-
-  if (!el || isCalipersElement(el)) return null;
+  const el = !hit || isCalipersElement(hit) ? null : hit;
+  memo = { x, y, sx: window.scrollX, sy: window.scrollY, t: now, el };
   return el;
 }
 

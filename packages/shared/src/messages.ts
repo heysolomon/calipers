@@ -8,7 +8,6 @@ export type Message =
   | { type: 'ACTIVATE'; mode: Mode }
   | { type: 'DEACTIVATE' }
   | { type: 'SWITCH_MODE'; mode: Mode }
-  | { type: 'TOGGLE_BOX_MODEL'; enabled: boolean }
   | { type: 'TOGGLE_GUIDES'; enabled: boolean }
   | { type: 'TOGGLE_GUIDE_LABELS'; enabled: boolean }
   | { type: 'TOGGLE_SNAP'; enabled: boolean }
@@ -21,6 +20,8 @@ export type Message =
   | { type: 'MEASUREMENT_RESULT'; data: MeasurementData }
   | { type: 'GET_STATE' }
   | { type: 'TOGGLE_PANEL' }
+  /** Background asks whether a live content script is in the tab. */
+  | { type: 'PING' }
   | { type: 'COPY_MEASUREMENT' };
 
 export type MessageType = Message['type'];

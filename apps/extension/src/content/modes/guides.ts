@@ -5,9 +5,13 @@
 import type { Guide } from '@calipers/shared';
 import type { OverlayElements } from '../overlay';
 import { clearCanvas, drawGuide, drawRulers, RULER_SIZE } from '../renderer';
-import { setLabel, removeLabel } from '../labels';
+import { setLabel, hideLabel, removeLabel, showToast } from '../labels';
 import { formatDistance, uid, isCalipersElement, toPageX, toPageY, toViewX, toViewY } from '../utils';
-import { loadGuides, saveGuides } from '../storage';
+import { loadGuides, saveGuides, guidePageKey } from '../storage';
+import { addRenderer, markActive } from '../frame';
+import { setCursorResolver, refreshCursor } from '../cursor';
+import { setSegmented } from '../tokens';
+import { onPageChange } from '../page-scope';
 
 export type GuidePlacement = 'both' | 'horizontal' | 'vertical';
 
@@ -15,7 +19,6 @@ interface GuidesState {
   guides: Guide[];
   draggingId: string | null;
   hoveredId: string | null;
-  rafId: number | null;
   mouseX: number;
   mouseY: number;
   snapEnabled: boolean;
@@ -30,7 +33,6 @@ const state: GuidesState = {
   guides: [],
   draggingId: null,
   hoveredId: null,
-  rafId: null,
   mouseX: 0,
   mouseY: 0,
   snapEnabled: true,
@@ -46,8 +48,67 @@ const SNAP_THRESHOLD = 8;
 const SNAP_SAMPLE_STEP = 48;
 
 let overlay: OverlayElements | null = null;
+let stopLoop: (() => void) | null = null;
 let sessionId = 0;
 let knownLabelIds = new Set<string>();
+
+/** Pointer travel before a press on a guide counts as a drag (move) rather than a click (delete). */
+const DRAG_THRESHOLD = 4;
+let press: { id: string; x: number; y: number; from: number; moved: boolean } | null = null;
+/** The click that follows a press on a guide must not also place a new guide. */
+let swallowClick = false;
+/** Guides placed by the click that is still under the pointer. */
+const unarmed = new Set<string>();
+
+// ─── Undo ─────────────────────────────────────────────────────────────────────
+// Every change to the guides can be reversed, so trying things is never destructive.
+
+type UndoAction =
+  | { kind: 'add'; ids: string[] }
+  | { kind: 'delete'; guides: Guide[] }
+  | { kind: 'move'; id: string; from: number };
+
+const UNDO_LIMIT = 50;
+const undoStack: UndoAction[] = [];
+
+function pushUndo(action: UndoAction): void {
+  undoStack.push(action);
+  if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+}
+
+/** Reverse the most recent guide change. Returns false when there is nothing to undo. */
+export function undoGuideChange(): boolean {
+  const action = undoStack.pop();
+  if (!action) return false;
+  applyUndo(action);
+  return true;
+}
+
+function applyUndo(action: UndoAction): void {
+  if (action.kind === 'add') {
+    const ids = new Set(action.ids);
+    const kept = state.guides.filter((g) => !ids.has(g.id));
+    state.guides.splice(0, state.guides.length, ...kept);
+    removeGuideLabels(action.ids);
+    showToast('Guide removed');
+  } else if (action.kind === 'delete') {
+    state.guides.push(...action.guides);
+    showToast(action.guides.length > 1 ? `Restored ${action.guides.length} guides` : 'Guide restored');
+  } else {
+    const guide = state.guides.find((g) => g.id === action.id);
+    if (guide) guide.position = action.from;
+    showToast('Guide moved back');
+  }
+
+  state.hoveredId = findGuideAtPoint(state.mouseX, state.mouseY)?.id ?? null;
+  void persist();
+  refreshCursor();
+  markActive();
+}
+
+/** Deleted guides fade out instead of vanishing. */
+const FADE_MS = 160;
+const fading: { guide: Guide; t0: number }[] = [];
 
 export function setSnapEnabled(enabled: boolean): void {
   state.snapEnabled = enabled;
@@ -77,11 +138,36 @@ export function getGuidePlacement(): GuidePlacement {
   return state.placement;
 }
 
-/** Load saved guides into memory so the persist layer can paint them in any mode. */
-export async function hydrateGuides(): Promise<void> {
-  const saved = await loadGuides();
-  state.guides.splice(0, state.guides.length, ...saved);
+/** The page whose guides are currently in memory. */
+let loadedPage: string | null = null;
+
+function persist(): Promise<void> {
+  return saveGuides(loadedPage ?? guidePageKey(), state.guides);
 }
+
+/** Load this page's saved guides into memory so the persist layer can paint them in any mode. */
+export async function hydrateGuides(): Promise<void> {
+  const page = guidePageKey();
+  loadedPage = page;
+  const saved = await loadGuides(page);
+  // The page may have changed again while storage was being read.
+  if (loadedPage !== page) return;
+  state.guides.splice(0, state.guides.length, ...saved);
+  markActive();
+}
+
+// Single-page apps change route without reloading: swap to the new page's
+// guides instead of carrying the old ones over.
+onPageChange(() => {
+  if (loadedPage === null) return;
+  state.guides.splice(0, state.guides.length);
+  state.hoveredId = null;
+  state.draggingId = null;
+  press = null;
+  undoStack.length = 0;
+  fading.length = 0;
+  void hydrateGuides();
+});
 
 export async function initGuidesMode(o: OverlayElements, snapEnabled = true): Promise<void> {
   const sid = ++sessionId;
@@ -92,6 +178,11 @@ export async function initGuidesMode(o: OverlayElements, snapEnabled = true): Pr
   state.snapTarget = null;
   state.interactive = true;
 
+  setCursorResolver(() => {
+    const dragged = state.draggingId ? state.guides.find((g) => g.id === state.draggingId) : undefined;
+    if (dragged && press?.moved) return dragged.axis === 'horizontal' ? 'move-y' : 'move-x';
+    return state.hoveredId || state.draggingId ? 'delete' : 'crosshair';
+  });
   document.addEventListener('click', onClick, true);
   document.addEventListener('mousemove', onMouseMove, { passive: true });
   document.addEventListener('mousedown', onMouseDown, true);
@@ -109,14 +200,18 @@ export async function initGuidesMode(o: OverlayElements, snapEnabled = true): Pr
 export function destroyGuidesMode(): void {
   sessionId++;
   state.interactive = false;
+  setCursorResolver(null);
+  press = null;
+  swallowClick = false;
+  unarmed.clear();
   document.removeEventListener('click', onClick, true);
   document.removeEventListener('mousemove', onMouseMove);
   document.removeEventListener('mousedown', onMouseDown, true);
   document.removeEventListener('mouseup', onMouseUp);
   document.removeEventListener('contextmenu', onContextMenu, true);
   document.removeEventListener('keydown', onKeyDown, true);
-  if (state.rafId !== null) cancelAnimationFrame(state.rafId);
-  state.rafId = null;
+  stopLoop?.();
+  stopLoop = null;
   state.draggingId = null;
   state.hoveredId = null;
   state.snapTarget = null;
@@ -140,20 +235,35 @@ function removeGuideLabels(ids: string[]): void {
 }
 
 export function clearGuides(): void {
+  if (state.guides.length > 0) pushUndo({ kind: 'delete', guides: [...state.guides] });
   const ids = state.guides.map((g) => g.id);
   state.guides.splice(0, state.guides.length);
   removeGuideLabels(ids);
-  void saveGuides([]);
+  state.hoveredId = null;
+  void persist();
 }
 
 function removeGuide(guide: Guide): void {
   const idx = state.guides.findIndex((g) => g.id === guide.id);
   if (idx === -1) return;
   state.guides.splice(idx, 1);
+  pushUndo({ kind: 'delete', guides: [guide] });
+  fading.push({ guide, t0: performance.now() });
   removeGuideLabels([guide.id]);
   if (state.hoveredId === guide.id) state.hoveredId = null;
   if (state.draggingId === guide.id) state.draggingId = null;
-  void saveGuides(state.guides);
+  void persist();
+  showToast('Guide deleted');
+  refreshCursor();
+  markActive();
+}
+
+/** Delete the guide under the pointer, if any. */
+export function deleteHoveredGuide(): boolean {
+  const guide = state.guides.find((g) => g.id === state.hoveredId);
+  if (!guide) return false;
+  removeGuide(guide);
+  return true;
 }
 
 /** Paint placed guides onto the persist canvas (called every frame while Calipers is open). */
@@ -185,6 +295,17 @@ export function paintPlacedGuides(
       removeLabel(name);
       knownLabelIds.delete(name);
     }
+  }
+
+  const now = performance.now();
+  for (let i = fading.length - 1; i >= 0; i--) {
+    const { guide, t0 } = fading[i]!;
+    const t = (now - t0) / FADE_MS;
+    if (t >= 1) { fading.splice(i, 1); continue; }
+    ctx.globalAlpha = (1 - t) ** 2;
+    drawGuide(ctx, guide.axis, guideViewPos(guide), true);
+    ctx.globalAlpha = 1;
+    markActive();
   }
 }
 
@@ -305,8 +426,9 @@ function getHandlePosition(guide: Guide): { x: number; y: number } {
     : { x: viewPos, y: M };
 }
 
-function findGuideAtPoint(x: number, y: number): Guide | null {
+function findGuideAtPoint(x: number, y: number, skip?: Set<string>): Guide | null {
   for (const guide of state.guides) {
+    if (skip?.has(guide.id)) continue;
     const hp = getHandlePosition(guide);
     const dist = Math.hypot(x - hp.x, y - hp.y);
     if (dist <= HANDLE_HIT) return guide;
@@ -321,6 +443,7 @@ function onKeyDown(e: KeyboardEvent): void {
   if (!state.interactive) return;
   const t = e.target as HTMLElement;
   if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable) return;
+
   if (e.metaKey || e.ctrlKey || e.altKey) return;
 
   const key = e.key.toLowerCase();
@@ -343,45 +466,33 @@ function onKeyDown(e: KeyboardEvent): void {
 }
 
 function syncPlacementUi(): void {
-  const idx = state.placement === 'horizontal' ? 1 : state.placement === 'vertical' ? 2 : 0;
-  const indicator = document.querySelector<HTMLElement>('[data-guide-placement-indicator]');
-  if (indicator) {
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    indicator.style.transition = reduce ? 'none' : 'left 0.22s cubic-bezier(0.4, 0, 0.2, 1)';
-    indicator.style.left = `calc(3px + ${idx} * ((100% - 6px) / 3))`;
-  }
-  document.querySelectorAll<HTMLElement>('[data-guide-placement]').forEach((btn) => {
-    const on = btn.dataset['guidePlacement'] === state.placement;
-    btn.style.color = on ? '#000' : '#737373';
-    btn.setAttribute('aria-pressed', String(on));
-  });
+  setSegmented(document, 'guide-placement', state.placement);
 }
 
 function onClick(e: MouseEvent): void {
+  if (swallowClick) { swallowClick = false; return; }
   if (isCalipersElement(e.target as Element)) return;
   if (state.hoveredId) return;
   if (e.button !== 0) return;
 
-  let x = e.clientX;
-  let y = e.clientY;
+  const x = e.clientX;
+  const y = e.clientY;
   if (x < RULER_SIZE || y < RULER_SIZE) return;
 
-  if (state.snapEnabled) {
-    if (state.placement !== 'vertical') {
-      y = findSnapPosition('horizontal', y, e.clientX, e.clientY);
-    }
-    if (state.placement !== 'horizontal') {
-      x = findSnapPosition('vertical', x, e.clientX, e.clientY);
-    }
-  }
-
+  // Placement always lands exactly where you click — the live preview line
+  // tracks the raw cursor, so the committed guide must match it. Snapping
+  // still applies once a guide exists and is being dragged (see onMouseMove).
+  const added: Guide[] = [];
   if (state.placement === 'both' || state.placement === 'horizontal') {
-    state.guides.push({ id: uid(), axis: 'horizontal', position: toGuidePagePos('horizontal', y) });
+    added.push({ id: uid(), axis: 'horizontal', position: toGuidePagePos('horizontal', y) });
   }
   if (state.placement === 'both' || state.placement === 'vertical') {
-    state.guides.push({ id: uid(), axis: 'vertical', position: toGuidePagePos('vertical', x) });
+    added.push({ id: uid(), axis: 'vertical', position: toGuidePagePos('vertical', x) });
   }
-  void saveGuides(state.guides);
+  state.guides.push(...added);
+  for (const g of added) unarmed.add(g.id);
+  pushUndo({ kind: 'add', ids: added.map((g) => g.id) });
+  void persist();
 }
 
 function onMouseMove(e: MouseEvent): void {
@@ -389,6 +500,11 @@ function onMouseMove(e: MouseEvent): void {
   state.mouseY = e.clientY;
 
   if (state.draggingId) {
+    // A press only becomes a move once the pointer has travelled; a still press is a click (delete).
+    if (press && !press.moved) {
+      if (Math.hypot(e.clientX - press.x, e.clientY - press.y) < DRAG_THRESHOLD) return;
+      press.moved = true;
+    }
     const guide = state.guides.find((g) => g.id === state.draggingId);
     if (guide) {
       const raw = guide.axis === 'horizontal' ? e.clientY : e.clientX;
@@ -400,27 +516,49 @@ function onMouseMove(e: MouseEvent): void {
     }
   } else {
     state.snapTarget = null;
-    const hovered = findGuideAtPoint(e.clientX, e.clientY);
+    // A guide you just placed is still under the pointer; it only becomes
+    // deletable once you have moved off it and come back.
+    for (const id of [...unarmed]) {
+      const only = new Set(state.guides.filter((g) => g.id !== id).map((g) => g.id));
+      if (!findGuideAtPoint(e.clientX, e.clientY, only)) unarmed.delete(id);
+    }
+    const hovered = findGuideAtPoint(e.clientX, e.clientY, unarmed);
     state.hoveredId = hovered?.id ?? null;
   }
 }
 
 function onMouseDown(e: MouseEvent): void {
+  swallowClick = false;
   if (e.button !== 0) return;
   if (isCalipersElement(e.target as Element)) return;
   const guide = findGuideAtPoint(e.clientX, e.clientY);
   if (guide) {
     state.draggingId = guide.id;
+    press = { id: guide.id, x: e.clientX, y: e.clientY, from: guide.position, moved: false };
     e.preventDefault();
   }
 }
 
 function onMouseUp(): void {
-  if (state.draggingId) {
-    void saveGuides(state.guides);
-    state.draggingId = null;
-    state.snapTarget = null;
+  if (!state.draggingId) return;
+  const guide = state.guides.find((g) => g.id === state.draggingId);
+  const p = press;
+  press = null;
+  state.draggingId = null;
+  state.snapTarget = null;
+  swallowClick = true;
+
+  if (guide && p) {
+    if (!p.moved) {
+      removeGuide(guide);
+    } else {
+      if (guide.position !== p.from) pushUndo({ kind: 'move', id: guide.id, from: p.from });
+      void persist();
+    }
   }
+
+  state.hoveredId = findGuideAtPoint(state.mouseX, state.mouseY)?.id ?? null;
+  refreshCursor();
 }
 
 function onContextMenu(e: MouseEvent): void {
@@ -436,10 +574,8 @@ function onContextMenu(e: MouseEvent): void {
 
 function scheduleFrame(): void {
   if (!overlay || !state.interactive) return;
-  state.rafId = requestAnimationFrame(() => {
-    render();
-    scheduleFrame();
-  });
+  stopLoop?.();
+  stopLoop = addRenderer(render);
 }
 
 function render(): void {
@@ -448,23 +584,34 @@ function render(): void {
 
   clearCanvas(ctx);
 
-  // Live preview matching placement mode
-  if (state.placement === 'both' || state.placement === 'horizontal') {
-    drawGuide(ctx, 'horizontal', state.mouseY, false);
-  }
-  if (state.placement === 'both' || state.placement === 'vertical') {
-    drawGuide(ctx, 'vertical', state.mouseX, false);
+  const dragged = state.draggingId ? state.guides.find((g) => g.id === state.draggingId) : undefined;
+  const moving = Boolean(dragged && press?.moved);
+  const overGuide = state.hoveredId !== null || state.draggingId !== null;
+
+  // The placement preview would suggest a click adds a guide — over an existing one it deletes instead.
+  if (!overGuide) {
+    if (state.placement === 'both' || state.placement === 'horizontal') {
+      drawGuide(ctx, 'horizontal', state.mouseY, false);
+    }
+    if (state.placement === 'both' || state.placement === 'vertical') {
+      drawGuide(ctx, 'vertical', state.mouseX, false);
+    }
   }
 
-  if (state.snapTarget !== null && state.draggingId) {
-    const guide = state.guides.find((g) => g.id === state.draggingId);
-    if (guide) drawGuide(ctx, guide.axis, state.snapTarget, true);
+  if (state.snapTarget !== null && dragged) drawGuide(ctx, dragged.axis, state.snapTarget, true);
+
+  if (overGuide && !moving) {
+    setLabel(labelContainer, 'guide-hint', 'Click to delete · Drag to move', state.mouseX + 16, state.mouseY + 18);
+  } else {
+    hideLabel('guide-hint');
   }
 
   setLabel(
     labelContainer,
     'crosshair-pos',
-    `${Math.round(state.mouseX)}, ${Math.round(state.mouseY)}`,
+    moving && dragged
+      ? formatDistance(dragged.position)
+      : `${Math.round(state.mouseX)}, ${Math.round(state.mouseY)}`,
     state.mouseX + 10,
     state.mouseY - 22,
   );

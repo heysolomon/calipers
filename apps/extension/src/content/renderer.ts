@@ -2,25 +2,15 @@
  * Renderer — draws highlights, dimension lines, measurement labels onto the canvas.
  * All coordinates are in CSS pixels; we apply DPR scaling at the start of each frame.
  */
-import type { Rect, BoxModel } from '@calipers/shared';
+import type { Rect } from '@calipers/shared';
+import { tuning } from './motion';
 
 // ─── Design tokens (mirrors popup / branding) ─────────────────────────────────
 
 const C = {
   primary: '#FF4500',
-  primaryAlpha08: 'rgba(255, 69, 0, 0.08)',
-  primaryAlpha12: 'rgba(255, 69, 0, 0.12)',
-  primaryAlpha60: 'rgba(255, 69, 0, 0.6)',
   primaryAlpha80: 'rgba(255, 69, 0, 0.8)',
   primaryAlpha50: 'rgba(255, 69, 0, 0.5)',
-  boxContent: 'rgba(255, 69, 0, 0.15)',
-  boxPadding: 'rgba(80, 200, 140, 0.15)',
-  boxBorder: 'rgba(255, 200, 80, 0.15)',
-  boxMargin: 'rgba(255, 130, 80, 0.15)',
-  boxContentBorder: 'rgba(255, 69, 0, 0.4)',
-  boxPaddingBorder: 'rgba(80, 200, 140, 0.4)',
-  boxBorderBorder: 'rgba(255, 200, 80, 0.4)',
-  boxMarginBorder: 'rgba(255, 130, 80, 0.4)',
 };
 
 // ─── Module state ─────────────────────────────────────────────────────────────
@@ -59,31 +49,105 @@ export function clearCanvas(ctx: CanvasRenderingContext2D): void {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
-/** Draw a hovered element highlight */
+function hexToRgb(hex: string): string {
+  const h = hex.replace('#', '');
+  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+  const n = parseInt(full.slice(0, 6), 16);
+  return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`;
+}
+
+/**
+ * The one element highlight every mode shares.
+ * Hover: soft fill with a thin border. Selected (clicked / pinned): the same
+ * shape with a darker fill and a solid, heavier border.
+ */
 export function drawElementHighlight(
   ctx: CanvasRenderingContext2D,
   rect: Rect,
-  locked = false,
+  selected = false,
   opacity = 1,
+  color = C.primary,
 ): void {
   scale(ctx);
   ctx.globalAlpha = opacity;
+  const rgb = hexToRgb(color);
 
-  // Soft fill — keep the page readable
-  ctx.fillStyle = locked ? 'rgba(255,69,0,0.10)' : 'rgba(255,69,0,0.06)';
-  roundedRect(ctx, rect.x, rect.y, rect.width, rect.height, 2);
+  ctx.fillStyle = `rgba(${rgb},${selected ? tuning.selectedFillAlpha : tuning.fillAlpha})`;
+  roundedRect(ctx, rect.x, rect.y, rect.width, rect.height, tuning.radius);
   ctx.fill();
 
-  // Quiet border
-  ctx.strokeStyle = locked ? '#FF4500' : 'rgba(255,69,0,0.75)';
-  ctx.lineWidth = locked ? 1.5 : 1;
-  roundedRect(ctx, rect.x, rect.y, rect.width, rect.height, 2);
+  ctx.strokeStyle = `rgba(${rgb},${selected ? 1 : tuning.strokeAlpha})`;
+  ctx.lineWidth = selected ? 1.5 : 1;
+  roundedRect(ctx, rect.x, rect.y, rect.width, rect.height, tuning.radius);
   ctx.stroke();
 
   ctx.globalAlpha = 1;
 }
 
+/**
+ * Colour picker target. Elements use the shared highlight. Text is the one
+ * deliberate exception: the word itself is filled with the accent and turned
+ * white by the CSS Highlight API, so only an outline is drawn around it here.
+ */
+export function drawColorPickHighlight(
+  ctx: CanvasRenderingContext2D,
+  rect: { x: number; y: number; w: number; h: number; opacity: number },
+  isText: boolean,
+  selected = false,
+  /** Tint the word here because the browser cannot recolour the text itself. */
+  tintText = false,
+): void {
+  if (!isText) {
+    drawElementHighlight(ctx, {
+      x: rect.x, y: rect.y, width: rect.w, height: rect.h,
+      left: rect.x, top: rect.y, right: rect.x + rect.w, bottom: rect.y + rect.h,
+    }, selected, rect.opacity);
+    return;
+  }
+
+  scale(ctx);
+  ctx.globalAlpha = rect.opacity;
+  roundedRect(ctx, rect.x, rect.y, rect.w, rect.h, tuning.radius + 1);
+  if (tintText) {
+    ctx.fillStyle = `rgba(255,69,0,${selected ? 0.28 : 0.2})`;
+    ctx.fill();
+  }
+  ctx.strokeStyle = selected ? C.primary : C.primaryAlpha80;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
 /** Draw measurement line between two points with end caps and centered label */
+/** Small lettered marker on a pinned element's corner — names it without a label in the way. */
+export function drawBadge(ctx: CanvasRenderingContext2D, x: number, y: number, letter: string): void {
+  scale(ctx);
+  const r = 8;
+  // Keep the whole badge on screen when the element touches the viewport edge.
+  const cx = Math.max(r + 2, x);
+  const cy = Math.max(r + 2, y);
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = C.primary;
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '600 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(letter, cx, cy + 0.5);
+}
+
+/** Share of the animation spent drawing the line; the rest opens the far end cap. */
+export const LINE_TRAVEL = 0.78;
+
+const easeInOutCubic = (t: number): number => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+const easeOutCubic = (t: number): number => 1 - (1 - t) ** 3;
+
 export function drawMeasurementLine(
   ctx: CanvasRenderingContext2D,
   x1: number,
@@ -94,50 +158,40 @@ export function drawMeasurementLine(
 ): void {
   scale(ctx);
 
-  const mx = (x1 + x2) / 2;
-  const my = (y1 + y2) / 2;
+  // Three beats, in the order you picked the elements:
+  //  1. a cap opens on the first element's edge,
+  //  2. the line runs straight from there to the second element,
+  //  3. once it lands, the cap on that edge opens out.
+  // The line eases in and out so it visibly leaves the first edge rather than
+  // appearing part-way along.
+  const travel = easeInOutCubic(Math.min(1, progress / LINE_TRAVEL));
+  const startCap = easeOutCubic(Math.min(1, progress / 0.18));
+  const endCap = easeOutCubic(Math.max(0, (progress - LINE_TRAVEL) / (1 - LINE_TRAVEL)));
 
-  // Animate from center outward
-  const ax1 = mx + (x1 - mx) * progress;
-  const ay1 = my + (y1 - my) * progress;
-  const ax2 = mx + (x2 - mx) * progress;
-  const ay2 = my + (y2 - my) * progress;
-
-  const isHorizontal = Math.abs(ay2 - ay1) < 2;
+  const tipX = x1 + (x2 - x1) * travel;
+  const tipY = y1 + (y2 - y1) * travel;
+  const isHorizontal = Math.abs(y2 - y1) < 2;
   const capSize = 4;
 
-  ctx.strokeStyle = `rgba(255, 69, 0, ${0.8 * progress})`;
+  ctx.strokeStyle = 'rgba(255, 69, 0, 0.8)';
   ctx.lineWidth = 1.5;
   ctx.lineCap = 'round';
 
-  // Main line
   ctx.beginPath();
-  ctx.moveTo(ax1, ay1);
-  ctx.lineTo(ax2, ay2);
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(tipX, tipY);
   ctx.stroke();
 
-  // End caps
-  if (isHorizontal) {
-    // vertical end caps
+  const cap = (x: number, y: number, amount: number): void => {
+    if (amount <= 0) return;
+    const half = capSize * amount;
     ctx.beginPath();
-    ctx.moveTo(ax1, ay1 - capSize);
-    ctx.lineTo(ax1, ay1 + capSize);
+    if (isHorizontal) { ctx.moveTo(x, y - half); ctx.lineTo(x, y + half); }
+    else { ctx.moveTo(x - half, y); ctx.lineTo(x + half, y); }
     ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(ax2, ay2 - capSize);
-    ctx.lineTo(ax2, ay2 + capSize);
-    ctx.stroke();
-  } else {
-    // horizontal end caps
-    ctx.beginPath();
-    ctx.moveTo(ax1 - capSize, ay1);
-    ctx.lineTo(ax1 + capSize, ay1);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(ax2 - capSize, ay2);
-    ctx.lineTo(ax2 + capSize, ay2);
-    ctx.stroke();
-  }
+  };
+  cap(x1, y1, startCap);
+  cap(x2, y2, endCap);
 }
 
 /** Draw dashed alignment guideline extending from an element edge */
@@ -184,149 +238,6 @@ export function drawGuide(
   ctx.stroke();
 }
 
-// ─── Box model helpers ────────────────────────────────────────────────────────
-
-/** Format a box model value: show "-" for zero, round otherwise */
-function fmtPx(v: number): string {
-  return v === 0 ? '-' : String(Math.round(v));
-}
-
-/**
- * Draw a single dimension value centered in a band on the canvas.
- * Skips rendering if the band is too narrow to fit readable text.
- */
-function drawBandLabel(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  cx: number,
-  cy: number,
-  bandSize: number,
-  textColor: string,
-): void {
-  if (bandSize < 8) return; // band too thin — skip
-  ctx.save();
-  ctx.font = '10px Inter, -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.shadowColor = 'rgba(0,0,0,0.55)';
-  ctx.shadowBlur = 3;
-  ctx.fillStyle = textColor;
-  ctx.fillText(text, cx, cy);
-  ctx.restore();
-}
-
-/** Draw a ring using evenodd fill so only the band between outer and inner is colored */
-function drawRing(
-  ctx: CanvasRenderingContext2D,
-  outer: { x: number; y: number; w: number; h: number },
-  inner: { x: number; y: number; w: number; h: number },
-  values: { top: number; right: number; bottom: number; left: number },
-  fillColor: string,
-  strokeColor: string,
-  _layerName: string,
-  textColor: string,
-): void {
-  // evenodd fill: outer rect (winding) + inner rect (same winding) = only the
-  // ring area between them is painted. No overlap with inner layers.
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(outer.x, outer.y, outer.w, outer.h);
-  ctx.rect(inner.x, inner.y, inner.w, inner.h);
-  ctx.fillStyle = fillColor;
-  ctx.fill('evenodd');
-
-  // Dashed border on the outer edge only
-  ctx.beginPath();
-  ctx.rect(outer.x, outer.y, outer.w, outer.h);
-  ctx.strokeStyle = strokeColor;
-  ctx.lineWidth = 1;
-  ctx.setLineDash([3, 3]);
-  ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.restore();
-
-  // Band dimension labels — centered in each of the four band sides
-  const topBandH = inner.y - outer.y;
-  const bottomBandH = (outer.y + outer.h) - (inner.y + inner.h);
-  const leftBandW = inner.x - outer.x;
-  const rightBandW = (outer.x + outer.w) - (inner.x + inner.w);
-
-  drawBandLabel(ctx, fmtPx(values.top),
-    outer.x + outer.w / 2, outer.y + topBandH / 2, topBandH, textColor);
-
-  drawBandLabel(ctx, fmtPx(values.bottom),
-    outer.x + outer.w / 2, inner.y + inner.h + bottomBandH / 2, bottomBandH, textColor);
-
-  drawBandLabel(ctx, fmtPx(values.left),
-    outer.x + leftBandW / 2, outer.y + outer.h / 2, leftBandW, textColor);
-
-  drawBandLabel(ctx, fmtPx(values.right),
-    inner.x + inner.w + rightBandW / 2, outer.y + outer.h / 2, rightBandW, textColor);
-}
-
-/** Draw the box model overlay for an element */
-export function drawBoxModel(ctx: CanvasRenderingContext2D, box: BoxModel): void {
-  scale(ctx);
-
-  const { content, padding, border, margin } = box;
-
-  // Compute each box rect
-  const paddingRect = {
-    x: content.left - padding.left,
-    y: content.top - padding.top,
-    w: content.width + padding.left + padding.right,
-    h: content.height + padding.top + padding.bottom,
-  };
-
-  const borderRect = {
-    x: paddingRect.x - border.left,
-    y: paddingRect.y - border.top,
-    w: paddingRect.w + border.left + border.right,
-    h: paddingRect.h + border.top + border.bottom,
-  };
-
-  const marginRect = {
-    x: borderRect.x - margin.left,
-    y: borderRect.y - margin.top,
-    w: borderRect.w + margin.left + margin.right,
-    h: borderRect.h + margin.top + margin.bottom,
-  };
-
-  // Draw outermost → innermost so inner layers paint over outer fill
-
-  // Margin ring
-  drawRing(ctx, marginRect, borderRect, margin,
-    C.boxMargin, C.boxMarginBorder, 'margin', 'rgba(255,160,100,0.95)');
-
-  // Border ring
-  drawRing(ctx, borderRect, paddingRect, border,
-    C.boxBorder, C.boxBorderBorder, 'border', 'rgba(220,190,80,0.95)');
-
-  // Padding ring
-  drawRing(ctx, paddingRect, { x: content.left, y: content.top, w: content.width, h: content.height }, padding,
-    C.boxPadding, C.boxPaddingBorder, 'padding', 'rgba(80,200,140,0.95)');
-
-  // Content box
-  ctx.fillStyle = C.boxContent;
-  roundedRect(ctx, content.left, content.top, content.width, content.height, 2);
-  ctx.fill();
-  ctx.strokeStyle = C.boxContentBorder;
-  ctx.lineWidth = 1;
-  ctx.setLineDash([3, 3]);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Content dimensions label in the center
-  const contentLabel = `${Math.round(content.width)} × ${Math.round(content.height)}`;
-  drawBandLabel(
-    ctx, contentLabel,
-    content.left + content.width / 2,
-    content.top + content.height / 2,
-    Math.min(content.width, content.height),
-    'rgba(100,180,255,0.95)',
-  );
-}
-
 // ─── Ruler overlay ────────────────────────────────────────────────────────────
 
 export const RULER_SIZE = 20;
@@ -344,12 +255,12 @@ export function drawRulers(
   const R = RULER_SIZE;
 
   // Background strips
-  ctx.fillStyle = 'rgba(10,10,10,0.82)';
+  ctx.fillStyle = 'rgba(255,255,255,0.94)';
   ctx.fillRect(0, 0, w, R);
   ctx.fillRect(0, R, R, h - R);
 
   // Separator lines
-  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.strokeStyle = 'rgba(0,0,0,0.1)';
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(0, R);     ctx.lineTo(w, R);
@@ -357,7 +268,7 @@ export function drawRulers(
   ctx.stroke();
 
   // Ticks and labels
-  ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+  ctx.strokeStyle = 'rgba(0,0,0,0.28)';
   ctx.lineWidth = 0.5;
   ctx.font = '7px Inter, -apple-system, sans-serif';
 
@@ -368,7 +279,7 @@ export function drawRulers(
     const tick  = major ? 12 : mid ? 7 : 3;
     ctx.beginPath(); ctx.moveTo(x, R); ctx.lineTo(x, R - tick); ctx.stroke();
     if (major && px > 0) {
-      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'alphabetic';
       ctx.fillText(String(px), x, R - 14);
@@ -383,7 +294,7 @@ export function drawRulers(
     ctx.beginPath(); ctx.moveTo(R, y); ctx.lineTo(R - tick, y); ctx.stroke();
     if (major && py > 0) {
       ctx.save();
-      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
       ctx.translate(R - 14, y);
       ctx.rotate(-Math.PI / 2);
       ctx.textAlign = 'center';
@@ -395,7 +306,7 @@ export function drawRulers(
 
   // Cursor crosshair highlights on the rulers
   if (mouseX > R && mouseY > R) {
-    ctx.fillStyle = 'rgba(255,69,0,0.55)';
+    ctx.fillStyle = 'rgba(255,69,0,0.9)';
     ctx.fillRect(mouseX - 0.5, 0, 1, R);
     ctx.fillRect(0, mouseY - 0.5, R, 1);
   }

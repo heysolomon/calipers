@@ -3,6 +3,8 @@
  * toggled with the `?` key while Calipers is active.
  */
 
+import { UI } from './tokens';
+
 const PANEL_ID = 'calipers-shortcuts-panel';
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -11,34 +13,33 @@ const BACKDROP_CSS = `
   position: fixed;
   inset: 0;
   z-index: 2147483645;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
 `;
 
 const PANEL_CSS = `
-  background: rgba(12, 14, 20, 0.95);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(255,255,255,0.09);
+  background: ${UI.bg};
+  border: 1px solid ${UI.border};
   border-radius: 14px;
   padding: 20px 22px 18px;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.03);
-  font-family: 'Neue Plak Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  color: rgba(255,255,255,0.85);
+  box-shadow: ${UI.shadow};
+  font-family: ${UI.font};
+  color: ${UI.textPrimary};
   width: 380px;
   max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  box-sizing: border-box;
   pointer-events: all;
   user-select: none;
-  animation: calipers-shortcuts-in 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: calipers-shortcuts-in 0.16s ${UI.easeOut} both;
 `;
 
 const KEYFRAME_CSS = `
   @keyframes calipers-shortcuts-in {
-    from { opacity: 0; transform: scale(0.92) translateY(8px); }
+    from { opacity: 0; transform: scale(0.98) translateY(4px); }
     to   { opacity: 1; transform: scale(1)    translateY(0);   }
   }
 `;
@@ -50,24 +51,24 @@ function kbd(keys: string[]): string {
     .map(
       (k) => `<span style="
         display:inline-flex;align-items:center;justify-content:center;
-        background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);
+        background:#fafafa;border:1px solid ${UI.border};
         border-bottom-width:2px;border-radius:5px;
-        padding:2px 7px;min-width:22px;height:22px;
+        padding:0 6px;min-width:22px;height:22px;box-sizing:border-box;
         font-size:11px;font-weight:500;letter-spacing:0.01em;
-        color:rgba(255,255,255,0.8);font-family:inherit;line-height:1;
+        color:${UI.textSecondary};font-family:inherit;line-height:1;
         white-space:nowrap;
       ">${k}</span>`,
     )
-    .join('<span style="color:rgba(255,255,255,0.2);font-size:10px;margin:0 3px;">+</span>');
+    .join(`<span style="color:${UI.textMuted};font-size:10px;margin:0 3px;">+</span>`);
 }
 
 function row(keys: string[], label: string): string {
   return `
     <div style="
       display:flex;align-items:center;justify-content:space-between;
-      padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);
+      padding:5px 0;border-bottom:1px solid ${UI.borderSubtle};
     ">
-      <span style="font-size:12px;color:rgba(255,255,255,0.5);">${label}</span>
+      <span style="font-size:12px;color:${UI.textSecondary};letter-spacing:-0.01em;">${label}</span>
       <div style="display:flex;align-items:center;gap:3px;">${kbd(keys)}</div>
     </div>
   `;
@@ -78,7 +79,7 @@ function section(title: string, rows: string): string {
     <div style="margin-top:14px;">
       <div style="
         font-size:9px;font-weight:600;letter-spacing:0.1em;
-        color:rgba(255,255,255,0.22);text-transform:uppercase;
+        color:${UI.textMuted};text-transform:uppercase;
         margin-bottom:4px;
       ">${title}</div>
       ${rows}
@@ -96,27 +97,25 @@ function buildHTML(): string {
     ">
       <span style="
         font-size:11px;font-weight:600;letter-spacing:0.08em;
-        color:rgba(255,255,255,0.3);text-transform:uppercase;
+        color:${UI.textSecondary};text-transform:uppercase;
       ">Keyboard Shortcuts</span>
       <span style="
-        font-size:10px;color:rgba(255,255,255,0.2);
-        border:1px solid rgba(255,255,255,0.1);border-radius:4px;
+        font-size:10px;color:${UI.textMuted};
+        border:1px solid ${UI.border};border-radius:4px;
         padding:2px 6px;letter-spacing:0.04em;
       ">Press ? to close</span>
     </div>
 
     ${section('Modes', `
-      ${row(['1'], 'Inspect — hover to measure elements')}
+      ${row(['1'], 'Inspect — size, type and colours')}
       ${row(['2'], 'Measure — click two elements to compare')}
       ${row(['3'], 'Guides — crosshair + pin guide lines')}
-      ${row(['4'], 'Colour picker')}
-      ${row(['5'], 'Spacing grid')}
-      ${row(['6'], 'Annotate — critique UI like a notebook')}
+      ${row(['4'], 'Annotate — critique UI like a notebook')}
     `)}
 
     ${section('Inspect Mode', `
-      ${row(['B'], 'Toggle box model overlay')}
-      ${row(['Click'], 'Show box model detail panel')}
+      ${row(['Click'], 'Open details for text or an element')}
+      ${row(['F'], 'Cycle colour format')}
     `)}
 
     ${section('Guides Mode', `
@@ -124,13 +123,10 @@ function buildHTML(): string {
       ${row(['H'], 'Place horizontal only')}
       ${row(['V'], 'Place vertical only')}
       ${row(['Click'], 'Pin guide(s) at cursor')}
-      ${row(['Right-click'], 'Remove a single guide')}
-      ${row(['Del'], 'Clear all guides')}
-    `)}
-
-    ${section('Colour Picker', `
-      ${row(['F'], 'Cycle HEX / RGB / HSL')}
-      ${row(['Click'], 'Copy colour (hover panel to pin)')}
+      ${row(['Click a guide'], 'Delete it')}
+      ${row(['Drag a guide'], 'Move it')}
+      ${row(['⌘ / Ctrl', 'Z'], 'Undo the last guide change')}
+      ${row(['Del'], 'Delete hovered guide, or clear all')}
     `)}
 
     ${section('Annotate', `

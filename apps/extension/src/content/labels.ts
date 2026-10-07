@@ -3,10 +3,15 @@
  * Using DOM instead of canvas drawing enables real backdrop-filter blur.
  */
 import { uid, copyToClipboard } from './utils';
+import { showToast } from './toast';
+
+export { showToast } from './toast';
 
 const LABEL_STYLE = `
   position: absolute;
-  background: rgba(247, 247, 247, 0.96);
+  left: 0;
+  top: 0;
+  background: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 6px;
   color: #000;
@@ -16,7 +21,7 @@ const LABEL_STYLE = `
   letter-spacing: -0.01em;
   padding: 3px 8px;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 2px 8px rgba(0, 0, 0, 0.04);
   pointer-events: all;
   cursor: pointer;
   user-select: none;
@@ -24,31 +29,8 @@ const LABEL_STYLE = `
   will-change: opacity;
 `;
 
-const TOAST_STYLE = `
-  position: fixed;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%) translateY(0);
-  background: rgba(80, 200, 140, 0.9);
-  backdrop-filter: blur(16px) saturate(150%);
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.95);
-  font-family: 'Neue Plak Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  padding: 6px 14px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-  pointer-events: none;
-  z-index: 2147483647;
-`;
-
-type LabelEntry = { el: HTMLElement; id: string; text: string };
+type LabelEntry = { el: HTMLElement; id: string; text: string | null; x: number; y: number; visible: boolean };
 const labels = new Map<string, LabelEntry>();
-let toastTimeout: ReturnType<typeof setTimeout> | null = null;
-let toastEl: HTMLElement | null = null;
 let errorReportEl: HTMLElement | null = null;
 
 const ERROR_REPORT_STYLE = `
@@ -60,7 +42,7 @@ const ERROR_REPORT_STYLE = `
   background: #fff;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 12px;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 6px 20px rgba(0, 0, 0, 0.06);
   font-family: 'Neue Plak Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   color: #000;
   z-index: 2147483647;
@@ -89,16 +71,20 @@ export function setLabel(
     el.addEventListener('click', async () => {
       const val = el.dataset['copyValue'] ?? el.textContent ?? '';
       await copyToClipboard(val);
-      showToast('Copied!');
+      showToast('Copied', { type: 'success' });
     });
 
-    entry = { el, id: el.id, text };
+    entry = { el, id: el.id, text: null, x: NaN, y: NaN, visible: false };
     labels.set(name, entry);
   }
 
+  // Called every frame for live labels, so only write what actually changed.
   const { el } = entry;
-  el.textContent = text;
-  if (copyValue !== undefined) el.dataset['copyValue'] = copyValue;
+  if (entry.text !== text) {
+    el.textContent = text;
+    entry.text = text;
+  }
+  if (copyValue !== undefined && el.dataset['copyValue'] !== copyValue) el.dataset['copyValue'] = copyValue;
 
   // Position: clamp within viewport
   const vpW = window.innerWidth;
@@ -106,19 +92,27 @@ export function setLabel(
   const labelW = 100; // approx — DOM hasn't reflow'd yet
   const labelH = 24;
 
-  const clampedX = Math.max(4, Math.min(vpW - labelW - 4, x));
-  const clampedY = Math.max(4, Math.min(vpH - labelH - 4, y));
+  const clampedX = Math.round(Math.max(4, Math.min(vpW - labelW - 4, x)));
+  const clampedY = Math.round(Math.max(4, Math.min(vpH - labelH - 4, y)));
 
-  el.style.left = `${clampedX}px`;
-  el.style.top = `${clampedY}px`;
-  el.style.opacity = '1';
+  // transform instead of left/top: moves on the compositor, no layout
+  if (entry.x !== clampedX || entry.y !== clampedY) {
+    el.style.transform = `translate3d(${clampedX}px, ${clampedY}px, 0)`;
+    entry.x = clampedX;
+    entry.y = clampedY;
+  }
+  if (!entry.visible) {
+    el.style.opacity = '1';
+    entry.visible = true;
+  }
 }
 
 /** Hide (but don't remove) a label */
 export function hideLabel(name: string): void {
   const entry = labels.get(name);
-  if (entry) {
+  if (entry?.visible) {
     entry.el.style.opacity = '0';
+    entry.visible = false;
   }
 }
 
@@ -138,37 +132,6 @@ export function clearLabels(container: HTMLElement): void {
       labels.delete(name);
     }
   }
-}
-
-/** Show a brief "Copied!" toast notification */
-export function showToast(message: string, duration = 1500): void {
-  if (toastEl) {
-    toastEl.remove();
-    toastEl = null;
-  }
-  if (toastTimeout) clearTimeout(toastTimeout);
-
-  const toast = document.createElement('div');
-  toast.setAttribute('style', TOAST_STYLE);
-  toast.textContent = message;
-  document.documentElement.appendChild(toast);
-  toastEl = toast;
-
-  // Spring entrance
-  requestAnimationFrame(() => {
-    toast.style.transition =
-      'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s cubic-bezier(0.22, 1, 0.36, 1)';
-    toast.style.transform = 'translateX(-50%) translateY(-4px)';
-    toast.style.opacity = '1';
-  });
-
-  toastTimeout = setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateX(-50%) translateY(4px)';
-    setTimeout(() => toast.remove(), 300);
-    toastEl = null;
-    toastTimeout = null;
-  }, duration);
 }
 
 function dismissErrorReport(): void {
@@ -205,7 +168,7 @@ export function showErrorReport(action: string, error: string): void {
   console.error(`[Calipers] ${action} failed\n${report}`);
   console.error('[Calipers] error object:', { action, error, report });
 
-  showToast(`${action} failed — see Console (F12) for details`, 4000);
+  showToast(`${action} failed — see Console`, { type: 'error', duration: 4000 });
 
   // Lightweight card pointing at the console (no clipboard dependency)
   const card = document.createElement('div');

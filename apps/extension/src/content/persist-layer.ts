@@ -5,14 +5,16 @@
 import { resizeCanvas } from './overlay';
 import { clearCanvas } from './renderer';
 import { paintPlacedGuides, isGuidesVisible, getGuides } from './modes/guides';
+import { checkPage, startPageTracking, stopPageTracking } from './page-scope';
 import { paintPinnedMeasurements } from './modes/measure';
 import { paintAnnotations } from './modes/annotate';
 import { removeLabel } from './labels';
+import { addRenderer } from './frame';
 
 let persistCanvas: HTMLCanvasElement | null = null;
 let persistCtx: CanvasRenderingContext2D | null = null;
 let persistLabels: HTMLDivElement | null = null;
-let rafId: number | null = null;
+let stopLoop: (() => void) | null = null;
 
 export function createPersistLayer(root: HTMLDivElement): void {
   if (persistCanvas) return;
@@ -48,17 +50,15 @@ export function getPersistLabels(): HTMLDivElement | null {
 }
 
 export function startPersistLayer(): void {
-  if (rafId !== null) return;
-  const tick = (): void => {
-    renderPersist();
-    rafId = requestAnimationFrame(tick);
-  };
-  rafId = requestAnimationFrame(tick);
+  if (stopLoop) return;
+  startPageTracking();
+  stopLoop = addRenderer(renderPersist);
 }
 
 export function stopPersistLayer(): void {
-  if (rafId !== null) cancelAnimationFrame(rafId);
-  rafId = null;
+  stopLoop?.();
+  stopLoop = null;
+  stopPageTracking();
   if (persistCtx) clearCanvas(persistCtx);
 }
 
@@ -81,6 +81,9 @@ function renderPersist(): void {
 
   const root = persistCanvas?.parentElement;
   if (!root) return;
+
+  // Before painting, so nothing from the previous page is drawn on a new one.
+  checkPage();
 
   if (isGuidesVisible()) {
     paintPlacedGuides(persistCtx, persistLabels);

@@ -3,13 +3,12 @@
  */
 
 /** Active measurement mode */
-export type Mode = 'inspect' | 'measure' | 'guides' | 'colorpicker' | 'spacing' | 'annotate';
+export type Mode = 'inspect' | 'measure' | 'guides' | 'annotate';
 
 /** Extension activation state */
 export interface ExtensionState {
   active: boolean;
   mode: Mode;
-  showBoxModel: boolean;
   showGuides: boolean;
   showGuideLabels: boolean;
   showRulers: boolean;
@@ -79,21 +78,38 @@ export interface KeyboardShortcut {
 export const DEFAULT_STATE: ExtensionState = {
   active: false,
   mode: 'inspect',
-  showBoxModel: false,
   showGuides: true,
   showGuideLabels: false,
   showRulers: false,
   snapToElements: true,
 };
 
+/** Settings remembered across sessions, and the storage key each one lives under. */
+export const SETTING_STORAGE_KEYS = {
+  snapToElements:  'calipers_snap_to_elements',
+  showRulers:      'calipers_show_rulers',
+  showGuides:      'calipers_show_guides',
+  showGuideLabels: 'calipers_show_guide_labels',
+} as const;
+
+export type SettingKey = keyof typeof SETTING_STORAGE_KEYS;
+export type Settings = Pick<ExtensionState, SettingKey>;
+
+/** Read saved settings out of a storage result, falling back to the defaults. */
+export function settingsFromStorage(result: Record<string, unknown>): Settings {
+  const out = {} as Settings;
+  for (const key of Object.keys(SETTING_STORAGE_KEYS) as SettingKey[]) {
+    const stored = result[SETTING_STORAGE_KEYS[key]];
+    out[key] = typeof stored === 'boolean' ? stored : DEFAULT_STATE[key];
+  }
+  return out;
+}
+
 export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
   { key: '1', description: 'Switch to Inspect mode',       action: 'SWITCH_MODE_INSPECT' },
   { key: '2', description: 'Switch to Measure mode',       action: 'SWITCH_MODE_MEASURE' },
   { key: '3', description: 'Switch to Guides mode',        action: 'SWITCH_MODE_GUIDES' },
-  { key: '4', description: 'Switch to Colour Picker mode', action: 'SWITCH_MODE_COLORPICKER' },
-  { key: '5', description: 'Switch to Spacing Grid mode',  action: 'SWITCH_MODE_SPACING' },
-  { key: '6', description: 'Switch to Annotate mode',      action: 'SWITCH_MODE_ANNOTATE' },
-  { key: 'b', description: 'Toggle box model overlay',     action: 'TOGGLE_BOX_MODEL' },
+  { key: '4', description: 'Switch to Annotate mode',      action: 'SWITCH_MODE_ANNOTATE' },
   { key: 'd', description: 'Open design token panel',      action: 'TOGGLE_TOKEN_PANEL' },
   { key: 'c', description: 'Copy current measurement',     action: 'COPY_MEASUREMENT' },
   { key: 's', description: 'Take screenshot',              action: 'CAPTURE_SCREENSHOT' },

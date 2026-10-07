@@ -28,14 +28,14 @@ const features: Feature[] = [
     icon: <GuidesIcon />,
     title: 'Alignment Guides',
     description:
-      'Place draggable horizontal and vertical guides anywhere on the page. Right-click to remove.',
+      'Place horizontal and vertical guides anywhere on the page. Click a guide to delete it, drag to move it, and undo any change.',
     color: '#50C88C',
   },
   {
     icon: <BoxModelIcon />,
-    title: 'Box Model Overlay',
+    title: 'Type, Colour & Box Details',
     description:
-      'Visualise margin, padding, border, and content areas with colour-coded overlays pulled directly from computed styles.',
+      'Click any text or element to read its font, size, line height, colours, margin, padding, and radius — each one click to copy.',
     color: '#FFC850',
   },
   {

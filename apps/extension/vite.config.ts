@@ -1,6 +1,5 @@
 import { defineConfig, type Plugin } from 'vite';
 import { crx } from '@crxjs/vite-plugin';
-import react from '@vitejs/plugin-react';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join, resolve } from 'path';
 import { fileURLToPath } from 'url';
@@ -130,7 +129,6 @@ function ensureManifestPermissions(): Plugin {
 
 export default defineConfig({
   plugins: [
-    react(),
     // Read from disk each config evaluation so Vite JSON-import cache can't
     // keep an older manifest without "downloads".
     crx({ manifest: loadManifest() }),

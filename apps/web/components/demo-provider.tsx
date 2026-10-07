@@ -1,46 +1,50 @@
 'use client';
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
-export type DemoKey = 'inspect' | 'boxmodel' | 'measure' | 'guides' | 'colorpicker' | 'spacing';
+/** Same modes as the extension. Colours and box values live inside Inspect. */
+export type DemoKey = 'inspect' | 'measure' | 'guides';
+
+/** What the demo cursor should look like, set by the active tool. */
+export type DemoCursor = 'crosshair' | 'text' | 'delete' | 'move-x' | 'move-y';
 
 interface DemoCtx {
-  isOpen:      boolean;
-  inspect:     boolean;
-  boxmodel:    boolean;
-  measure:     boolean;
-  guides:      boolean;
-  colorpicker: boolean;
-  spacing:     boolean;
-  anyTool:     boolean;
-  open:        () => void;
-  close:       () => void;
-  toggle:      (k: DemoKey) => void;
-  reset:       () => void;
+  isOpen:    boolean;
+  inspect:   boolean;
+  measure:   boolean;
+  guides:    boolean;
+  anyTool:   boolean;
+  cursor:    DemoCursor;
+  setCursor: (c: DemoCursor) => void;
+  open:      () => void;
+  close:     () => void;
+  toggle:    (k: DemoKey) => void;
+  reset:     () => void;
 }
 
 const Ctx = createContext<DemoCtx | null>(null);
-const OFF = { inspect: false, boxmodel: false, measure: false, guides: false, colorpicker: false, spacing: false };
+const OFF = { inspect: false, measure: false, guides: false };
 
 export function DemoProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [tools, setTools]   = useState(OFF);
+  const [cursor, setCursorState] = useState<DemoCursor>('crosshair');
 
-  const open  = () => setIsOpen(true);
-  const close = () => { setIsOpen(false); setTools(OFF); };
+  // Stable identity: tools pass this to effects that must not re-run on every render.
+  const setCursor = useCallback((c: DemoCursor) => setCursorState(c), []);
 
-  function toggle(k: DemoKey) {
-    setTools(p => p[k] ? { ...OFF } : { ...OFF, [k]: true });
-  }
+  const value = useMemo<DemoCtx>(() => ({
+    isOpen,
+    ...tools,
+    anyTool: tools.inspect || tools.measure || tools.guides,
+    cursor,
+    setCursor,
+    open:   () => setIsOpen(true),
+    close:  () => { setIsOpen(false); setTools(OFF); setCursorState('crosshair'); },
+    toggle: (k) => { setCursorState('crosshair'); setTools((p) => (p[k] ? { ...OFF } : { ...OFF, [k]: true })); },
+    reset:  () => { setTools(OFF); setCursorState('crosshair'); },
+  }), [isOpen, tools, cursor, setCursor]);
 
-  function reset() { setTools(OFF); }
-
-  const anyTool = tools.inspect || tools.boxmodel || tools.measure || tools.guides || tools.colorpicker || tools.spacing;
-
-  return (
-    <Ctx.Provider value={{ isOpen, ...tools, anyTool, open, close, toggle, reset }}>
-      {children}
-    </Ctx.Provider>
-  );
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
 export function useDemo(): DemoCtx {

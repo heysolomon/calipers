@@ -12,7 +12,7 @@ import {
 export const metadata: Metadata = buildPageMetadata({
   title: 'Calipers vs Page Ruler Redux',
   description:
-    'Compare Calipers and Page Ruler Redux for measuring elements in Chrome. Calipers adds multi-element measure, alignment guides, box model overlay, and design tokens.',
+    'Compare Calipers and Page Ruler Redux for measuring elements in Chrome. Calipers adds multi-element measure, alignment guides, box values, and design tokens.',
   path: '/alternatives/page-ruler',
 });
 
@@ -48,8 +48,8 @@ export default function PageRulerAlternativePage() {
       <BodyText>
         Click two elements in Measure mode and Calipers shows the pixel gap between their closest edges — with
         alignment guidelines drawn automatically. Switch to Guides mode to pin horizontal and vertical lines
-        that snap to element edges. Toggle the box model overlay to see margin, padding, and border values
-        without opening DevTools.
+        you can drag onto element edges. Click any element in Inspect mode to see its margin, padding, and
+        border values without opening DevTools.
       </BodyText>
 
       <SectionLabel label="Related" />

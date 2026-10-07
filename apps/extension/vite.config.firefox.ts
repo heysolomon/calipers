@@ -4,11 +4,9 @@
  * Run: vite build --config vite.config.firefox.ts
  */
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
 export default defineConfig({
-  plugins: [react()],
   resolve: {
     alias: {
       '@calipers/shared': resolve(__dirname, '../../packages/shared/src/index.ts'),

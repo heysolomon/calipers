@@ -30,14 +30,14 @@ export default function DesignHandoffPage() {
 
       <SectionLabel label="What to check" />
       <BodyText>
-        Use Inspect mode (1) to hover over any element and see its exact width × height. Enable the box model
-        overlay (B) to confirm margin, padding, and border values. In Measure mode (2), click two components
+        Use Inspect mode (1) to hover over any element and see its exact width × height. Click it to confirm
+        its margin, padding, and border values. In Measure mode (2), click two components
         to see the pixel distance between them — copy the value with one click.
       </BodyText>
       <BodyText>
         Place alignment guides (3) along key vertical rhythm lines to check that headings, icons, and columns
-        share the same horizontal alignment. Use the colour picker (4) to verify fills and text colours match
-        the palette.
+        share the same horizontal alignment. Click text or an element in Inspect mode to verify its fills,
+        text colours, and type settings match the palette.
       </BodyText>
 
       <SectionLabel label="Share findings" />

@@ -3,6 +3,9 @@
  * that sits above the page.
  */
 
+/** While this class is on <html>, the page's own cursors are hidden in favour of the Calipers mark. */
+export const HIDE_CURSOR_CLASS = 'calipers-hide-cursor';
+
 export interface OverlayElements {
   root: HTMLDivElement;
   canvas: HTMLCanvasElement;
@@ -46,6 +49,25 @@ export function createOverlay(): OverlayElements {
 
   root.appendChild(canvas);
   root.appendChild(labelContainer);
+
+  // Rules that inline styles cannot express.
+  if (!document.getElementById('calipers-base-style')) {
+    const base = document.createElement('style');
+    base.id = 'calipers-base-style';
+    base.textContent = `
+      /* Keyboard focus: every control drops its outline inline, so restore one for keyboard users only. */
+      [id^="calipers-"] button:focus-visible,
+      [id^="calipers-"] [tabindex]:focus-visible {
+        outline: 2px solid #FF4500 !important;
+        outline-offset: 1px !important;
+      }
+      /* Links and buttons set their own cursor, which would show next to the crosshair. */
+      html.${HIDE_CURSOR_CLASS}, html.${HIDE_CURSOR_CLASS} * {
+        cursor: none !important;
+      }
+    `;
+    document.head.appendChild(base);
+  }
 
   // Inject @font-face for Neue Plak Text so all Calipers UI uses the brand font
   if (!document.getElementById('calipers-fonts')) {

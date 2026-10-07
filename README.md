@@ -95,7 +95,6 @@ After running the extension dev server, load `apps/extension/dist/` as an unpack
 | Layer | Technology |
 |---|---|
 | Extension | TypeScript, Canvas API, Chrome Manifest V3 |
-| Popup UI | React 18, Tailwind CSS |
 | Bundler | Vite + `@crxjs/vite-plugin` |
 | Website | Next.js 14 (App Router), TypeScript, Tailwind CSS |
 | Animations | Framer Motion |
@@ -108,13 +107,14 @@ After running the extension dev server, load `apps/extension/dist/` as an unpack
 | Shortcut | Action |
 |---|---|
 | `⌘⇧M` / `Ctrl+Shift+M` | Toggle Calipers on/off |
-| `1` | Switch to Inspect mode |
-| `2` | Switch to Measure mode |
-| `3` | Switch to Guides mode |
-| `B` | Toggle box model overlay |
-| `C` | Copy current measurement |
+| `1` – `4` | Switch mode: Inspect, Measure, Guides, Annotate |
+| `R` | Toggle rulers |
+| `D` | Open design token panel |
+| `F` | Cycle colour format (Inspect) |
 | `S` | Take screenshot |
-| `Esc` | Deactivate / cancel |
+| `⌘Z` / `Ctrl+Z` | Undo in Measure, Guides, and Annotate |
+| `?` | Show all shortcuts |
+| `Esc` | Close what is open, then Calipers |
 
 ---
 

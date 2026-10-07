@@ -39,15 +39,15 @@ export default function DocsIndexPage() {
       <h3>Activate Calipers</h3>
       <p>
         Press <code>Cmd+Shift+M</code> / <code>Ctrl+Shift+M</code> to toggle Calipers on the
-        current page. A floating control panel appears in the top-right corner with the mode
-        switcher and contextual settings.
+        current page. A compact toolbar appears at the top of the page with the modes, capture
+        buttons, and options that open on demand.
       </p>
 
-      <h3>Five Measurement Modes</h3>
+      <h3>Four Modes</h3>
       <ul>
         <li>
-          <strong>Inspect (1)</strong> — Hover elements to see dimensions, typography, CSS path,
-          and viewport distances.
+          <strong>Inspect (1)</strong> — Hover to see an element&apos;s size; click text or an
+          element for its typography, colours, and box values.
         </li>
         <li>
           <strong>Measure (2)</strong> — Click elements to measure pixel distance between closest
@@ -57,17 +57,15 @@ export default function DocsIndexPage() {
           <strong>Guides (3)</strong> — Place draggable alignment guides with snap-to-element edges.
         </li>
         <li>
-          <strong>Colour picker (4)</strong> — Sample colours and copy as HEX, RGB, or HSL.
-        </li>
-        <li>
-          <strong>Spacing grid (5)</strong> — Show all gaps between sibling elements at once.
+          <strong>Annotate (4)</strong> — Mark up the page with size callouts, notes, arrows, and
+          freehand strokes.
         </li>
       </ul>
 
       <h3>Tools &amp; Overlays</h3>
       <ul>
         <li>
-          <strong>Box model (B)</strong> — Colour-coded margin, padding, border, and content rings.
+          <strong>Details</strong> — Click in Inspect for typography, colours, margin, padding, and radius.
         </li>
         <li>
           <strong>Rulers</strong> — Pixel rulers along viewport edges with cursor crosshair.

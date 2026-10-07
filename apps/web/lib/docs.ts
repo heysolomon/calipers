@@ -25,14 +25,14 @@ export const DOC_NAV: DocNavSection[] = [
       { label: 'Inspect Mode', href: '/docs/features/inspect-mode' },
       { label: 'Measure Mode', href: '/docs/features/measure-mode' },
       { label: 'Alignment Guides', href: '/docs/features/guides' },
-      { label: 'Colour Picker', href: '/docs/features/color-picker' },
-      { label: 'Spacing Grid', href: '/docs/features/spacing-grid' },
+      { label: 'Annotate', href: '/docs/features/annotate' },
     ],
   },
   {
     section: 'Tools',
     items: [
-      { label: 'Box Model Overlay', href: '/docs/features/box-model' },
+      { label: 'Colours & Typography', href: '/docs/features/color-picker' },
+      { label: 'Box Values', href: '/docs/features/box-model' },
       { label: 'Ruler Overlay', href: '/docs/features/rulers' },
       { label: 'Design Tokens', href: '/docs/features/design-tokens' },
       { label: 'Screenshot Export', href: '/docs/features/screenshot-export' },
@@ -122,85 +122,79 @@ Calipers is keyboard-first. Press **?** while Calipers is active to open the in-
 | Shortcut | Action |
 |---|---|
 | \`Cmd+Shift+M\` / \`Ctrl+Shift+M\` | Toggle Calipers on/off |
-| \`1\` – \`5\` | Switch mode |
-| \`B\` | Toggle box model overlay |
+| \`1\` – \`4\` | Switch mode: Inspect, Measure, Guides, Annotate |
+| \`R\` | Toggle rulers |
 | \`D\` | Open design token panel |
 | \`S\` | Capture screenshot |
+| \`Cmd+Z\` / \`Ctrl+Z\` | Undo the last change in Measure, Guides, or Annotate |
 | \`?\` | Show / hide shortcuts panel |
-| \`Esc\` | Deactivate Calipers |
+| \`Esc\` | Close whatever is open; when nothing is, close Calipers |
 
 ## Inspect mode
 
 | Shortcut | Action |
 |---|---|
-| Hover | Show dimensions, typography, and element path |
-| Click element | Open box model detail panel |
-| \`B\` | Toggle box model rings on hovered element |
+| Hover | Outline the element or word under the cursor and show its size |
+| Click | Open details: typography, colours, and box values |
+| Click again | Close the details |
+| \`F\` | Cycle colour format (HEX / RGB / HSL) |
 
 ## Measure mode
 
 | Shortcut | Action |
 |---|---|
 | Click | Pin an element (up to 5: A–E) |
-| Click pinned element | Unpin it |
+| Click pinned element | Unpin just that element |
 | Click label | Copy distance to clipboard |
 
 ## Guides mode
 
 | Shortcut | Action |
 |---|---|
-| Click | Pin horizontal and vertical guides at cursor |
-| Drag handle | Reposition a guide |
-| \`Del\` / \`Backspace\` | Clear all guides |
-| Right-click guide | Remove a single guide |
+| Click | Pin a guide at the cursor |
+| \`C\` / \`H\` / \`V\` | Place both, horizontal only, or vertical only |
+| Click a guide | Delete it |
+| Drag a guide | Move it |
+| \`Del\` / \`Backspace\` | Delete the hovered guide, or clear all |
 
-## Colour picker mode
-
-| Shortcut | Action |
-|---|---|
-| Hover | Sample colours from element under cursor |
-| Click swatch | Copy colour in active format (HEX / RGB / HSL) |
-
-## Spacing grid mode
+## Annotate mode
 
 | Shortcut | Action |
 |---|---|
-| Hover parent | Show gaps between all sibling children |
+| \`M\` / \`N\` / \`A\` / \`P\` | Size, Note, Arrow, or Pen tool |
+| Right-click an annotation | Remove it |
+| \`Del\` / \`Backspace\` | Clear all annotations |
     `.trim(),
   },
 
   'features/inspect-mode': {
     title: 'Inspect Mode',
-    description: 'Hover any element to see dimensions, typography, viewport distances, and its CSS path.',
+    description: 'Hover to see an element’s size; click to see its typography, colours, and box values.',
     content: `
 # Inspect Mode
 
-Inspect mode is the default when you activate Calipers. Hover over any element to see its exact rendered size and supporting context — without opening DevTools.
+Inspect mode is the default when you activate Calipers. Hover to see what is under the cursor, click to see everything about it — without opening DevTools.
 
 ## How it works
 
 1. Activate Calipers (\`Cmd+Shift+M\`).
-2. Hover over any element on the page.
-3. A dimension label shows \`width × height\` in pixels.
-4. Click the label to copy the measurement.
+2. Hover over the page. Elements are outlined and labelled with \`width × height\`; words of text are highlighted.
+3. Click an element or a word to open its details.
+4. Click it again, click empty space, or press \`Esc\` to close the details.
 
-## What you see
+## The details panel
 
-- **Dimensions** — rendered width and height from \`getBoundingClientRect()\`
-- **Element path** — CSS selector breadcrumb (tag, id, and up to two classes per level)
-- **Typography** — font family, size, weight, line-height, and letter-spacing on text nodes
-- **Viewport distances** — dashed lines from element edges to the viewport edges with pixel labels
-- **Box model rings** — when enabled, colour-coded margin, padding, border, and content layers
+The panel opens next to what you clicked, with the tag and size at the top and one section open at a time:
 
-## Box model detail panel
+- **Typography** (when you click text) — font, size, weight, line height, and letter spacing, with a **Copy CSS** button.
+- **Colours** — text, background, and border colours in HEX, RGB, or HSL. Press \`F\` to cycle the format.
+- **Box** — margin, border, padding, and corner radius.
 
-Click any element to open the detail panel with exact computed values for margin, padding, border, and content on each side.
-
-Toggle the overlay rings with \`B\` or the **Box model** toggle in the control panel. See [Box Model Overlay](/docs/features/box-model) for colour coding details.
+Click any value to copy it. A closed section previews its contents in its header.
 
 ## Rulers
 
-Enable **Rulers** in the control panel to show pixel rulers along the viewport edges with a cursor crosshair — useful for checking alignment against the viewport grid.
+Enable **Rulers** in the options card, or press \`R\`, to show pixel rulers along the viewport edges.
     `.trim(),
   },
 
@@ -218,7 +212,7 @@ Measure mode lets you click elements to see the pixel distance between their clo
 2. Click the **first element** — it stays highlighted and labelled **A**.
 3. Click the **second element** — the gap between them is measured and labelled **B**.
 4. Keep clicking to pin up to **five elements** (A through E). Every consecutive pair is measured simultaneously.
-5. Click a pinned element again to unpin it.
+5. Click a pinned element again to unpin just that one. Press \`Cmd+Z\` / \`Ctrl+Z\` to undo.
 
 ## Smart edge detection
 
@@ -255,101 +249,107 @@ Alignment guides are persistent horizontal and vertical lines you can place anyw
 
 ## Moving guides
 
-Drag the small handle (circle at the edge of the line) to reposition a guide. With **Snap to elements** enabled, guides snap to nearby element edges within 8px.
+Drag a guide to reposition it. With **Snap to elements** enabled, a guide being dragged snaps to nearby element edges within 8px. Placing a new guide never snaps: it lands exactly where you click.
 
 ## Removing guides
 
-- **Right-click** a guide or its handle to remove that single guide.
-- Press **Del** or **Backspace** to clear all guides.
-- In Guides mode, use **Clear all guides** in the control panel Settings section.
+Hover a guide and the cursor changes to a delete mark.
+
+- **Click** the guide to remove it.
+- Press **Del** or **Backspace** over a guide to remove it, or away from one to clear all guides.
+- Press \`Cmd+Z\` / \`Ctrl+Z\` to undo adding, moving, deleting, or clearing.
 
 ## Persistence
 
-Guides are saved to \`chrome.storage.local\` and reload when you reopen Calipers on the same browser profile. They also survive mode switches — place guides in Guides mode, then switch to Inspect or Measure without losing them.
+Guides belong to the page they were placed on. Each page (site and path) keeps its own guides in \`chrome.storage.local\`, so guides from one site or page never appear on another. They survive mode switches and reopening Calipers.
 
-Closing Calipers (Esc / deactivate) does **not** delete guides. They stay until you remove them with right-click, Del/Backspace, or **Clear all guides**.
-
-Toggle **Show guides** in the control panel to hide guides without deleting them.
+Toggle **Show guides** in the options card to hide guides without deleting them.
     `.trim(),
   },
 
   'features/color-picker': {
-    title: 'Colour Picker',
-    description: 'Sample colours from any element and copy as HEX, RGB, or HSL.',
+    title: 'Colours & Typography',
+    description: 'Read the colours and type settings of anything on the page from Inspect mode.',
     content: `
-# Colour Picker
+# Colours & Typography
 
-Colour picker mode lets you sample colours from elements on the page and copy them in the format you need.
+Colours and typography are part of [Inspect mode](/docs/features/inspect-mode). There is no separate colour picker mode.
 
 ## How it works
 
-1. Switch to Colour picker mode — press \`4\`.
-2. Hover over any element.
-3. The panel shows sampled colours: background, text, and border where applicable.
-4. Click a swatch to copy it in the active format.
+1. In Inspect mode, click a word of text or an element.
+2. Open the **Typography** or **Colours** section in the details panel.
+3. Click any value to copy it.
 
-## Output formats
+## Colour formats
 
-Toggle between three formats in the panel:
+Switch between three formats in the Colours section, or press \`F\`:
 
 - **HEX** — \`#4A9EFF\` or \`#4A9EFF80\` with alpha
 - **RGB** — \`rgb(74, 158, 255)\` or \`rgba(74, 158, 255, 0.5)\`
 - **HSL** — \`hsl(210, 100%, 65%)\`
 
-Values are read from \`window.getComputedStyle()\`, so they reflect the rendered colour — including inherited and computed values.
+## Typography
+
+Clicking text shows the font, size, weight, line height, and letter spacing. **Copy CSS** copies them all as CSS declarations, including the text colour.
+
+Values are read from \`window.getComputedStyle()\`, so they reflect what is rendered. The font shown is the first family in the CSS font stack.
     `.trim(),
   },
 
+  // Kept so old links still land somewhere useful.
   'features/spacing-grid': {
     title: 'Spacing Grid',
-    description: 'Show all gaps between sibling elements at once by hovering their parent.',
+    description: 'Spacing grid has been replaced by Measure mode.',
     content: `
 # Spacing Grid
 
-Spacing grid mode reveals every gap between sibling elements in a single view — ideal for checking consistent spacing in nav bars, card rows, and form layouts.
+Spacing grid mode has been removed. [Measure mode](/docs/features/measure-mode) covers the same job: pin up to five elements and every gap between consecutive ones is measured at once.
+    `.trim(),
+  },
 
-## How it works
+  'features/annotate': {
+    title: 'Annotate',
+    description: 'Mark up a page with size callouts, notes, arrows, and freehand strokes.',
+    content: `
+# Annotate
 
-1. Switch to Spacing grid mode — press \`5\`.
-2. Hover over a container element (a parent with two or more visible children).
-3. Calipers highlights the parent and draws measurement lines between every consecutive sibling pair.
-4. Each gap is labelled in pixels.
+Annotate mode lets you mark up the page you are looking at, then capture it with a screenshot.
 
-## Layout detection
+## Tools
 
-Calipers detects whether siblings are arranged in a row or column by comparing the position of the first two children, then measures gaps along the predominant axis.
+Switch to Annotate mode with \`4\`, then pick a tool in the options card or by key:
 
-Hidden, zero-size, and Calipers overlay elements are excluded from the grid.
+- **Size** (\`M\`) — click an element to add its width and height.
+- **Note** (\`N\`) — click to write a note.
+- **Arrow** (\`A\`) — drag to draw an arrow.
+- **Pen** (\`P\`) — draw freehand.
+
+## Editing
+
+- Right-click an annotation to remove it.
+- \`Del\` / \`Backspace\` clears all annotations.
+- \`Cmd+Z\` / \`Ctrl+Z\` undoes the last change.
+
+Annotations stay with the page they were made on and last until the page is reloaded.
     `.trim(),
   },
 
   'features/box-model': {
-    title: 'Box Model Overlay',
-    description: 'Visualise margin, padding, border, and content as colour-coded rings on any element.',
+    title: 'Box Values',
+    description: 'Read the margin, border, padding, and corner radius of any element.',
     content: `
-# Box Model Overlay
+# Box Values
 
-The box model overlay visualises the margin, border, padding, and content areas of any inspected element. It is available in Inspect and Measure modes.
+Box values are part of [Inspect mode](/docs/features/inspect-mode).
 
-## Enabling
+## How it works
 
-- Press \`B\` to toggle the overlay.
-- Or use the **Box model** toggle in the control panel.
+1. In Inspect mode, click an element.
+2. Open the **Box** section in the details panel.
+3. Click a value to copy it.
 
-## Colour coding
-
-| Layer | Colour |
-|---|---|
-| Content | Blue (\`rgba(74,158,255,0.15)\`) |
-| Padding | Green (\`rgba(80,200,140,0.15)\`) |
-| Border | Amber (\`rgba(255,200,80,0.15)\`) |
-| Margin | Coral (\`rgba(255,130,80,0.15)\`) |
-
-Each layer has a subtle dashed border in the same colour family.
-
-## Detail panel
-
-Click any element in Inspect mode to open the detail panel with exact computed values for each side. Values come from \`window.getComputedStyle()\` — they reflect the rendered layout, not the stylesheet source.
+Margin, border, and padding are shown in CSS shorthand order (top, right, bottom, left), shortened where sides match. Values come from \`window.getComputedStyle()\`, so they reflect the rendered layout.
     `.trim(),
   },
 
@@ -421,7 +421,7 @@ The file is saved as \`calipers-{timestamp}.png\`.
 
 ## What is included
 
-The screenshot captures exactly what you see — dimension labels, measurement lines, alignment guides, box model rings, and ruler overlays are all included in the export.
+The screenshot includes what you have drawn — dimension labels, measurement lines, guides, annotations, and rulers. The Calipers toolbar, cursor, and notifications are hidden while the capture is taken.
 
 ## Tips
 

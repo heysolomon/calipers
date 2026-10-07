@@ -3,13 +3,32 @@
  * Handles: keyboard shortcuts, message routing, tab state management
  */
 import type { Message, ExtensionState, Mode } from '@calipers/shared';
-import { DEFAULT_STATE } from '@calipers/shared';
+import { DEFAULT_STATE, SETTING_STORAGE_KEYS, settingsFromStorage } from '@calipers/shared';
+import type { Settings, SettingKey } from '@calipers/shared';
 
 // Per-tab state
 const tabState = new Map<number, ExtensionState>();
 
+// Saved settings. Read once when the worker starts, then kept current through
+// storage change events (the content script writes them, including on key presses).
+let savedSettings: Partial<Settings> = {};
+const settingsReady: Promise<void> = chrome.storage.local
+  .get(Object.values(SETTING_STORAGE_KEYS))
+  .then((result) => { savedSettings = settingsFromStorage(result); })
+  .catch(() => { /* fall back to defaults */ });
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'local') return;
+  for (const key of Object.keys(SETTING_STORAGE_KEYS) as SettingKey[]) {
+    const change = changes[SETTING_STORAGE_KEYS[key]];
+    if (!change || typeof change.newValue !== 'boolean') continue;
+    savedSettings[key] = change.newValue;
+    for (const [tabId, state] of tabState) tabState.set(tabId, { ...state, [key]: change.newValue });
+  }
+});
+
 function getTabState(tabId: number): ExtensionState {
-  return tabState.get(tabId) ?? { ...DEFAULT_STATE };
+  return tabState.get(tabId) ?? { ...DEFAULT_STATE, ...savedSettings };
 }
 
 function setTabState(tabId: number, patch: Partial<ExtensionState>): ExtensionState {
@@ -24,8 +43,65 @@ async function sendToContent(tabId: number, message: Message): Promise<void> {
   try {
     await chrome.tabs.sendMessage(tabId, message);
   } catch {
-    // Content script may not be injected yet — silently ignore
+    // No receiver — callers that start Calipers go through ensureContentScript first.
   }
+}
+
+async function contentScriptAlive(tabId: number): Promise<boolean> {
+  try {
+    const res = (await chrome.tabs.sendMessage(tabId, { type: 'PING' } satisfies Message)) as { ok?: boolean } | undefined;
+    return res?.ok === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Make sure the tab has a working content script before talking to it.
+ *
+ * The manifest only injects into pages loaded after the extension was installed
+ * or last updated. Tabs that were already open — and every tab after an update
+ * or a dev rebuild — have no script, or a dead one, so the first click on the
+ * icon used to do nothing until the page was reloaded. Inject it on demand.
+ */
+async function ensureContentScript(tabId: number): Promise<boolean> {
+  if (await contentScriptAlive(tabId)) return true;
+
+  const files = chrome.runtime.getManifest().content_scripts?.[0]?.js ?? [];
+  if (files.length === 0) return false;
+
+  try {
+    if (chrome.scripting?.executeScript) {
+      await chrome.scripting.executeScript({ target: { tabId }, files });
+    } else {
+      // Manifest V2 (Firefox build)
+      await new Promise<void>((resolve, reject) => {
+        chrome.tabs.executeScript(tabId, { file: files[0] }, () => {
+          const err = chrome.runtime.lastError;
+          if (err) reject(new Error(err.message));
+          else resolve();
+        });
+      });
+    }
+  } catch {
+    // Browser pages (chrome://, the extension store, some PDF viewers) do not allow extensions.
+    return false;
+  }
+
+  // The script registers its listener a moment after it is injected.
+  for (let attempt = 0; attempt < 30; attempt++) {
+    if (await contentScriptAlive(tabId)) return true;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  return false;
+}
+
+/** Brief badge so a click that cannot work is not met with silence. */
+function flagUnavailable(tabId: number): void {
+  chrome.action.setTitle({ tabId, title: 'Calipers can’t run on this page' });
+  chrome.action.setBadgeText({ tabId, text: '!' });
+  chrome.action.setBadgeBackgroundColor({ tabId, color: '#888888' });
+  setTimeout(() => chrome.action.setBadgeText({ tabId, text: '' }), 2000);
 }
 
 /** Update the extension icon badge to reflect active state */
@@ -39,6 +115,8 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
   if (command !== 'toggle-calipers' || !tab?.id) return;
 
   const tabId = tab.id;
+  if (!(await ensureContentScript(tabId))) { flagUnavailable(tabId); return; }
+  await settingsReady;
   const state = getTabState(tabId);
   const newActive = !state.active;
   const next = setTabState(tabId, { active: newActive });
@@ -55,6 +133,7 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
 // ─── Extension icon click handler (no popup) ─────────────────────────────────
 chrome.action.onClicked.addListener(async (tab) => {
   if (!tab?.id) return;
+  if (!(await ensureContentScript(tab.id))) { flagUnavailable(tab.id); return; }
   await sendToContent(tab.id, { type: 'TOGGLE_PANEL' });
 });
 
@@ -78,6 +157,7 @@ async function handlePopupMessage(
   msg: Message,
   sendResponse: (r: unknown) => void,
 ): Promise<void> {
+  await settingsReady;
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) {
     sendResponse({ error: 'No active tab' });
@@ -107,12 +187,6 @@ async function handlePopupMessage(
     case 'SWITCH_MODE': {
       const next = setTabState(tabId, { mode: msg.mode as Mode });
       await sendToContent(tabId, { type: 'SWITCH_MODE', mode: msg.mode as Mode });
-      sendResponse(next);
-      break;
-    }
-    case 'TOGGLE_BOX_MODEL': {
-      const next = setTabState(tabId, { showBoxModel: msg.enabled });
-      await sendToContent(tabId, { type: 'TOGGLE_BOX_MODEL', enabled: msg.enabled });
       sendResponse(next);
       break;
     }
@@ -254,6 +328,7 @@ async function handleContentMessage(
   tabId: number,
   sendResponse: (r: unknown) => void,
 ): Promise<void> {
+  await settingsReady;
   switch (msg.type) {
     case 'GET_STATE': {
       sendResponse(getTabState(tabId));
@@ -276,12 +351,6 @@ async function handleContentMessage(
     case 'SWITCH_MODE': {
       const next = setTabState(tabId, { mode: msg.mode as Mode });
       await sendToContent(tabId, { type: 'SWITCH_MODE', mode: msg.mode as Mode });
-      sendResponse(next);
-      break;
-    }
-    case 'TOGGLE_BOX_MODEL': {
-      const next = setTabState(tabId, { showBoxModel: msg.enabled });
-      await sendToContent(tabId, { type: 'TOGGLE_BOX_MODEL', enabled: msg.enabled });
       sendResponse(next);
       break;
     }
