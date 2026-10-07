@@ -120,6 +120,9 @@ const TILES: { name: string; hint: string; art: ReactNode[]; labels: ReactNode[]
  * same six tiles as the homepage (Inspect, Measure, Guides, Annotate,
  * Screenshot, Design tokens), drawn here rather than screenshotted.
  * `title` replaces the headline for inner pages.
+ *
+ * After changing the drawing, bump "Drawing revision" in app/opengraph-image.tsx
+ * and app/twitter-image.tsx so the image gets a new URL.
  */
 export async function renderOg(title = 'Measure, inspect and annotate any webpage'): Promise<ImageResponse> {
   const font = (file: string): Promise<Buffer> => readFile(join(process.cwd(), 'public/fonts', file));
