@@ -8,26 +8,19 @@ import { CHROME_STORE_URL } from '../lib/site';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
-/** Who it is for, and the three things each of them gets from it. */
-// Kept short: three cards share one row.
-const AUDIENCES: { name: string; use: string; text: string; points: string[] }[] = [
+/** The two things people use it for, and what each gets them. */
+const USES: { name: string; use: string; text: string; points: string[] }[] = [
   {
-    name: 'Designers',
-    use: 'Design review and handoff',
-    text: 'Check the build against the design without opening DevTools.',
-    points: ['Read sizes, type and colours', 'Measure the gap between elements', 'Mark up what is off and screenshot it'],
+    name: 'Check your own work',
+    use: 'Design review and frontend QA',
+    text: 'Compare the build with the design without opening DevTools.',
+    points: ['Measure the gap between any two elements', 'Line things up with guides that snap to edges', 'Mark up what is off and screenshot it'],
   },
   {
-    name: 'Design engineers',
-    use: 'Studying a site',
+    name: 'Study any site',
+    use: 'For designers and design engineers',
     text: 'Take apart a site you admire and see how it was put together.',
-    points: ['See the fonts, sizes and colours it uses', 'Read its spacing and layout at a glance', 'Pull out its design tokens'],
-  },
-  {
-    name: 'Developers',
-    use: 'Frontend QA',
-    text: 'Verify spacing and alignment while you build.',
-    points: ['Pixel distances, straight from the DOM', 'Guides that snap to element edges', 'Design tokens exported as JSON'],
+    points: ['See the fonts, sizes and colours it uses', 'Read its spacing and layout at a glance', 'Pull out its design tokens as JSON'],
   },
 ];
 
@@ -88,7 +81,7 @@ export default function HomePage() {
           </div>
 
           <div className="lp-cards">
-            {AUDIENCES.map(({ name, use, text, points }) => (
+            {USES.map(({ name, use, text, points }) => (
               <div key={name} className="lp-card">
                 <div>
                   <h3>{name}</h3>
