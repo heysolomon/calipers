@@ -26,9 +26,24 @@ const SECTION_ORDER: SectionName[] = ['Added', 'Changed', 'Fixed', 'Removed'];
 
 const entries: ChangelogEntry[] = [
   {
-    version: '0.2.0',
+    version: '0.3.0',
     date: null,
     preRelease: true,
+    sections: {
+      Added: [
+        'A welcome page opens after installing, with the three steps to get started and something to practise on',
+      ],
+      Changed: [
+        'Renamed from Calipers to Raval. Your saved guides and settings carry over',
+        'Notes are written straight onto the page, with no box around them',
+        'The first Annotate tool is now called Callout (it was Size)',
+        'The default shortcut to open Raval is Alt+Shift+C (Option+Shift+C on a Mac). The old one clashed with the browser’s own',
+      ],
+    },
+  },
+  {
+    version: '0.2.0',
+    date: '2026-10-06',
     sections: {
       Added: [
         'Inspect details — click text or an element for its typography, colours, and box values, each in a collapsible section',
@@ -48,7 +63,6 @@ const entries: ChangelogEntry[] = [
         'Changelog diff mode — visually compare how element sizes changed between two page snapshots',
       ],
       Changed: [
-        'Renamed from Calipers to Raval. Your saved guides and settings carry over',
         'Colours is now part of Inspect, and Spacing grid is removed in favour of Measure; modes are Inspect, Measure, Guides, Annotate on keys 1–4',
         'The box model overlay on the page is replaced by the Box section in Inspect details',
         'Highlights, tabs, tooltips, and notifications share one lighter design',

@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Raval — Measure & Inspect Web Pages",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Measure pixel distances, inspect element sizes, and check alignment on any webpage. Free, open source.",
   "author": "Raval Contributors",
 
