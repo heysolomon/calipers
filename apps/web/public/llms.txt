@@ -1,18 +1,18 @@
 # Raval
 
-> Free, open-source Chrome extension to measure pixel distances, inspect element dimensions, check alignment, and verify spacing on any webpage.
+> Raval is a free, open-source browser extension for measuring distances, inspecting sizes, fonts and colours, placing guides and annotating any webpage. It was called Calipers until October 2026.
 
 Raval is a browser extension for designers and frontend developers who need pixel-perfect measurements directly on live web pages — without screenshots or switching to a separate app.
 
 ## What Raval does
 
-- Measure pixel distance between two or more elements
-- Inspect element dimensions (width × height) on hover
-- Place draggable horizontal and vertical alignment guides
-- Visualise box model (margin, padding, border, content)
-- Extract CSS custom properties as design tokens
-- Export screenshots with measurements overlaid
-- Keyboard-first workflow with shortcuts for every action
+- Inspect: hover any element for its size; click text or an element for its typography, colours, margin, padding, border and radius
+- Measure: click up to five elements to read the pixel distance between them
+- Guides: place horizontal and vertical guides that snap to element edges and are saved per page
+- Annotate: mark up the page with size callouts, notes, arrows and freehand strokes
+- Extract CSS custom properties as design tokens (JSON)
+- Screenshot the page or a region, with your measurements and annotations on it
+- Keyboard shortcuts for every action
 
 ## Who it's for
 
@@ -31,25 +31,26 @@ Raval is a browser extension for designers and frontend developers who need pixe
 
 | Tool | Platform | Approach |
 |------|----------|----------|
-| Raval | Chrome, Firefox | DOM-native measurement on live pages |
+| Raval | Chrome | Reads real values from the live page |
 | PixelSnap | macOS desktop | Screenshot-based measurement |
 | Page Ruler Redux | Chrome | Basic ruler overlay |
 | Dimensions | Chrome | Hover dimensions only |
 
-Raval combines measure mode, alignment guides, box model overlay, design tokens, and screenshot export in one free, open-source extension with direct DOM access for accurate results.
+Raval combines inspecting, measuring, guides, annotation, design tokens and screenshots in one free, open-source extension that reads the page's real values.
 
 ## Keyboard shortcuts
 
-- Alt+Shift+C (Option+Shift+C on Mac) — Toggle Raval on/off
-- 1 — Inspect mode
-- 2 — Measure mode
-- 3 — Guides mode
-- 4 — Colour picker mode
-- 5 — Spacing grid mode
-- B — Toggle box model overlay
-- C — Copy measurement
-- S — Screenshot export
-- Esc — Deactivate
+- Alt+Shift+C (Option+Shift+C on Mac) — Open or close Raval
+- 1 — Inspect
+- 2 — Measure
+- 3 — Guides
+- 4 — Annotate
+- R — Rulers on/off
+- D — Design tokens
+- S — Screenshot
+- ? — Show all shortcuts
+- Cmd/Ctrl+Z — Undo
+- Esc — Close what is open, then Raval
 
 ## Alternatives and comparisons
 

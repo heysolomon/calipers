@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
 import type { JSX } from 'react';
+import { buildPageMetadata } from '../../components/content-page';
 import { Footer } from '../../components/footer';
 import { SiteHeader } from '../../components/site-header';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: 'Privacy Policy',
-};
+  description: 'Raval collects no data. What it stores on your device, the browser permissions it asks for and why.',
+  path: '/privacy',
+});
 
 function SectionLabel({ label }: { label: string }): JSX.Element {
   return (

@@ -1,37 +1,29 @@
 import type { MetadataRoute } from 'next';
+import { DOC_NAV } from '../lib/docs';
 import { SITE_URL } from '../lib/site';
 
-const ROUTES: Array<{
-  path: string;
-  changeFrequency: MetadataRoute.Sitemap[number]['changeFrequency'];
-  priority: number;
-}> = [
+type Entry = { path: string; changeFrequency: MetadataRoute.Sitemap[number]['changeFrequency']; priority: number };
+
+const PAGES: Entry[] = [
   { path: '', changeFrequency: 'weekly', priority: 1 },
-  { path: '/docs', changeFrequency: 'weekly', priority: 0.9 },
-  { path: '/docs/getting-started/installation', changeFrequency: 'monthly', priority: 0.8 },
-  { path: '/docs/getting-started/shortcuts', changeFrequency: 'monthly', priority: 0.8 },
-  { path: '/docs/features/inspect-mode', changeFrequency: 'monthly', priority: 0.8 },
-  { path: '/docs/features/measure-mode', changeFrequency: 'monthly', priority: 0.8 },
-  { path: '/docs/features/guides', changeFrequency: 'monthly', priority: 0.8 },
-  { path: '/docs/features/color-picker', changeFrequency: 'monthly', priority: 0.8 },
-  { path: '/docs/features/box-model', changeFrequency: 'monthly', priority: 0.8 },
-  { path: '/docs/features/rulers', changeFrequency: 'monthly', priority: 0.7 },
-  { path: '/docs/features/design-tokens', changeFrequency: 'monthly', priority: 0.7 },
-  { path: '/docs/features/screenshot-export', changeFrequency: 'monthly', priority: 0.7 },
-  { path: '/docs/contributing', changeFrequency: 'monthly', priority: 0.6 },
-  { path: '/changelog', changeFrequency: 'weekly', priority: 0.5 },
-  { path: '/alternatives/pixelsnap', changeFrequency: 'monthly', priority: 0.85 },
-  { path: '/alternatives/page-ruler', changeFrequency: 'monthly', priority: 0.85 },
   { path: '/use-cases/frontend-qa', changeFrequency: 'monthly', priority: 0.85 },
   { path: '/use-cases/design-handoff', changeFrequency: 'monthly', priority: 0.85 },
+  { path: '/alternatives/pixelsnap', changeFrequency: 'monthly', priority: 0.85 },
+  { path: '/alternatives/page-ruler', changeFrequency: 'monthly', priority: 0.85 },
   { path: '/changelog', changeFrequency: 'weekly', priority: 0.5 },
   { path: '/privacy', changeFrequency: 'yearly', priority: 0.3 },
 ];
 
+// Every page in the docs sidebar. `/welcome` is left out on purpose: it is for new installs, not search.
+const DOCS: Entry[] = DOC_NAV.flatMap((group) => group.items).map(({ href }) => ({
+  path: href,
+  changeFrequency: href === '/docs' ? 'weekly' : 'monthly',
+  priority: href === '/docs' ? 0.9 : 0.8,
+}));
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();
-
-  return ROUTES.map(({ path, changeFrequency, priority }) => ({
+  return [...PAGES, ...DOCS].map(({ path, changeFrequency, priority }) => ({
     url: `${SITE_URL}${path}`,
     lastModified,
     changeFrequency,

@@ -15,20 +15,23 @@ const SOFT = 'rgba(6,6,6,0.08)';
 const LOGO = 'M 256 256 L 128 256 L 0 128 L 128 128 Z M 256 128 L 128 128 L 0 0 L 128 0 Z';
 
 // ─── Layout ───────────────────────────────────────────────────────────────────
-// Words on the left, the homepage's six tiles on the right.
+// Words on the left; on the right the four modes as tiles, two by two.
 
 const PAD = 64;
-const WORDS = 496;
-const FRAME_W = OG_SIZE.width - PAD * 2 - WORDS - 44;
-/** Tiles keep the homepage's proportions (278 : 233), so the frame is as tall as two of them. */
-const CELL_W = (FRAME_W - 2) / 3;
-const CELL = { w: CELL_W, h: (CELL_W - 10) * (233 / 278) + 10 };
-const FRAME = { w: FRAME_W, h: CELL.h * 2 + 2 };
+const GAP = 36;
+// The frame runs the full height between the top and bottom margins, so it starts level
+// with the logo and ends level with the headline. Its width follows from that: tiles keep
+// the homepage's proportions (278 : 233). The words get whatever is left.
+const FRAME_H = OG_SIZE.height - PAD * 2;
+const CELL_H = (FRAME_H - 2) / 2;
+const CELL = { w: (CELL_H - 10) * (278 / 233) + 10, h: CELL_H };
+const FRAME = { w: CELL.w * 2 + 2, h: FRAME_H };
+const WORDS = OG_SIZE.width - PAD * 2 - FRAME.w - GAP;
 const CARD = { w: CELL.w - 10, h: CELL.h - 10 };
 /** Each drawing is laid out on the same 200 × 96 grid as the website's tiles, then scaled to the card. */
 const ART_W = CARD.w - 24;
 const K = ART_W / 200;
-const ART_TOP = (CARD.h - 30 - 96 * K) / 2;
+const ART_TOP = (CARD.h - 40 - 96 * K) / 2;
 
 const block = { fill: 'rgba(0,0,0,0.04)', stroke: 'rgba(0,0,0,0.1)' } as const;
 
@@ -115,10 +118,13 @@ const TILES: { name: string; hint: string; art: ReactNode[]; labels: ReactNode[]
   },
 ];
 
+/** The preview shows the four modes; Screenshot and Design tokens are left out so each tile can be larger. */
+const MODE_TILES = TILES.slice(0, 4);
+
 /**
  * The link preview: the logo and headline on the left, and on the right the
- * same six tiles as the homepage (Inspect, Measure, Guides, Annotate,
- * Screenshot, Design tokens), drawn here rather than screenshotted.
+ * four mode tiles from the homepage (Inspect, Measure, Guides, Annotate),
+ * drawn here rather than screenshotted.
  * `title` replaces the headline for inner pages.
  *
  * After changing the drawing, bump "Drawing revision" in app/opengraph-image.tsx
@@ -129,7 +135,7 @@ export async function renderOg(title = 'Measure, inspect and annotate any webpag
   // Ashbury for the words, Neue Plak (the extension's own typeface) for everything drawn as UI.
   const [ashbury, plak, plakBold] = await Promise.all([font('Ashbury-Medium.ttf'), font('Neue Plak Regular.ttf'), font('Neue Plak Text SemiBold.ttf')]);
   // Longer page titles step down so they still fit the column.
-  const size = title.length > 60 ? 34 : title.length > 42 ? 38 : 42;
+  const size = title.length > 60 ? 36 : title.length > 42 ? 40 : 46;
 
   return new ImageResponse(
     (
@@ -141,22 +147,22 @@ export async function renderOg(title = 'Measure, inspect and annotate any webpag
         </div>
 
         {/* The six tiles */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', width: FRAME.w, height: FRAME.h, alignSelf: 'center', border: `1px solid ${LINE}`, borderRadius: 22 }}>
-          {TILES.map(({ name, hint, art, labels }, i) => (
+        <div style={{ display: 'flex', flexWrap: 'wrap', width: FRAME.w, height: FRAME.h, border: `1px solid ${LINE}`, borderRadius: 22 }}>
+          {MODE_TILES.map(({ name, hint, art, labels }, i) => (
             <div
               key={name}
               style={{
                 display: 'flex', width: CELL.w, height: CELL.h, padding: 5,
-                borderLeft: i % 3 === 0 ? 'none' : `1px dashed ${LINE}`,
-                borderTop: i < 3 ? 'none' : `1px dashed ${LINE}`,
+                borderLeft: i % 2 === 0 ? 'none' : `1px dashed ${LINE}`,
+                borderTop: i < 2 ? 'none' : `1px dashed ${LINE}`,
               }}
             >
-              <div style={{ position: 'relative', display: 'flex', flex: 1, background: '#fff', border: `1px solid ${SOFT}`, borderRadius: 16, boxShadow: '0 2px 1px rgba(6,6,6,0.05)' }}>
+              <div style={{ position: 'relative', display: 'flex', flex: 1, background: '#fff', border: `1px solid ${SOFT}`, borderRadius: 18, boxShadow: '0 2px 1px rgba(6,6,6,0.05)' }}>
                 <svg width={ART_W} height={96 * K} viewBox="0 0 200 96" fill="none" style={{ position: 'absolute', left: 12, top: ART_TOP }}>
                   {art}
                 </svg>
                 {labels}
-                <div style={{ position: 'absolute', left: 14, right: 14, bottom: 8, display: 'flex', justifyContent: 'space-between', fontSize: 13.5, color: '#424242' }}>
+                <div style={{ position: 'absolute', left: 16, right: 16, bottom: 14, display: 'flex', justifyContent: 'space-between', fontSize: 19, color: '#424242' }}>
                   <div style={{ display: 'flex' }}>{name}</div>
                   <div style={{ display: 'flex', color: '#121212' }}>{hint}</div>
                 </div>

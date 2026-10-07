@@ -7,7 +7,7 @@ import { CHROME_STORE_URL, GITHUB_URL } from '../../lib/site';
 export const metadata: Metadata = buildPageMetadata({
   title: 'Documentation',
   description:
-    'Learn how to install and use Raval — the free Chrome extension for measuring distances, inspecting dimensions, and checking alignment on any webpage.',
+    'How to install and use Raval: open it on any page, then inspect sizes, fonts and colours, measure gaps, place guides and annotate.',
   path: '/docs',
 });
 

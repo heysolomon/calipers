@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SITE_VERSION } from '../lib/site';
 
 const LINKS = [
   { label: 'Docs',         href: '/docs' },
@@ -17,7 +18,7 @@ export function Footer() {
       <span className="site-footer-meta">
         <span className="site-footer-dot" aria-hidden="true" />
         MIT License
-        <span>v0.2.0</span>
+        <span>v{SITE_VERSION}</span>
       </span>
 
       <nav aria-label="Footer" className="site-footer-links">

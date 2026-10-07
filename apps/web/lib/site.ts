@@ -4,22 +4,27 @@ export const CHROME_STORE_URL =
   'https://chromewebstore.google.com/detail/raval/anocimjcbeijomifkdcdkafdjphcdale';
 
 export const SITE_NAME = 'Raval';
-export const SITE_TAGLINE = 'Precision measurement for the web';
+/** The name the product was listed under before October 2026. People still search for it. */
+export const FORMER_NAME = 'Calipers';
+/** Shown in the footer and in structured data. Keep in step with the extension's manifest. */
+export const SITE_VERSION = '0.2.0';
+
+// The tagline is the homepage's headline and the second half of its title, so
+// the words people search for are in both.
+export const SITE_TAGLINE = 'Measure, inspect and annotate any webpage';
 export const SITE_DESCRIPTION =
-  'Free, open-source Chrome extension to measure pixel distances, inspect element dimensions, check alignment, and verify spacing on any webpage.';
+  'Raval is a free, open-source browser extension for measuring distances, inspecting sizes, fonts and colours, placing guides and annotating any webpage.';
 
 export const SEO_KEYWORDS = [
   'measure distance between elements chrome extension',
   'pixel ruler chrome extension',
-  'inspect element dimensions chrome',
-  'alignment guides browser',
-  'box model overlay extension',
-  'pixel perfect web design tool',
+  'inspect element size chrome extension',
+  'inspect font and colour on a webpage',
+  'alignment guides browser extension',
+  'annotate webpage screenshot extension',
+  'extract design tokens from a website',
   'frontend QA spacing checker',
   'design handoff browser tool',
-  'chrome extension',
-  'design tools',
-  'frontend',
-  'pixel perfect',
-  'measurement',
+  'PixelSnap alternative for the browser',
+  'Calipers extension',
 ];

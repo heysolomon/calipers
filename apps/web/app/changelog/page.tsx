@@ -9,7 +9,7 @@ import { GITHUB_URL } from '../../lib/site';
 export const metadata: Metadata = buildPageMetadata({
   title: 'Changelog',
   description:
-    'Release history for Raval — the free, open-source Chrome extension for measuring distances and inspecting dimensions on any webpage.',
+    'What is new in Raval, the free, open-source browser extension for measuring, inspecting and annotating webpages. Every release, newest first.',
   path: '/changelog',
 });
 

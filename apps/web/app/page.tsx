@@ -1,10 +1,14 @@
 import { DemoTrigger } from '../components/demo-trigger';
 import { FeatureTiles } from '../components/feature-tiles';
 import { HeroDemo } from '../components/hero-demo';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Footer } from '../components/footer';
 import { SiteHeader } from '../components/site-header';
 import { CHROME_STORE_URL } from '../lib/site';
+
+// The title and description come from the layout; only the homepage should claim the root address.
+export const metadata: Metadata = { alternates: { canonical: '/' } };
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 

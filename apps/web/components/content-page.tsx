@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { SiteHeader } from './site-header';
 import { Footer } from './footer';
-import { CHROME_STORE_URL, GITHUB_URL } from '../lib/site';
+import { CHROME_STORE_URL, GITHUB_URL, SITE_URL } from '../lib/site';
 
 export function sectionLabelStyle() {
   return {
@@ -149,20 +149,23 @@ export function buildPageMetadata({
   description: string;
   path: string;
 }): Metadata {
-  const url = `https://raval.solomonakuson.com${path}`;
+  const url = `${SITE_URL}${path}`;
+  // "Frontend QA with Raval | Raval" says the name twice; such titles stand on their own.
+  const named = title.includes('Raval');
+  const full = named ? title : `${title} | Raval`;
   return {
-    title,
+    title: named ? { absolute: title } : title,
     description,
     alternates: { canonical: url },
     openGraph: {
-      title: `${title} | Raval`,
+      title: full,
       description,
       url,
       type: 'article',
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${title} | Raval`,
+      title: full,
       description,
     },
   };

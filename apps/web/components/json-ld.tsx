@@ -1,16 +1,20 @@
-import { CHROME_STORE_URL, GITHUB_URL, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from '../lib/site';
+import { CHROME_STORE_URL, FORMER_NAME, GITHUB_URL, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL, SITE_VERSION } from '../lib/site';
 
 export function JsonLd() {
   const software = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
     name: SITE_NAME,
-    applicationCategory: 'DeveloperApplication',
-    operatingSystem: 'Chrome, Firefox',
+    alternateName: FORMER_NAME,
+    applicationCategory: 'BrowserApplication',
+    applicationSubCategory: 'Browser extension',
+    operatingSystem: 'Chrome',
+    browserRequirements: 'Requires Google Chrome or another Chromium browser',
+    license: 'https://opensource.org/license/mit',
     description: SITE_DESCRIPTION,
     url: SITE_URL,
     downloadUrl: CHROME_STORE_URL,
-    softwareVersion: '0.1.0',
+    softwareVersion: SITE_VERSION,
     offers: {
       '@type': 'Offer',
       price: '0',
@@ -22,12 +26,12 @@ export function JsonLd() {
       url: GITHUB_URL,
     },
     featureList: [
-      'Measure pixel distance between elements',
-      'Inspect element dimensions on hover',
-      'Draggable alignment guides with snap-to-edge',
-      'Box model overlay',
-      'Design token extraction',
-      'Screenshot export with measurements',
+      'Inspect the size, typography, colours and box values of any element',
+      'Measure the pixel distance between up to five elements',
+      'Alignment guides that snap to element edges and are saved per page',
+      'Annotate a page with size callouts, notes, arrows and freehand strokes',
+      'Extract CSS custom properties as design tokens',
+      'Screenshot the page or a region with your marks on it',
     ],
   };
 
@@ -37,14 +41,10 @@ export function JsonLd() {
     name: SITE_NAME,
     url: SITE_URL,
     description: SITE_DESCRIPTION,
+    alternateName: FORMER_NAME,
     publisher: {
       '@type': 'Organization',
       name: 'Raval Contributors',
-    },
-    potentialAction: {
-      '@type': 'SearchAction',
-      target: `${SITE_URL}/docs?q={search_term_string}`,
-      'query-input': 'required name=search_term_string',
     },
   };
 

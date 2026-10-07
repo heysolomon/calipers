@@ -21,11 +21,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!page) return { title: 'Docs' };
 
-  return buildPageMetadata({
+  const metadata = buildPageMetadata({
     title: page.title,
     description: page.description,
     path: `/docs/${slug.join('/')}`,
   });
+  // Kept only so old links land somewhere; it has nothing worth finding in search.
+  return slug.join('/') === 'features/spacing-grid' ? { ...metadata, robots: { index: false, follow: true } } : metadata;
 }
 
 export default async function DocPage({ params }: Props): Promise<JSX.Element> {
