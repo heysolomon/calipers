@@ -1,6 +1,6 @@
 /**
  * Toasts that behave like Sonner (stack, expand on hover, pause while read,
- * swipe away) but look like Calipers: one short line in a small chip.
+ * swipe away) but look like Raval: one short line in a small chip.
  * Written without a framework so the content script stays small.
  */
 import { UI } from './tokens';
@@ -23,7 +23,7 @@ interface ToastItem {
   mounted:   boolean;
 }
 
-const HOST_ID = 'calipers-toaster';
+const HOST_ID = 'raval-toaster';
 const MAX_WIDTH = 320;
 const EDGE = 20;
 /** How far older toasts peek out when stacked, and the space between them when expanded. */

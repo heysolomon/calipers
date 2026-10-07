@@ -61,7 +61,7 @@ export function GET(req: NextRequest) {
             }}
           />
           <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '18px', fontWeight: 500 }}>
-            Calipers
+            Raval
           </span>
         </div>
 

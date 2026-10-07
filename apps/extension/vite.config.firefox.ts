@@ -9,7 +9,7 @@ import { resolve } from 'path';
 export default defineConfig({
   resolve: {
     alias: {
-      '@calipers/shared': resolve(__dirname, '../../packages/shared/src/index.ts'),
+      '@raval/shared': resolve(__dirname, '../../packages/shared/src/index.ts'),
     },
   },
   build: {

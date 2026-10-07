@@ -6,7 +6,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "paths": {
-      "@calipers/shared": ["../../packages/shared/src/index.ts"]
+      "@raval/shared": ["../../packages/shared/src/index.ts"]
     },
     "types": ["chrome", "vite/client"]
   },

@@ -1,9 +1,9 @@
 {
-  "name": "@calipers/web",
+  "name": "@raval/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Calipers companion website",
+  "description": "Raval companion website",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,7 +12,7 @@
     "lint": "eslint \"**/*.{ts,tsx}\""
   },
   "dependencies": {
-    "@calipers/shared": "workspace:*",
+    "@raval/shared": "workspace:*",
     "@mdx-js/loader": "^3.1.0",
     "@mdx-js/react": "^3.1.0",
     "@next/mdx": "^15.3.0",

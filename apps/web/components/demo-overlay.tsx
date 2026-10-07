@@ -175,7 +175,7 @@ function sameRange(a: Range | null | undefined, b: Range | null | undefined): bo
     && a.endContainer === b.endContainer && a.endOffset === b.endOffset;
 }
 
-const HIGHLIGHT_NAME = 'calipers-demo-text';
+const HIGHLIGHT_NAME = 'raval-demo-text';
 
 /** Fill the hovered and selected words with the accent and turn their glyphs white, like a text selection. */
 function useTextHighlight(ranges: (Range | null | undefined)[]): void {
@@ -876,7 +876,7 @@ function GuidesOverlay({ setCursor }: { setCursor: (c: DemoCursor) => void }) {
 
 type AnnoTool = 'size' | 'note' | 'arrow' | 'pen';
 const ANNO_TOOLS: { id: AnnoTool; label: string }[] = [
-  { id: 'size', label: 'Size' }, { id: 'note', label: 'Note' }, { id: 'arrow', label: 'Arrow' }, { id: 'pen', label: 'Pen' },
+  { id: 'size', label: 'Callout' }, { id: 'note', label: 'Note' }, { id: 'arrow', label: 'Arrow' }, { id: 'pen', label: 'Pen' },
 ];
 const ANNO_KEYS: Record<string, AnnoTool> = { m: 'size', n: 'note', a: 'arrow', p: 'pen' };
 const ANNO_COLORS: { hex: string; label: string }[] = [
@@ -890,7 +890,7 @@ const NOTE_STYLE: CSSProperties = {
   textShadow: '0 1px 0 rgba(255,255,255,0.85)', transform: 'rotate(-1.5deg)', transformOrigin: '0 0',
 };
 const ANNO_HINT: Record<AnnoTool, string> = {
-  size: 'Click an element to mark its size',
+  size: 'Click an element to mark its width and height',
   note: 'Click to write · Drag a note to move it',
   arrow: 'Drag to draw · Drag a handle to reshape',
   pen: 'Drag to draw freehand',

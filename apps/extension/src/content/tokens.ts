@@ -1,5 +1,5 @@
 /**
- * Shared design tokens for every Calipers surface (toolbar, cards, labels,
+ * Shared design tokens for every Raval surface (toolbar, cards, labels,
  * toasts, tooltips). The UI is light, so elevation is carried mostly by a
  * hairline border with only a faint shadow underneath.
  */
@@ -49,7 +49,7 @@ export interface SegmentItem {
 
 /**
  * Segmented control with a pill that slides to the active item. Every tab row
- * in Calipers is built from this so they all look and move the same way.
+ * in Raval is built from this so they all look and move the same way.
  * `attr` is the data attribute the buttons carry, e.g. `data-fmt="hex"`.
  */
 export function segmentedHTML(attr: string, items: SegmentItem[], activeId: string): string {

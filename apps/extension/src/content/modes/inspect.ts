@@ -2,11 +2,11 @@
  * Inspect mode — hover to outline what is under the pointer and see its size;
  * click text or an element to open its typography, colours and box values.
  */
-import type { Rect } from '@calipers/shared';
+import type { Rect } from '@raval/shared';
 import type { OverlayElements } from '../overlay';
 import { clearCanvas, drawRulers, drawColorPickHighlight } from '../renderer';
 import { getElementAtPoint, getElementRect, getBoxModel } from '../detector';
-import { isCalipersElement, copyToClipboard, domRectToRect, formatDimensions } from '../utils';
+import { isRavalElement, copyToClipboard, domRectToRect, formatDimensions } from '../utils';
 import { showToast, setLabel, hideLabel } from '../labels';
 import { setCursorResolver } from '../cursor';
 import { BoxSpring, boxToRect } from '../motion';
@@ -93,7 +93,7 @@ let stopLoop: (() => void) | null = null;
 // text selection paints — so the underlying text never needs to be duplicated
 // or covered by the canvas. Falls back to no recolour on browsers without it.
 
-const HIGHLIGHT_NAME = 'calipers-inspect-text';
+const HIGHLIGHT_NAME = 'raval-inspect-text';
 const supportsHighlightApi = typeof CSS !== 'undefined' && 'highlights' in CSS;
 let highlightStyleEl: HTMLStyleElement | null = null;
 let appliedRanges: Range[] = [];
@@ -101,7 +101,7 @@ let appliedRanges: Range[] = [];
 function ensureHighlightStyle(): void {
   if (highlightStyleEl) return;
   const style = document.createElement('style');
-  style.id = 'calipers-inspect-highlight-style';
+  style.id = 'raval-inspect-highlight-style';
   style.textContent = `::highlight(${HIGHLIGHT_NAME}) { background-color: #FF4500; color: #fff; }`;
   document.documentElement.appendChild(style);
   highlightStyleEl = style;
@@ -166,7 +166,7 @@ function getTextRangeAtPoint(x: number, y: number): TextTarget | null {
   if (!node || node.nodeType !== Node.TEXT_NODE) return null;
   const text = node.textContent ?? '';
   const parent = (node.parentElement) as Element | null;
-  if (!parent || !text.trim() || isCalipersElement(parent)) return null;
+  if (!parent || !text.trim() || isRavalElement(parent)) return null;
 
   let start = offset;
   let end = offset;
@@ -445,7 +445,7 @@ function renderColorRows(container: HTMLElement): void {
 
 function buildPanel(): HTMLDivElement {
   const panel = document.createElement('div');
-  panel.id = 'calipers-inspect-panel';
+  panel.id = 'raval-inspect-panel';
   panel.setAttribute('style', PANEL_STYLE);
 
   panel.addEventListener('click', (e) => {
@@ -758,8 +758,8 @@ function extractBox(el: Element): TypeEntry[] {
 // ─── Event handlers ───────────────────────────────────────────────────────────
 
 function onMouseMove(e: MouseEvent): void {
-  // Over the panel (or any Calipers UI) keep the last sample so nothing shifts underneath a click.
-  if (isCalipersElement(e.target as Element)) {
+  // Over the panel (or any Raval UI) keep the last sample so nothing shifts underneath a click.
+  if (isRavalElement(e.target as Element)) {
     state.pinned = true;
     return;
   }
@@ -771,7 +771,7 @@ function onMouseMove(e: MouseEvent): void {
 
 /** Click a word or element to open its details; click it again, or empty space, to close. */
 function onClick(e: MouseEvent): void {
-  if (e.button !== 0 || isCalipersElement(e.target as Element)) return;
+  if (e.button !== 0 || isRavalElement(e.target as Element)) return;
 
   const text = getTextRangeAtPoint(e.clientX, e.clientY);
   const el = text ? text.el : getElementAtPoint(e.clientX, e.clientY);

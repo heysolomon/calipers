@@ -1,7 +1,7 @@
 /**
  * Geometry helpers, formatting, and shared utilities for the content script.
  */
-import type { Rect } from '@calipers/shared';
+import type { Rect } from '@raval/shared';
 
 // ─── Geometry ─────────────────────────────────────────────────────────────────
 
@@ -100,14 +100,14 @@ export function formatDistance(px: number): string {
 
 /** Generate a unique ID */
 export function uid(): string {
-  return `calipers-${Math.random().toString(36).slice(2, 9)}`;
+  return `raval-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-/** Check if an element is part of any Calipers UI (panel, overlay, sub-panels, Excalidraw) */
-export function isCalipersElement(el: Element | null): boolean {
+/** Check if an element is part of any Raval UI (panel, overlay, sub-panels, Excalidraw) */
+export function isRavalElement(el: Element | null): boolean {
   if (!el) return false;
-  if (el.id?.startsWith('calipers-')) return true;
-  if (el.closest('[id^="calipers-"]')) return true;
+  if (el.id?.startsWith('raval-')) return true;
+  if (el.closest('[id^="raval-"]')) return true;
   return false;
 }
 

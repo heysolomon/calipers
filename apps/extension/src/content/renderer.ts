@@ -2,7 +2,7 @@
  * Renderer — draws highlights, dimension lines, measurement labels onto the canvas.
  * All coordinates are in CSS pixels; we apply DPR scaling at the start of each frame.
  */
-import type { Rect } from '@calipers/shared';
+import type { Rect } from '@raval/shared';
 import { tuning } from './motion';
 
 // ─── Design tokens (mirrors popup / branding) ─────────────────────────────────

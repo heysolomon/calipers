@@ -474,7 +474,8 @@ button: focus-visible,
 }
 
 /* A key named in running text */
-.lp-prose kbd {
+.lp-prose kbd,
+.welcome-steps kbd {
   display: inline-block;
   min-width: 20px;
   padding: 0 5px;
@@ -681,6 +682,74 @@ button: focus-visible,
 
 .lp-footer {
   padding-top: clamp(96px, 18vw, 256px);
+}
+
+/* ─── Welcome page (opened by the extension after install) ───────────────────── */
+
+.welcome-hero {
+  padding-top: clamp(56px, 8vw, 112px);
+  padding-bottom: clamp(48px, 6vw, 80px);
+}
+
+.welcome-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  list-style: none;
+}
+
+.welcome-steps .lp-card {
+  gap: 16px;
+}
+
+.welcome-steps h2 {
+  margin-bottom: 4px;
+  font-size: inherit;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.welcome-step-number {
+  font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0;
+  color: var(--text-2);
+}
+
+.welcome-section {
+  margin-top: clamp(72px, 10vw, 128px);
+}
+
+.welcome-practice {
+  margin-top: 32px;
+}
+
+.welcome-try {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 24px;
+}
+
+.welcome-try dt {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.welcome-try dd {
+  color: var(--text-2);
+}
+
+@media (max-width: 960px) {
+  .welcome-steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .welcome-try {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* Header, shared by every page */

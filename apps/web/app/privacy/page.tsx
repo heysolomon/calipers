@@ -57,21 +57,21 @@ export default function PrivacyPage(): JSX.Element {
         {/* Overview */}
         <SectionLabel label="Overview" />
         <p style={{ fontSize: '16px', color: 'var(--text-body)', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
-          Calipers is a free, open-source browser extension. This policy explains what data we collect,
+          Raval is a free, open-source browser extension. This policy explains what data we collect,
           store, and transmit — which is as little as possible.
         </p>
 
         {/* Data we collect */}
         <SectionLabel label="Data we collect" />
         <p style={{ fontSize: '16px', color: 'var(--text-body)', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
-          We collect nothing. Calipers does not collect, store, or transmit any personally identifiable
+          We collect nothing. Raval does not collect, store, or transmit any personally identifiable
           information, browsing history, or usage data.
         </p>
 
         {/* Local storage */}
         <SectionLabel label="Local storage" />
         <p style={{ fontSize: '16px', color: 'var(--text-body)', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
-          Calipers stores your preferences locally in your browser using{' '}
+          Raval stores your preferences locally in your browser using{' '}
           <code
             style={{
               background: 'var(--hover)',
@@ -91,7 +91,7 @@ export default function PrivacyPage(): JSX.Element {
         {/* Permissions */}
         <SectionLabel label="Permissions" />
         <p style={{ fontSize: '16px', color: 'var(--text-body)', lineHeight: '25.6px', letterSpacing: '-0.01em', marginBottom: '12px' }}>
-          Calipers requests certain browser permissions solely to deliver its core functionality.
+          Raval requests certain browser permissions solely to deliver its core functionality.
           No permission is used to collect or transmit data.
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -121,14 +121,14 @@ export default function PrivacyPage(): JSX.Element {
         {/* Third parties */}
         <SectionLabel label="Third parties" />
         <p style={{ fontSize: '16px', color: 'var(--text-body)', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
-          Calipers does not share data with any third party. There are no analytics, no tracking
+          Raval does not share data with any third party. There are no analytics, no tracking
           scripts, and no external services.
         </p>
 
         {/* Open source */}
         <SectionLabel label="Open source" />
         <p style={{ fontSize: '16px', color: 'var(--text-body)', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
-          Calipers is fully open source. You can inspect every line of code at{' '}
+          Raval is fully open source. You can inspect every line of code at{' '}
           <a
             href="https://github.com/heysolomon/calipers"
             target="_blank"

@@ -11,10 +11,10 @@ let teardown: (() => void) | null = null;
 export function mountDevDials(): void {
   if (teardown) return;
 
-  // The `calipers-` id makes the panel count as Calipers UI, so modes and the
+  // The `raval-` id makes the panel count as Raval UI, so modes and the
   // click interceptor leave it alone.
   const host = document.createElement('div');
-  host.id = 'calipers-dialkit';
+  host.id = 'raval-dialkit';
   host.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;z-index:2147483647;';
 
   const style = document.createElement('style');
@@ -24,7 +24,7 @@ export function mountDevDials(): void {
 
   const root = createDialRoot({ target: host, position: 'bottom-left', defaultOpen: false });
 
-  const kit = createDialKit('Calipers motion', {
+  const kit = createDialKit('Raval motion', {
     enabled: tuning.enabled,
     hover: { type: 'spring', ...tuning.hover },
     fadeIn: [tuning.fadeIn, 0, 0.6, 0.01],

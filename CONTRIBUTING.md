@@ -1,6 +1,6 @@
-# Contributing to Calipers
+# Contributing to Raval
 
-Calipers is a community project and all contributions are welcome — code, documentation, design, bug reports, and feature ideas. Whether you're fixing a typo or building a new measurement mode, you're in the right place.
+Raval is a community project and all contributions are welcome — code, documentation, design, bug reports, and feature ideas. Whether you're fixing a typo or building a new measurement mode, you're in the right place.
 
 ## Development Setup
 
@@ -15,19 +15,19 @@ cd calipers
 pnpm install
 
 # Build and watch the extension
-pnpm dev --filter=@calipers/extension
+pnpm dev --filter=@raval/extension
 
 # Run the companion website dev server
-pnpm dev --filter=@calipers/web
+pnpm dev --filter=@raval/web
 ```
 
 ### Loading the extension in Chrome
 
-1. Run `pnpm dev --filter=@calipers/extension` — it watches for changes and rebuilds into `apps/extension/dist/`.
+1. Run `pnpm dev --filter=@raval/extension` — it watches for changes and rebuilds into `apps/extension/dist/`.
 2. Open Chrome and go to `chrome://extensions`.
 3. Enable **Developer mode** (toggle in the top-right).
 4. Click **Load unpacked** and select `apps/extension/dist/`.
-5. The Calipers icon appears in your toolbar. Press `⌘⇧M` (Mac) or `Ctrl+Shift+M` to activate.
+5. The Raval icon appears in your toolbar. Press `⌥⇧C` (Mac) or `Alt+Shift+C` to activate.
 
 ## Architecture Overview
 
@@ -35,9 +35,9 @@ The project is a pnpm monorepo with three packages:
 
 | Package | Path | Description |
 |---|---|---|
-| `@calipers/extension` | `apps/extension/` | Chrome extension (Vite + TypeScript) |
-| `@calipers/web` | `apps/web/` | Companion Next.js website |
-| `@calipers/shared` | `packages/shared/` | Types & messages shared between both |
+| `@raval/extension` | `apps/extension/` | Chrome extension (Vite + TypeScript) |
+| `@raval/web` | `apps/web/` | Companion Next.js website |
+| `@raval/shared` | `packages/shared/` | Types & messages shared between both |
 
 **Extension internals:**
 

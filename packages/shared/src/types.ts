@@ -86,10 +86,10 @@ export const DEFAULT_STATE: ExtensionState = {
 
 /** Settings remembered across sessions, and the storage key each one lives under. */
 export const SETTING_STORAGE_KEYS = {
-  snapToElements:  'calipers_snap_to_elements',
-  showRulers:      'calipers_show_rulers',
-  showGuides:      'calipers_show_guides',
-  showGuideLabels: 'calipers_show_guide_labels',
+  snapToElements:  'raval_snap_to_elements',
+  showRulers:      'raval_show_rulers',
+  showGuides:      'raval_show_guides',
+  showGuideLabels: 'raval_show_guide_labels',
 } as const;
 
 export type SettingKey = keyof typeof SETTING_STORAGE_KEYS;

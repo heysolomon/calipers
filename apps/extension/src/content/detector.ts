@@ -1,13 +1,13 @@
 /**
  * Element detection — finds and characterises DOM elements under the cursor.
  */
-import type { Rect, BoxModel, BoxModelValues } from '@calipers/shared';
-import { domRectToRect, parsePx, isCalipersElement } from './utils';
+import type { Rect, BoxModel, BoxModelValues } from '@raval/shared';
+import { domRectToRect, parsePx, isRavalElement } from './utils';
 
 const HIT_MEMO_MS = 100;
 let memo: { x: number; y: number; sx: number; sy: number; t: number; el: Element | null } | null = null;
 
-/** Get the deepest non-Calipers element at the given viewport coordinates */
+/** Get the deepest non-Raval element at the given viewport coordinates */
 export function getElementAtPoint(x: number, y: number): Element | null {
   // Pointer rarely moves between consecutive frames — reuse the last answer briefly.
   const now = performance.now();
@@ -21,7 +21,7 @@ export function getElementAtPoint(x: number, y: number): Element | null {
 
   // The overlay is normally click-through already. Only toggle pointer-events
   // (a style write that forces a recalc) in the rare case the canvas is interactive.
-  const canvas = document.getElementById('calipers-canvas-overlay');
+  const canvas = document.getElementById('raval-canvas-overlay');
   const prev = canvas?.style.pointerEvents ?? '';
   const mustToggle = canvas !== null && prev !== 'none';
   if (mustToggle) canvas.style.pointerEvents = 'none';
@@ -30,7 +30,7 @@ export function getElementAtPoint(x: number, y: number): Element | null {
 
   if (mustToggle) canvas.style.pointerEvents = prev;
 
-  const el = !hit || isCalipersElement(hit) ? null : hit;
+  const el = !hit || isRavalElement(hit) ? null : hit;
   memo = { x, y, sx: window.scrollX, sy: window.scrollY, t: now, el };
   return el;
 }

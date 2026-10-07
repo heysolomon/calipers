@@ -3,11 +3,11 @@
  * Pin element measurements, write notes, draw arrows / freehand, export via screenshot.
  * Each annotation stores its own colour from a palette (design-system accent by default).
  */
-import type { Rect } from '@calipers/shared';
+import type { Rect } from '@raval/shared';
 import type { OverlayElements } from '../overlay';
 import { getElementAtPoint, getElementRect } from '../detector';
 import { clearCanvas, drawRulers, drawElementHighlight } from '../renderer';
-import { isCalipersElement, uid, toPageX, toPageY, toViewX, toViewY } from '../utils';
+import { isRavalElement, uid, toPageX, toPageY, toViewX, toViewY } from '../utils';
 import { showToast } from '../labels';
 import { BoxSpring, boxToRect } from '../motion';
 import { setSegmented, setSwatches } from '../tokens';
@@ -211,7 +211,7 @@ export function hasAnnotations(): boolean {
 function ensureNoteLayer(root: HTMLElement): HTMLDivElement {
   if (noteLayer?.isConnected) return noteLayer;
   noteLayer = document.createElement('div');
-  noteLayer.id = 'calipers-annotate-notes';
+  noteLayer.id = 'raval-annotate-notes';
   Object.assign(noteLayer.style, {
     position: 'absolute',
     inset: '0',
@@ -556,7 +556,7 @@ function annotationAt(x: number, y: number): Annotation | null {
 
 /** Right-click removes the one annotation under the pointer. */
 function onContextMenu(e: MouseEvent): void {
-  if (isCalipersElement(e.target as Element)) return;
+  if (isRavalElement(e.target as Element)) return;
   const item = annotationAt(e.clientX, e.clientY);
   if (!item) return;
   e.preventDefault();
@@ -763,7 +763,7 @@ function syncColorUi(): void {
 }
 
 function onClick(e: MouseEvent): void {
-  if (isCalipersElement(e.target as Element)) return;
+  if (isRavalElement(e.target as Element)) return;
   if (state.tool === 'arrow' || state.tool === 'pen') return;
   if (e.button !== 0) return;
 
@@ -797,7 +797,7 @@ function onClick(e: MouseEvent): void {
 
 function onMouseDown(e: MouseEvent): void {
   swallowNoteClick = false;
-  if (isCalipersElement(e.target as Element)) return;
+  if (isRavalElement(e.target as Element)) return;
   if (e.button !== 0) return;
 
   if (state.tool === 'note' && activeNoteId && !state.noteDraft) {
@@ -857,7 +857,7 @@ function onMouseMove(e: MouseEvent): void {
     return;
   }
   if (state.tool === 'note' && !state.noteDraft) {
-    updateNoteHover(e.clientX, e.clientY, isCalipersElement(e.target as Element));
+    updateNoteHover(e.clientX, e.clientY, isRavalElement(e.target as Element));
   }
   if (state.drawing && state.tool === 'arrow' && state.draftArrow) {
     const from = { x: state.draftArrow.x1, y: state.draftArrow.y1 };
@@ -867,7 +867,7 @@ function onMouseMove(e: MouseEvent): void {
     return;
   }
   if (state.tool === 'arrow') {
-    const over = isCalipersElement(e.target as Element) ? null : arrowAt(e.clientX, e.clientY);
+    const over = isRavalElement(e.target as Element) ? null : arrowAt(e.clientX, e.clientY);
     const id = over?.item.id ?? null;
     if (id !== activeArrowId) {
       activeArrowId = id;
@@ -879,7 +879,7 @@ function onMouseMove(e: MouseEvent): void {
     return;
   }
 
-  if (state.tool === 'measure' && !isCalipersElement(e.target as Element)) {
+  if (state.tool === 'measure' && !isRavalElement(e.target as Element)) {
     const el = getElementAtPoint(e.clientX, e.clientY);
     state.hoveredRect = el ? getElementRect(el) : null;
   } else {

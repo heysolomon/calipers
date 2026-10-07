@@ -26,7 +26,7 @@ export async function getGithubStars(): Promise<number | null> {
 export async function getChromeUsers(): Promise<number | null> {
   try {
     const res = await fetch(CHROME_STORE_URL, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; CalipersSite/1.0)', 'Accept-Language': 'en' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RavalSite/1.0)', 'Accept-Language': 'en' },
       next: { revalidate: REVALIDATE },
     });
     if (!res.ok) return null;

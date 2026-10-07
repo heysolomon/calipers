@@ -18,7 +18,7 @@ export function JsonLd() {
     },
     author: {
       '@type': 'Organization',
-      name: 'Calipers Contributors',
+      name: 'Raval Contributors',
       url: GITHUB_URL,
     },
     featureList: [
@@ -39,7 +39,7 @@ export function JsonLd() {
     description: SITE_DESCRIPTION,
     publisher: {
       '@type': 'Organization',
-      name: 'Calipers Contributors',
+      name: 'Raval Contributors',
     },
     potentialAction: {
       '@type': 'SearchAction',

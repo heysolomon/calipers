@@ -1,8 +1,8 @@
 {
-  "name": "@calipers/shared",
+  "name": "@raval/shared",
   "version": "0.1.0",
   "private": true,
-  "description": "Shared types and constants for Calipers",
+  "description": "Shared types and constants for Raval",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {

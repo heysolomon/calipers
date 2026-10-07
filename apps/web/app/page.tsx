@@ -37,7 +37,7 @@ export default function HomePage() {
       <section className="lp-hero">
         <h1 className="lp-display">Measure, inspect and annotate any webpage</h1>
         <div className="lp-hero-copy">
-          <p>Calipers is a free, open-source browser extension for designers and developers.</p>
+          <p>Raval is a free, open-source browser extension for designers and developers.</p>
           <p>
             Install it for{' '}
             <a href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer" className="lp-link">
@@ -49,7 +49,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Showcase ───────────────────────────────────────────────────────── */}
-      <section className="lp-showcase" aria-label="How Calipers works">
+      <section className="lp-showcase" aria-label="How Raval works">
         <div className="lp-grid">
           <div className="lp-frame lp-frame-demo">
             <HeroDemo />
@@ -68,7 +68,7 @@ export default function HomePage() {
           <h2 className="lp-heading">How it works</h2>
           <div className="lp-prose">
             <p>
-              Calipers reads the page itself, not a picture of it, so every size, gap and colour is
+              Raval reads the page itself, not a picture of it, so every size, gap and colour is
               the value the browser is actually using.
             </p>
             <p>

@@ -15,7 +15,7 @@ const withMDX = createMDX({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   pageExtensions: ['js', 'jsx', 'mdx', 'ts', 'tsx'],
-  transpilePackages: ['@calipers/shared'],
+  transpilePackages: ['@raval/shared'],
   // ESLint is handled by the root workspace flat config (eslint.config.js)
   eslint: { ignoreDuringBuilds: true },
   experimental: {

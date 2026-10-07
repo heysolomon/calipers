@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changelog page
 - Dynamic OG image generation via `@vercel/og`
 - Vercel Analytics and Speed Insights integration
-- Shared `@calipers/shared` package for types and message protocol
+- Shared `@raval/shared` package for types and message protocol
 - pnpm workspace + Turborepo monorepo setup
 - MIT license, Contributor Covenant Code of Conduct, Contributing guide
 - GitHub Actions CI (lint → typecheck → build on push and PR)

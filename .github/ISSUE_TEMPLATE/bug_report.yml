@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a bug in Calipers
+description: Report a bug in Raval
 title: "[Bug]: "
 labels: ["bug"]
 body:
@@ -18,7 +18,7 @@ body:
       description: How can we reproduce this?
       placeholder: |
         1. Go to '...'
-        2. Activate Calipers
+        2. Activate Raval
         3. Click on '...'
         4. See error
     validations:

@@ -103,7 +103,7 @@ const TILES: { name: string; hint: string; href: string; art: ReactNode }[] = [
 /** The six-cell grid from the landing page: one cell per tool, each linking to its guide. */
 export function FeatureTiles() {
   return (
-    <ul className="lp-tiles" aria-label="What Calipers does">
+    <ul className="lp-tiles" aria-label="What Raval does">
       {TILES.map(({ name, hint, href, art }) => (
         <li key={name} className="lp-tile">
           <Link href={href} className="lp-tile-card">

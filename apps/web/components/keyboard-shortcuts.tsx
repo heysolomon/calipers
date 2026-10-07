@@ -3,7 +3,7 @@ import { type ReactNode } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 
 const shortcuts = [
-  { keys: ['⌘', '⇧', 'M'], description: 'Toggle Calipers on/off', platform: '/ Ctrl+Shift+M' },
+  { keys: ['⌥', '⇧', 'C'], description: 'Toggle Raval on/off', platform: '/ Alt+Shift+C' },
   { keys: ['1'], description: 'Switch to Inspect mode' },
   { keys: ['2'], description: 'Switch to Measure mode' },
   { keys: ['3'], description: 'Switch to Guides mode' },
@@ -13,7 +13,7 @@ const shortcuts = [
   { keys: ['⌘', 'Z'], description: 'Undo in Measure, Guides, and Annotate', platform: '/ Ctrl+Z' },
   { keys: ['S'], description: 'Take screenshot' },
   { keys: ['?'], description: 'Show all shortcuts' },
-  { keys: ['Esc'], description: 'Close what is open, then Calipers' },
+  { keys: ['Esc'], description: 'Close what is open, then Raval' },
 ];
 
 export function KeyboardShortcuts() {

@@ -136,7 +136,7 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@calipers/shared': resolve(extensionRoot, '../../packages/shared/src/index.ts'),
+      '@raval/shared': resolve(extensionRoot, '../../packages/shared/src/index.ts'),
     },
   },
   build: {

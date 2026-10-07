@@ -38,7 +38,7 @@ importers:
 
   apps/extension:
     dependencies:
-      '@calipers/shared':
+      '@raval/shared':
         specifier: workspace:*
         version: link:../../packages/shared
     devDependencies:
@@ -60,9 +60,6 @@ importers:
 
   apps/web:
     dependencies:
-      '@calipers/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
       '@mdx-js/loader':
         specifier: ^3.1.0
         version: 3.1.1
@@ -72,6 +69,9 @@ importers:
       '@next/mdx':
         specifier: ^15.3.0
         version: 15.5.15(@mdx-js/loader@3.1.1)(@mdx-js/react@3.1.1(@types/react@19.2.14)(react@19.2.5))
+      '@raval/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@vercel/analytics':
         specifier: ^1.5.0
         version: 1.6.1(next@15.5.15(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(sass@1.51.0))(react@19.2.5)

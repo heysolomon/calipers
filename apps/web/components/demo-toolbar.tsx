@@ -84,7 +84,7 @@ export function DemoToolbar() {
       }}
     >
       <img
-        src="/calipers-logo.svg"
+        src="/raval-logo.svg"
         alt=""
         width={16}
         height={16}

@@ -1,14 +1,14 @@
 /**
  * Chrome storage helpers — persist guides, panel position, and settings across sessions.
  */
-import type { Guide, Settings, SettingKey } from '@calipers/shared';
-import { SETTING_STORAGE_KEYS, settingsFromStorage } from '@calipers/shared';
+import type { Guide, Settings, SettingKey } from '@raval/shared';
+import { SETTING_STORAGE_KEYS, settingsFromStorage } from '@raval/shared';
 import { pageId } from './page-scope';
 
-const KEY_GUIDES_PAGE = 'calipers_guides:';
+const KEY_GUIDES_PAGE = 'raval_guides:';
 /** Pre-per-page lists shared by every site. */
-const KEYS_GUIDES_GLOBAL = ['calipers_guides_doc', 'calipers_guides'];
-const KEY_PANEL_POS  = 'calipers_panel_pos';
+const KEYS_GUIDES_GLOBAL = ['raval_guides_doc', 'raval_guides'];
+const KEY_PANEL_POS  = 'raval_panel_pos';
 
 export interface PanelPosition {
   left: number;

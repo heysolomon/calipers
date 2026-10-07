@@ -9,8 +9,8 @@
  *
  * Tokens view opens as a card below the main popup.
  */
-import type { ExtensionState, Mode, Message } from '@calipers/shared';
-import { DEFAULT_STATE } from '@calipers/shared';
+import type { ExtensionState, Mode, Message } from '@raval/shared';
+import { DEFAULT_STATE } from '@raval/shared';
 import { copyToClipboard } from './utils';
 import { showErrorReport, showToast } from './labels';
 import {
@@ -25,7 +25,7 @@ import {
 import { setShowRulers } from './renderer';
 import { markActive } from './frame';
 import { withChromeHidden } from './capture-chrome';
-import type { SettingKey } from '@calipers/shared';
+import type { SettingKey } from '@raval/shared';
 import {
   clearAnnotations,
   setAnnotateTool,
@@ -43,7 +43,7 @@ import { startRegionCapture, cancelRegionCapture, isRegionCaptureActive } from '
 import { loadPanelPosition, savePanelPosition, saveSetting, type PanelPosition } from './storage';
 import { UI, segmentedHTML, setSegmented, swatchHTML, setSwatches } from './tokens';
 
-const PANEL_ID = 'calipers-panel';
+const PANEL_ID = 'raval-panel';
 /** Estimate used only before the toolbar has been measured; the real width follows its buttons. */
 const PANEL_WIDTH = 316;
 /** Sub-cards are narrower than the toolbar and hang from its right edge, under the buttons that open them. */
@@ -86,7 +86,7 @@ const PANEL_CSS = `
   user-select: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  animation: calipers-panel-in 0.25s cubic-bezier(0.34, 1.2, 0.64, 1) both;
+  animation: raval-panel-in 0.25s cubic-bezier(0.34, 1.2, 0.64, 1) both;
   overflow: visible;
 `;
 
@@ -103,16 +103,16 @@ const RUBBER_CONSTANT = 0.55;
 const RUBBER_DIM = 180;
 
 const KEYFRAMES = `
-  @keyframes calipers-panel-in {
+  @keyframes raval-panel-in {
     from { opacity: 0; transform: scale(0.95) translateY(-6px); }
     to   { opacity: 1; transform: scale(1)    translateY(0);    }
   }
-  @keyframes calipers-panel-out {
+  @keyframes raval-panel-out {
     from { opacity: 1; transform: scale(1)    translateY(0);    }
     to   { opacity: 0; transform: scale(0.95) translateY(-6px); }
   }
   @media (prefers-reduced-motion: reduce) {
-    #calipers-panel, #calipers-panel * { animation: none !important; transition: none !important; }
+    #raval-panel, #raval-panel * { animation: none !important; transition: none !important; }
   }
 `;
 
@@ -153,7 +153,7 @@ const MODE_SETTINGS: Record<Mode, SettingDef[]> = {
 };
 
 const ANNOTATE_TOOLS: { id: AnnotateTool; label: string; key: string }[] = [
-  { id: 'measure', label: 'Size',  key: 'M' },
+  { id: 'measure', label: 'Callout', key: 'M' },
   { id: 'note',    label: 'Note',  key: 'N' },
   { id: 'arrow',   label: 'Arrow', key: 'A' },
   { id: 'pen',     label: 'Pen',   key: 'P' },
@@ -1685,7 +1685,7 @@ export function hidePanel(): void {
   }
   window.removeEventListener('resize', onPanelViewportResize);
 
-  panelEl.style.animation = 'calipers-panel-out 0.15s cubic-bezier(0.22, 1, 0.36, 1) forwards';
+  panelEl.style.animation = 'raval-panel-out 0.15s cubic-bezier(0.22, 1, 0.36, 1) forwards';
   const el = panelEl;
   panelEl = null;
   setTimeout(() => el.remove(), 160);

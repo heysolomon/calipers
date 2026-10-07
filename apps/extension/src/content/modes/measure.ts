@@ -2,7 +2,7 @@
  * Measure mode — click 2–5 elements to see distances between each consecutive pair.
  * Pinned measurements live on the persist layer and survive mode switches until cleared.
  */
-import type { Rect } from '@calipers/shared';
+import type { Rect } from '@raval/shared';
 import type { OverlayElements } from '../overlay';
 import { getElementAtPoint, getElementRect } from '../detector';
 import {
@@ -10,7 +10,7 @@ import {
   drawAlignmentGuideline, drawRulers, drawBadge, LINE_TRAVEL,
 } from '../renderer';
 import { setLabel, hideLabel, removeLabel, showToast } from '../labels';
-import { formatDistance, formatDimensions, distanceBetweenRects, isCalipersElement } from '../utils';
+import { formatDistance, formatDimensions, distanceBetweenRects, isRavalElement } from '../utils';
 import { BoxSpring, boxToRect, tuning } from '../motion';
 import { addRenderer, markActive } from '../frame';
 import { onPageChange, createPageShelf } from '../page-scope';
@@ -200,7 +200,7 @@ function isRemovable(el: Element | null): boolean {
 }
 
 function onClick(e: MouseEvent): void {
-  if (isCalipersElement(e.target as Element)) return;
+  if (isRavalElement(e.target as Element)) return;
   const el = getElementAtPoint(e.clientX, e.clientY);
   if (!el || el === justPinned) return;
 

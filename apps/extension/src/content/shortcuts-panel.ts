@@ -1,11 +1,11 @@
 /**
  * Keyboard shortcuts reference panel — a centred glassmorphic overlay
- * toggled with the `?` key while Calipers is active.
+ * toggled with the `?` key while Raval is active.
  */
 
 import { UI } from './tokens';
 
-const PANEL_ID = 'calipers-shortcuts-panel';
+const PANEL_ID = 'raval-shortcuts-panel';
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
@@ -34,11 +34,11 @@ const PANEL_CSS = `
   box-sizing: border-box;
   pointer-events: all;
   user-select: none;
-  animation: calipers-shortcuts-in 0.16s ${UI.easeOut} both;
+  animation: raval-shortcuts-in 0.16s ${UI.easeOut} both;
 `;
 
 const KEYFRAME_CSS = `
-  @keyframes calipers-shortcuts-in {
+  @keyframes raval-shortcuts-in {
     from { opacity: 0; transform: scale(0.98) translateY(4px); }
     to   { opacity: 1; transform: scale(1)    translateY(0);   }
   }
@@ -130,7 +130,7 @@ function buildHTML(): string {
     `)}
 
     ${section('Annotate', `
-      ${row(['M'], 'Size tool — click elements for HxW')}
+      ${row(['M'], 'Callout tool — click an element to mark its width and height')}
       ${row(['N'], 'Note tool — click to write')}
       ${row(['A'], 'Arrow tool — drag to draw')}
       ${row(['P'], 'Pen tool — freehand')}
@@ -152,7 +152,7 @@ function buildHTML(): string {
     ${section('General', `
       ${row(['S'], 'Capture full screenshot')}
       ${row(['?'], 'Show / hide shortcuts')}
-      ${row(['Esc'], 'Close Calipers')}
+      ${row(['Esc'], 'Close Raval')}
     `)}
   `;
 }

@@ -2,11 +2,11 @@
  * Guides mode — place H / V / both alignment guides.
  * Placed guides live on the persist layer and survive mode switches until cleared.
  */
-import type { Guide } from '@calipers/shared';
+import type { Guide } from '@raval/shared';
 import type { OverlayElements } from '../overlay';
 import { clearCanvas, drawGuide, drawRulers, RULER_SIZE } from '../renderer';
 import { setLabel, hideLabel, removeLabel, showToast } from '../labels';
-import { formatDistance, uid, isCalipersElement, toPageX, toPageY, toViewX, toViewY } from '../utils';
+import { formatDistance, uid, isRavalElement, toPageX, toPageY, toViewX, toViewY } from '../utils';
 import { loadGuides, saveGuides, guidePageKey } from '../storage';
 import { addRenderer, markActive } from '../frame';
 import { SnapEase } from '../motion';
@@ -270,7 +270,7 @@ export function deleteHoveredGuide(): boolean {
   return true;
 }
 
-/** Paint placed guides onto the persist canvas (called every frame while Calipers is open). */
+/** Paint placed guides onto the persist canvas (called every frame while Raval is open). */
 export function paintPlacedGuides(
   ctx: CanvasRenderingContext2D,
   labelContainer: HTMLElement,
@@ -336,7 +336,7 @@ function collectSnapCandidates(
   const addAt = (x: number, y: number): void => {
     if (x < 0 || y < 0 || x >= vw || y >= vh) return;
     for (const el of document.elementsFromPoint(x, y)) {
-      if (!isCalipersElement(el) && el !== document.documentElement && el !== document.body) {
+      if (!isRavalElement(el) && el !== document.documentElement && el !== document.body) {
         candidates.add(el);
       }
     }
@@ -363,13 +363,13 @@ function collectSnapCandidates(
 }
 
 function withPageHitTesting<T>(fn: () => T): T {
-  const root = document.getElementById('calipers-overlay-root');
-  const canvas = document.getElementById('calipers-canvas-overlay');
-  const persist = document.getElementById('calipers-persist-canvas');
-  const panel = document.getElementById('calipers-panel');
-  const labels = document.getElementById('calipers-labels');
-  const persistLabels = document.getElementById('calipers-persist-labels');
-  const annotate = document.getElementById('calipers-annotate-root');
+  const root = document.getElementById('raval-overlay-root');
+  const canvas = document.getElementById('raval-canvas-overlay');
+  const persist = document.getElementById('raval-persist-canvas');
+  const panel = document.getElementById('raval-panel');
+  const labels = document.getElementById('raval-labels');
+  const persistLabels = document.getElementById('raval-persist-labels');
+  const annotate = document.getElementById('raval-annotate-root');
 
   const targets = [root, canvas, persist, panel, labels, persistLabels, annotate]
     .filter(Boolean) as HTMLElement[];
@@ -533,7 +533,7 @@ function syncPlacementUi(): void {
 
 function onClick(e: MouseEvent): void {
   if (swallowClick) { swallowClick = false; return; }
-  if (isCalipersElement(e.target as Element)) return;
+  if (isRavalElement(e.target as Element)) return;
   if (state.hoveredId) return;
   if (e.button !== 0) return;
 
@@ -592,7 +592,7 @@ function onMouseMove(e: MouseEvent): void {
 function onMouseDown(e: MouseEvent): void {
   swallowClick = false;
   if (e.button !== 0) return;
-  if (isCalipersElement(e.target as Element)) return;
+  if (isRavalElement(e.target as Element)) return;
   const guide = findGuideAtPoint(e.clientX, e.clientY);
   if (guide) {
     state.draggingId = guide.id;

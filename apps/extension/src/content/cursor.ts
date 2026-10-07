@@ -1,12 +1,12 @@
 /**
- * Custom crosshair cursor — replaces the native browser cursor when Calipers is active.
+ * Custom crosshair cursor — replaces the native browser cursor when Raval is active.
  * Minimal mark only (no live X/Y readout) so the page stays readable.
  */
-import { isCalipersElement } from './utils';
+import { isRavalElement } from './utils';
 import { HIDE_CURSOR_CLASS } from './overlay';
 import { trackPointerTarget } from './pointer';
 
-const CURSOR_ID = 'calipers-cursor';
+const CURSOR_ID = 'raval-cursor';
 
 let cursorEl: HTMLDivElement | null = null;
 const OFFSCREEN = -200;
@@ -78,7 +78,7 @@ function apply(): void {
 }
 
 function onMove(e: MouseEvent): void {
-  last = { x: e.clientX, y: e.clientY, overUI: isCalipersElement(e.target as Element) };
+  last = { x: e.clientX, y: e.clientY, overUI: isRavalElement(e.target as Element) };
   trackPointerTarget(e.target as Element);
   apply();
 }

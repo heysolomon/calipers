@@ -24,7 +24,7 @@ export function startRegionCapture(onFinish?: () => void): void {
   dragging = false;
 
   shadeEl = document.createElement('div');
-  shadeEl.id = 'calipers-region-shade';
+  shadeEl.id = 'raval-region-shade';
   Object.assign(shadeEl.style, {
     position: 'fixed',
     inset: '0',
@@ -35,7 +35,7 @@ export function startRegionCapture(onFinish?: () => void): void {
   });
 
   boxEl = document.createElement('div');
-  boxEl.id = 'calipers-region-box';
+  boxEl.id = 'raval-region-box';
   Object.assign(boxEl.style, {
     position: 'fixed',
     border: '1.5px solid #FF4500',
@@ -151,7 +151,7 @@ async function onUp(e: MouseEvent): Promise<void> {
 
   try {
     const cropped = await cropDataUrl(capture.dataUrl, x, y, w, h);
-    const filename = `calipers-region-${Date.now()}.png`;
+    const filename = `raval-region-${Date.now()}.png`;
     const dl = await new Promise<{ ok?: boolean; error?: string }>((resolve) => {
       chrome.runtime.sendMessage(
         { type: 'DOWNLOAD_DATA_URL', dataUrl: cropped, filename },

@@ -3,8 +3,8 @@
  * that sits above the page.
  */
 
-/** While this class is on <html>, the page's own cursors are hidden in favour of the Calipers mark. */
-export const HIDE_CURSOR_CLASS = 'calipers-hide-cursor';
+/** While this class is on <html>, the page's own cursors are hidden in favour of the Raval mark. */
+export const HIDE_CURSOR_CLASS = 'raval-hide-cursor';
 
 export interface OverlayElements {
   root: HTMLDivElement;
@@ -20,7 +20,7 @@ export function createOverlay(): OverlayElements {
   if (overlay) return overlay;
 
   const root = document.createElement('div');
-  root.id = 'calipers-overlay-root';
+  root.id = 'raval-overlay-root';
   Object.assign(root.style, {
     position: 'fixed',
     inset: '0',
@@ -30,7 +30,7 @@ export function createOverlay(): OverlayElements {
   });
 
   const canvas = document.createElement('canvas');
-  canvas.id = 'calipers-canvas-overlay';
+  canvas.id = 'raval-canvas-overlay';
   Object.assign(canvas.style, {
     position: 'absolute',
     inset: '0',
@@ -40,7 +40,7 @@ export function createOverlay(): OverlayElements {
   });
 
   const labelContainer = document.createElement('div');
-  labelContainer.id = 'calipers-labels';
+  labelContainer.id = 'raval-labels';
   Object.assign(labelContainer.style, {
     position: 'absolute',
     inset: '0',
@@ -51,13 +51,13 @@ export function createOverlay(): OverlayElements {
   root.appendChild(labelContainer);
 
   // Rules that inline styles cannot express.
-  if (!document.getElementById('calipers-base-style')) {
+  if (!document.getElementById('raval-base-style')) {
     const base = document.createElement('style');
-    base.id = 'calipers-base-style';
+    base.id = 'raval-base-style';
     base.textContent = `
       /* Keyboard focus: every control drops its outline inline, so restore one for keyboard users only. */
-      [id^="calipers-"] button:focus-visible,
-      [id^="calipers-"] [tabindex]:focus-visible {
+      [id^="raval-"] button:focus-visible,
+      [id^="raval-"] [tabindex]:focus-visible {
         outline: 2px solid #FF4500 !important;
         outline-offset: 1px !important;
       }
@@ -69,10 +69,10 @@ export function createOverlay(): OverlayElements {
     document.head.appendChild(base);
   }
 
-  // Inject @font-face for Neue Plak Text so all Calipers UI uses the brand font
-  if (!document.getElementById('calipers-fonts')) {
+  // Inject @font-face for Neue Plak Text so all Raval UI uses the brand font
+  if (!document.getElementById('raval-fonts')) {
     const fontStyle = document.createElement('style');
-    fontStyle.id = 'calipers-fonts';
+    fontStyle.id = 'raval-fonts';
     const fontBase = chrome.runtime.getURL('assets/fonts');
     fontStyle.textContent = `
       @font-face {

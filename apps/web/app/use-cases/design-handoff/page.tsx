@@ -9,23 +9,23 @@ import {
 } from '../../../components/content-page';
 
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Design Handoff with Calipers',
+  title: 'Design Handoff with Raval',
   description:
-    'Verify that implemented UI matches your design spec. Use Calipers to check spacing, alignment, typography, and box model values on any live webpage.',
+    'Verify that implemented UI matches your design spec. Use Raval to check spacing, alignment, typography, and box model values on any live webpage.',
   path: '/use-cases/design-handoff',
 });
 
 export default function DesignHandoffPage() {
   return (
     <ContentPage
-      title="Design Handoff with Calipers"
-      subtitle="Stop guessing whether the build matches the spec. Calipers gives designers and developers a shared way to verify spacing and alignment on the real page."
+      title="Design Handoff with Raval"
+      subtitle="Stop guessing whether the build matches the spec. Raval gives designers and developers a shared way to verify spacing and alignment on the real page."
     >
       <SectionLabel label="After handoff" />
       <BodyText>
         The design file says 16px padding and 24px gap between cards. The implementation looks close, but
         is it right? Instead of inspecting each element in DevTools or taking screenshots into a desktop ruler
-        app, open Calipers directly on the staging URL.
+        app, open Raval directly on the staging URL.
       </BodyText>
 
       <SectionLabel label="What to check" />
@@ -51,10 +51,10 @@ export default function DesignHandoffPage() {
       <BodyText>
         Developers doing pre-ship checks should read the{' '}
         <InlineLink href="/use-cases/frontend-qa">frontend QA guide</InlineLink>. Coming from a desktop tool?{' '}
-        <InlineLink href="/alternatives/pixelsnap">Compare Calipers with PixelSnap</InlineLink>.
+        <InlineLink href="/alternatives/pixelsnap">Compare Raval with PixelSnap</InlineLink>.
       </BodyText>
 
-      <InstallCta label="Install Calipers →" />
+      <InstallCta label="Install Raval →" />
     </ContentPage>
   );
 }

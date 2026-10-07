@@ -29,7 +29,7 @@
       "@/*": [
         "./src/*"
       ],
-      "@calipers/shared": [
+      "@raval/shared": [
         "../../packages/shared/src/index.ts"
       ]
     },

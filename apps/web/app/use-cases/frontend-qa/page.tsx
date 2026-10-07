@@ -9,17 +9,17 @@ import {
 } from '../../../components/content-page';
 
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Frontend QA with Calipers',
+  title: 'Frontend QA with Raval',
   description:
-    'Use Calipers to measure spacing between UI elements, verify alignment, and catch layout bugs before shipping. A practical frontend QA workflow inside Chrome.',
+    'Use Raval to measure spacing between UI elements, verify alignment, and catch layout bugs before shipping. A practical frontend QA workflow inside Chrome.',
   path: '/use-cases/frontend-qa',
 });
 
 export default function FrontendQaPage() {
   return (
     <ContentPage
-      title="Frontend QA with Calipers"
-      subtitle="Catch spacing and alignment bugs before they reach production. Calipers lets you measure any element on a live page in seconds."
+      title="Frontend QA with Raval"
+      subtitle="Catch spacing and alignment bugs before they reach production. Raval lets you measure any element on a live page in seconds."
     >
       <SectionLabel label="The problem" />
       <BodyText>
@@ -30,8 +30,8 @@ export default function FrontendQaPage() {
 
       <SectionLabel label="QA workflow" />
       <BodyText>
-        Activate Calipers with Cmd+Shift+M (or Ctrl+Shift+M). Switch to Measure mode (2) and click the two
-        elements you want to compare — Calipers draws the distance between their closest edges and labels it
+        Activate Raval with Option+Shift+C (Alt+Shift+C on Windows and Linux). Switch to Measure mode (2) and click the two
+        elements you want to compare — Raval draws the distance between their closest edges and labels it
         in pixels. Click the label to copy the value to your clipboard.
       </BodyText>
       <BodyText>
@@ -49,11 +49,11 @@ export default function FrontendQaPage() {
       <SectionLabel label="Related" />
       <BodyText>
         Designers verifying specs should read the{' '}
-        <InlineLink href="/use-cases/design-handoff">design handoff guide</InlineLink>. Compare Calipers with{' '}
+        <InlineLink href="/use-cases/design-handoff">design handoff guide</InlineLink>. Compare Raval with{' '}
         <InlineLink href="/alternatives/page-ruler">Page Ruler Redux</InlineLink>.
       </BodyText>
 
-      <InstallCta label="Install Calipers for QA →" />
+      <InstallCta label="Install Raval for QA →" />
     </ContentPage>
   );
 }

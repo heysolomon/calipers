@@ -7,16 +7,16 @@ import { CHROME_STORE_URL, GITHUB_URL } from '../../lib/site';
 export const metadata: Metadata = buildPageMetadata({
   title: 'Documentation',
   description:
-    'Learn how to install and use Calipers — the free Chrome extension for measuring distances, inspecting dimensions, and checking alignment on any webpage.',
+    'Learn how to install and use Raval — the free Chrome extension for measuring distances, inspecting dimensions, and checking alignment on any webpage.',
   path: '/docs',
 });
 
 export default function DocsIndexPage() {
   return (
     <>
-      <h1>Getting Started with Calipers</h1>
+      <h1>Getting Started with Raval</h1>
       <p className="docs-lead">
-        Calipers is a free, open-source browser extension that lets designers and developers
+        Raval is a free, open-source browser extension that lets designers and developers
         instantly measure distances, inspect dimensions, and check alignment on any webpage.
         Think PixelSnap, but for the browser — with direct DOM access for pixel-perfect accuracy.
       </p>
@@ -27,8 +27,8 @@ export default function DocsIndexPage() {
         <a href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer">
           Chrome Web Store
         </a>
-        . Click <strong>Add to Chrome</strong>, then press <code>Cmd+Shift+M</code> (Mac) or{' '}
-        <code>Ctrl+Shift+M</code> (Windows/Linux) to activate on any page.
+        . Click <strong>Add to Chrome</strong>, then press <code>Option+Shift+C</code> (Mac) or{' '}
+        <code>Alt+Shift+C</code> (Windows/Linux) to activate on any page.
       </p>
       <p>
         Prefer to build from source? See the full{' '}
@@ -36,9 +36,9 @@ export default function DocsIndexPage() {
       </p>
 
       <h2>Quick Tour</h2>
-      <h3>Activate Calipers</h3>
+      <h3>Activate Raval</h3>
       <p>
-        Press <code>Cmd+Shift+M</code> / <code>Ctrl+Shift+M</code> to toggle Calipers on the
+        Press <code>Option+Shift+C</code> / <code>Alt+Shift+C</code> to toggle Raval on the
         current page. A compact toolbar appears at the top of the page with the modes, capture
         buttons, and options that open on demand.
       </p>

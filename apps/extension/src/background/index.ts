@@ -2,9 +2,9 @@
  * Background service worker
  * Handles: keyboard shortcuts, message routing, tab state management
  */
-import type { Message, ExtensionState, Mode } from '@calipers/shared';
-import { DEFAULT_STATE, SETTING_STORAGE_KEYS, settingsFromStorage } from '@calipers/shared';
-import type { Settings, SettingKey } from '@calipers/shared';
+import type { Message, ExtensionState, Mode } from '@raval/shared';
+import { DEFAULT_STATE, SETTING_STORAGE_KEYS, settingsFromStorage } from '@raval/shared';
+import type { Settings, SettingKey } from '@raval/shared';
 import { activeIconData, iconPath, ICON_SIZES } from './active-icon';
 
 // Per-tab state
@@ -13,8 +13,32 @@ const tabState = new Map<number, ExtensionState>();
 // Saved settings. Read once when the worker starts, then kept current through
 // storage change events (the content script writes them, including on key presses).
 let savedSettings: Partial<Settings> = {};
-const settingsReady: Promise<void> = chrome.storage.local
-  .get(Object.values(SETTING_STORAGE_KEYS))
+
+/**
+ * Before the product was renamed, everything it saved was under a `calipers_`
+ * prefix. Move it to `raval_` once, so an update does not lose anyone's guides
+ * or settings. A key that already exists under the new name is left as it is.
+ */
+const LEGACY_STORAGE_PREFIX = 'calipers_';
+const STORAGE_PREFIX = 'raval_';
+
+async function migrateLegacyStorage(): Promise<void> {
+  const all = await chrome.storage.local.get(null);
+  const old = Object.keys(all).filter((key) => key.startsWith(LEGACY_STORAGE_PREFIX));
+  if (old.length === 0) return;
+  const moved: Record<string, unknown> = {};
+  for (const key of old) {
+    const next = STORAGE_PREFIX + key.slice(LEGACY_STORAGE_PREFIX.length);
+    if (!(next in all)) moved[next] = all[key];
+  }
+  await chrome.storage.local.set(moved);
+  await chrome.storage.local.remove(old);
+}
+
+// Nothing is activated until this settles, so the content script never reads before the move.
+const settingsReady: Promise<void> = migrateLegacyStorage()
+  .catch(() => { /* carry on with whatever is there */ })
+  .then(() => chrome.storage.local.get(Object.values(SETTING_STORAGE_KEYS)))
   .then((result) => { savedSettings = settingsFromStorage(result); })
   .catch(() => { /* fall back to defaults */ });
 
@@ -44,7 +68,7 @@ async function sendToContent(tabId: number, message: Message): Promise<void> {
   try {
     await chrome.tabs.sendMessage(tabId, message);
   } catch {
-    // No receiver — callers that start Calipers go through ensureContentScript first.
+    // No receiver — callers that start Raval go through ensureContentScript first.
   }
 }
 
@@ -89,7 +113,7 @@ async function ensureContentScript(tabId: number): Promise<boolean> {
     }
   } catch (err) {
     // Browser pages (chrome://, the extension store, some PDF viewers) do not allow extensions.
-    console.warn('[Calipers] Could not inject into this tab:', err instanceof Error ? err.message : err);
+    console.warn('[Raval] Could not inject into this tab:', err instanceof Error ? err.message : err);
     return false;
   }
 
@@ -101,19 +125,19 @@ async function ensureContentScript(tabId: number): Promise<boolean> {
     if (await contentScriptAlive(tabId)) return true;
     await new Promise((r) => setTimeout(r, 100));
   }
-  console.warn(`[Calipers] Injected, but the page script did not respond within ${READY_TIMEOUT_MS / 1000}s.`);
+  console.warn(`[Raval] Injected, but the page script did not respond within ${READY_TIMEOUT_MS / 1000}s.`);
   return false;
 }
 
 /** Brief badge so a click that cannot work is not met with silence. */
 function flagUnavailable(tabId: number): void {
-  chrome.action.setTitle({ tabId, title: 'Calipers can’t run on this page' });
+  chrome.action.setTitle({ tabId, title: 'Raval can’t run on this page' });
   chrome.action.setBadgeText({ tabId, text: '!' });
   chrome.action.setBadgeBackgroundColor({ tabId, color: '#888888' });
   setTimeout(() => chrome.action.setBadgeText({ tabId, text: '' }), 2000);
 }
 
-/** Show whether Calipers is active on a tab: a dot on the toolbar icon, not a badge. */
+/** Show whether Raval is active on a tab: a dot on the toolbar icon, not a badge. */
 function updateBadge(tabId: number, active: boolean): void {
   chrome.action.setBadgeText({ tabId, text: '' });
   void (async () => {
@@ -137,8 +161,17 @@ function updateBadge(tabId: number, active: boolean): void {
 }
 
 // ─── Keyboard command handler ─────────────────────────────────────────────────
+// A page that shows a new user how to open Raval and lets them try it there.
+const WELCOME_URL = 'https://raval.solomonakuson.com/welcome';
+
+// Only on a first install: updates and browser restarts should not open a tab.
+chrome.runtime.onInstalled.addListener(({ reason }) => {
+  if (reason !== 'install') return;
+  chrome.tabs.create({ url: WELCOME_URL }).catch(() => { /* no window to open it in */ });
+});
+
 chrome.commands.onCommand.addListener(async (command, tab) => {
-  if (command !== 'toggle-calipers' || !tab?.id) return;
+  if (command !== 'toggle-raval' || !tab?.id) return;
 
   const tabId = tab.id;
   if (!(await ensureContentScript(tabId))) { flagUnavailable(tabId); return; }
@@ -160,6 +193,8 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
 chrome.action.onClicked.addListener(async (tab) => {
   if (!tab?.id) return;
   if (!(await ensureContentScript(tab.id))) { flagUnavailable(tab.id); return; }
+  // Saved data must be in place (see migrateLegacyStorage) before the page reads it.
+  await settingsReady;
   await sendToContent(tab.id, { type: 'TOGGLE_PANEL' });
 });
 
@@ -288,10 +323,10 @@ async function saveDataUrl(tabId: number, dataUrl: string, filename: string): Pr
       await downloadUrl(dataUrl, filename);
       return;
     } catch (err) {
-      console.warn('[Calipers] downloads API failed, falling back to content download', err);
+      console.warn('[Raval] downloads API failed, falling back to content download', err);
     }
   } else {
-    console.warn('[Calipers] chrome.downloads missing; using content-script download fallback');
+    console.warn('[Raval] chrome.downloads missing; using content-script download fallback');
   }
   // Do not use sendToContent here — it swallows errors and would hide save failures.
   await chrome.tabs.sendMessage(tabId, {
@@ -313,13 +348,13 @@ async function captureAndDownload(tabId: number): Promise<{ ok: true; filename: 
 
     stage = 'captureVisibleTab(png)';
     let dataUrl = await captureVisible(windowId, { format: 'png' });
-    let filename = `calipers-${Date.now()}.png`;
+    let filename = `raval-${Date.now()}.png`;
 
     // ~1.5MB string limit is a common failure point for chrome.downloads + data: URLs
     if (dataUrl.length > 1_500_000) {
       stage = 'captureVisibleTab(jpeg-fallback-size)';
       dataUrl = await captureVisible(windowId, { format: 'jpeg', quality: 92 });
-      filename = `calipers-${Date.now()}.jpg`;
+      filename = `raval-${Date.now()}.jpg`;
     }
 
     try {
@@ -330,7 +365,7 @@ async function captureAndDownload(tabId: number): Promise<{ ok: true; filename: 
       if (filename.endsWith('.png')) {
         stage = 'captureVisibleTab(jpeg-fallback-download)';
         dataUrl = await captureVisible(windowId, { format: 'jpeg', quality: 88 });
-        filename = `calipers-${Date.now()}.jpg`;
+        filename = `raval-${Date.now()}.jpg`;
         stage = `save(${filename}, ${Math.round(dataUrl.length / 1024)}KB)`;
         await saveDataUrl(tabId, dataUrl, filename);
       } else {
@@ -344,7 +379,7 @@ async function captureAndDownload(tabId: number): Promise<{ ok: true; filename: 
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     const error = `[${stage}] ${message}`;
-    console.error('[Calipers] CAPTURE_SCREENSHOT failed:', error, err);
+    console.error('[Raval] CAPTURE_SCREENSHOT failed:', error, err);
     return { error };
   }
 }
@@ -452,7 +487,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.status === 'complete') {
     const state = getTabState(tabId);
     if (state.active) {
-      // Page navigated while calipers was active — re-inject
+      // Page navigated while Raval was active — re-inject
       sendToContent(tabId, { type: 'ACTIVATE', mode: state.mode });
     }
   }

@@ -1,5 +1,5 @@
 /**
- * The toolbar icon with a small accent dot, shown while Calipers is active on
+ * The toolbar icon with a small accent dot, shown while Raval is active on
  * a tab. The browser's badge is always a rounded rectangle, so the dot is drawn
  * into the icon itself instead.
  */

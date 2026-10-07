@@ -1,6 +1,6 @@
 # Chrome Web Store Listing
 
-Copy-paste reference for updating the [Calipers Chrome Web Store listing](https://chromewebstore.google.com/detail/calipers/anocimjcbeijomifkdcdkafdjphcdale).
+Copy-paste reference for updating the [Raval Chrome Web Store listing](https://chromewebstore.google.com/detail/raval/anocimjcbeijomifkdcdkafdjphcdale).
 
 ---
 
@@ -20,7 +20,7 @@ To change the title or summary:
 
 1. Edit `apps/extension/manifest.json` (`name` and `description`)
 2. Bump `version` (e.g. `0.1.0` → `0.1.1`)
-3. Rebuild: `pnpm build --filter=@calipers/extension`
+3. Rebuild: `pnpm build --filter=@raval/extension`
 4. Upload the new `apps/extension/dist/` ZIP to the Chrome Web Store
 5. Submit for review — the dashboard will pick up the new title/summary after publish
 
@@ -31,7 +31,7 @@ The long **Description** field in the dashboard is the only listing text you edi
 ## Title (max 75 characters)
 
 ```
-Calipers — Measure & Inspect Web Pages
+Raval — Measure & Inspect Web Pages
 ```
 
 ## Short description (max 132 characters)
@@ -43,7 +43,7 @@ Measure pixel distances, inspect element sizes, and check alignment on any webpa
 ## Detailed description
 
 ```
-Calipers is a free, open-source Chrome extension for designers and frontend developers who need pixel-perfect measurements on live web pages.
+Raval is a free, open-source Chrome extension for designers and frontend developers who need pixel-perfect measurements on live web pages.
 
 Measure spacing, inspect dimensions, and verify alignment — without screenshots, without switching apps, and without digging through DevTools.
 
@@ -70,11 +70,11 @@ Visualise margin, padding, border, and content as colour-coded rings directly on
 Every action has a shortcut. Switch modes with 1–5, toggle overlays with B, export screenshots with S, and deactivate with Esc. Built for speed.
 
 ━━━ FREE & OPEN SOURCE ━━━
-Calipers is MIT-licensed and fully open source. No account required. No data collection. Your preferences are stored locally in your browser.
+Raval is MIT-licensed and fully open source. No account required. No data collection. Your preferences are stored locally in your browser.
 
-Install Calipers and bring pixel-perfect precision to every webpage you work on.
+Install Raval and bring pixel-perfect precision to every webpage you work on.
 
-Website: https://calipers.solomonakuson.com
+Website: https://raval.solomonakuson.com
 GitHub: https://github.com/heysolomon/calipers
 ```
 
@@ -99,7 +99,7 @@ Use these as text overlays on each of the 5 store screenshots:
 ## Single purpose description (for Chrome Web Store review)
 
 ```
-Calipers provides pixel measurement, dimension inspection, and alignment tools for web designers and developers working on live webpages.
+Raval provides pixel measurement, dimension inspection, and alignment tools for web designers and developers working on live webpages.
 ```
 
 ## Permission justifications
@@ -108,7 +108,7 @@ Calipers provides pixel measurement, dimension inspection, and alignment tools f
 | Permission  | Justification                                                             |
 | ----------- | ------------------------------------------------------------------------- |
 | `activeTab` | Inject the measurement overlay into the page the user is viewing          |
-| `scripting` | Run measurement tools on the active tab when the user activates Calipers  |
+| `scripting` | Run measurement tools on the active tab when the user activates Raval  |
 | `storage`   | Save user preferences and guide positions locally in the browser          |
 | `tabs`      | Capture a screenshot when the user exports the viewport with measurements |
 
@@ -130,12 +130,12 @@ Calipers provides pixel measurement, dimension inspection, and alignment tools f
 
 ```
 [0s]  Measuring spacing on a webpage shouldn't require screenshots or DevTools.
-[5s]  Calipers is a free Chrome extension for pixel-perfect measurement.
+[5s]  Raval is a free Chrome extension for pixel-perfect measurement.
 [10s] Click two elements — see the exact distance in pixels.
 [15s] Hover to inspect dimensions. Drop alignment guides. Toggle the box model.
 [20s] Copy values, export screenshots, extract design tokens.
 [25s] Keyboard-first. Open source. Free forever.
-[30s] Install Calipers today.
+[30s] Install Raval today.
 ```
 
 ## Post-publish checklist

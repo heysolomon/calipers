@@ -70,6 +70,8 @@ const COLOURS_HEADER = { x: PANEL.x + 60, y: PANEL.y + PANEL_HEAD * 2 + PANEL_TY
 const TRAY: Box = { x: 268, y: 80, w: 150, h: 54 };
 type Tool = 'size' | 'note' | 'arrow' | 'pen';
 const TOOLS: Tool[] = ['size', 'note', 'arrow', 'pen'];
+/** The first tool is called Callout on the card; `size` is only its name in here. */
+const TOOL_LABEL: Record<Tool, string> = { size: 'Callout', note: 'Note', arrow: 'Arrow', pen: 'Pen' };
 const TOOL_W = (TRAY.w - 16) / 4;
 const toolBtn = (t: Tool): { x: number; y: number } => ({ x: TRAY.x + 8 + TOOL_W * (TOOLS.indexOf(t) + 0.5), y: TRAY.y + 8 + 9 });
 const SWATCHES = [ACCENT, '#FF2D85', BLUE, '#16A34A', '#7C3AED', '#111111'];
@@ -251,7 +253,7 @@ function Tray({ tool, colour }: { tool: Tool; colour: string }) {
       <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', height: 18, background: 'rgba(0,0,0,0.05)', borderRadius: 5, padding: 1.5, boxSizing: 'border-box' }}>
         <div style={{ position: 'absolute', top: 1.5, bottom: 1.5, width: `calc((100% - 3px) / 4)`, left: `calc(1.5px + ${idx} * ((100% - 3px) / 4))`, background: '#fff', borderRadius: 4, boxShadow: '0 1px 2px rgba(0,0,0,0.08)', transition: 'left 0.22s cubic-bezier(0.4, 0, 0.2, 1)' }} />
         {TOOLS.map((t) => (
-          <span key={t} style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7.5, fontWeight: 500, color: t === tool ? '#000' : '#737373', textTransform: 'capitalize', transition: 'color 0.22s ease' }}>{t}</span>
+          <span key={t} style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7.5, fontWeight: 500, color: t === tool ? '#000' : '#737373', transition: 'color 0.22s ease' }}>{TOOL_LABEL[t]}</span>
         ))}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 2px', marginTop: 8 }}>
@@ -608,7 +610,7 @@ export function HeroDemo() {
     <div
       ref={wrap}
       role="img"
-      aria-label="Animated simulation of Calipers in a browser window: inspecting elements and a word, reading its typography and colours, measuring gaps between cards and unpinning one, placing a guide that snaps to edges and dragging it, annotating with a size callout, an arrow and a note, and taking a screenshot."
+      aria-label="Animated simulation of Raval in a browser window: inspecting elements and a word, reading its typography and colours, measuring gaps between cards and unpinning one, placing a guide that snaps to edges and dragging it, annotating with a size callout, an arrow and a note, and taking a screenshot."
       // The interactive demo should not treat this picture as part of the page.
       data-demo-ui="true"
       style={{
@@ -621,7 +623,7 @@ export function HeroDemo() {
       <div aria-hidden="true" style={{ position: 'absolute', left: 0, top: 0, width: view, height: H, transform: `scale(${scale})`, transformOrigin: '0 0', fontFamily: SANS,
         // The stage sets its own type; it must not pick up the page's body size, leading or tracking.
         fontSize: 16, lineHeight: 1.5, letterSpacing: 'normal', textAlign: 'left',
-        // Calipers' own UI is light in both themes, so its text is always dark; the mock page sets its own colours.
+        // Raval' own UI is light in both themes, so its text is always dark; the mock page sets its own colours.
         color: '#000',
       }}>
         <BrowserBar width={view} />
@@ -657,7 +659,7 @@ export function HeroDemo() {
           ))}
           <div style={{ position: 'absolute', left: CARD_C.x, top: CARD_C.y, width: CARD_C.w, height: CARD_C.h, boxSizing: 'border-box', borderRadius: 8, background: 'var(--hd-block)' }} />
 
-          {/* ── Calipers, drawn over the page ── */}
+          {/* ── Raval, drawn over the page ── */}
 
           {/* Guides */}
           {f.guideV !== null && <div style={guideLine('v', false, f.guideV)} />}

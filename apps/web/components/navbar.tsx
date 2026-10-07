@@ -34,7 +34,7 @@ export function Navbar() {
         className="site-link"
         style={{ fontSize: '13px', fontWeight: 500, color: '#000', letterSpacing: '-0.02em' }}
       >
-        Calipers
+        Raval
       </Link>
 
       <nav aria-label="Main" style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>

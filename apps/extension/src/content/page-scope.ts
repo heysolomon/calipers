@@ -1,5 +1,5 @@
 /**
- * Everything drawn with Calipers belongs to the page it was drawn on. This
+ * Everything drawn with Raval belongs to the page it was drawn on. This
  * module names the current page and tells the modes when it changes, which on
  * single-page apps happens without a reload.
  */
@@ -20,7 +20,7 @@ type PageListener = (from: string, to: string) => void;
 const listeners = new Set<PageListener>();
 let current: string | null = null;
 
-/** Run `listener` whenever the page changes while Calipers is open. */
+/** Run `listener` whenever the page changes while Raval is open. */
 export function onPageChange(listener: PageListener): void {
   listeners.add(listener);
 }
@@ -31,10 +31,10 @@ function notify(from: string, to: string): void {
   for (const listener of listeners) listener(from, to);
 }
 
-/** Start tracking from the page Calipers is opened on. */
+/** Start tracking from the page Raval is opened on. */
 export function startPageTracking(): void {
   const now = pageId();
-  // The page may have changed while Calipers was closed.
+  // The page may have changed while Raval was closed.
   if (lastSeen !== null && lastSeen !== now) notify(lastSeen, now);
   current = now;
 }

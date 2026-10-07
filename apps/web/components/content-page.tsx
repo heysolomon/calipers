@@ -68,7 +68,7 @@ export function InstallCta({ label = 'Install for Chrome →' }: { label?: strin
 
 type ComparisonRow = {
   feature: string;
-  calipers: string;
+  raval: string;
   alternative: string;
 };
 
@@ -87,7 +87,7 @@ export function ComparisonTable({ rows }: { rows: ComparisonRow[] }) {
         <thead>
           <tr style={{ borderBottom: '1px solid var(--line)' }}>
             <th scope="col" style={{ textAlign: 'left', padding: '8px 0', color: 'var(--text-2)', fontWeight: 400 }}>Feature</th>
-            <th scope="col" style={{ textAlign: 'left', padding: '8px 12px', color: 'var(--text)', fontWeight: 500 }}>Calipers</th>
+            <th scope="col" style={{ textAlign: 'left', padding: '8px 12px', color: 'var(--text)', fontWeight: 500 }}>Raval</th>
             <th scope="col" style={{ textAlign: 'left', padding: '8px 0', color: 'var(--text-2)', fontWeight: 400 }}>Alternative</th>
           </tr>
         </thead>
@@ -95,7 +95,7 @@ export function ComparisonTable({ rows }: { rows: ComparisonRow[] }) {
           {rows.map((row) => (
             <tr key={row.feature} style={{ borderBottom: '1px solid var(--line)' }}>
               <td style={{ padding: '10px 0', color: 'var(--text-2)', verticalAlign: 'top' }}>{row.feature}</td>
-              <td style={{ padding: '10px 12px', color: 'var(--text)', verticalAlign: 'top' }}>{row.calipers}</td>
+              <td style={{ padding: '10px 12px', color: 'var(--text)', verticalAlign: 'top' }}>{row.raval}</td>
               <td style={{ padding: '10px 0', color: 'var(--text-body)', verticalAlign: 'top' }}>{row.alternative}</td>
             </tr>
           ))}
@@ -149,20 +149,20 @@ export function buildPageMetadata({
   description: string;
   path: string;
 }): Metadata {
-  const url = `https://calipers.solomonakuson.com${path}`;
+  const url = `https://raval.solomonakuson.com${path}`;
   return {
     title,
     description,
     alternates: { canonical: url },
     openGraph: {
-      title: `${title} | Calipers`,
+      title: `${title} | Raval`,
       description,
       url,
       type: 'article',
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${title} | Calipers`,
+      title: `${title} | Raval`,
       description,
     },
   };

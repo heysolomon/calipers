@@ -1,8 +1,8 @@
 {
-  "name": "@calipers/extension",
+  "name": "@raval/extension",
   "version": "0.2.0",
   "private": true,
-  "description": "Calipers Chrome extension",
+  "description": "Raval Chrome extension",
   "scripts": {
     "dev": "vite build --watch --mode development",
     "build": "vite build",
@@ -11,7 +11,7 @@
     "lint": "eslint \"src/**/*.{ts,tsx}\""
   },
   "dependencies": {
-    "@calipers/shared": "workspace:*"
+    "@raval/shared": "workspace:*"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0-beta.26",

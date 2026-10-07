@@ -9,7 +9,7 @@ import { GITHUB_URL } from '../../lib/site';
 export const metadata: Metadata = buildPageMetadata({
   title: 'Changelog',
   description:
-    'Release history for Calipers — the free, open-source Chrome extension for measuring distances and inspecting dimensions on any webpage.',
+    'Release history for Raval — the free, open-source Chrome extension for measuring distances and inspecting dimensions on any webpage.',
   path: '/changelog',
 });
 
@@ -41,24 +41,25 @@ const entries: ChangelogEntry[] = [
         'Region screenshot — drag a rectangle to capture a cropped PNG',
         'Draggable control panel — drag the header to reposition; position is saved across sessions',
         'Clear guides / measurements / annotations from the control panel in any mode',
-        'Figma plugin — import Calipers measurements directly into a Figma file',
+        'Figma plugin — import Raval measurements directly into a Figma file',
         'Shareable sessions — generate a link that replays a measurement session in another browser',
         'Measurement presets — save and name common measurements (e.g. "8pt grid", "nav height")',
         'Accessibility auditing — contrast ratio checker and touch target size validator (WCAG 2.1 AA/AAA)',
         'Changelog diff mode — visually compare how element sizes changed between two page snapshots',
       ],
       Changed: [
+        'Renamed from Calipers to Raval. Your saved guides and settings carry over',
         'Colours is now part of Inspect, and Spacing grid is removed in favour of Measure; modes are Inspect, Measure, Guides, Annotate on keys 1–4',
         'The box model overlay on the page is replaced by the Box section in Inspect details',
         'Highlights, tabs, tooltips, and notifications share one lighter design',
-        'Calipers redraws only while something is happening, and the cursor and labels move without forcing layout',
-        'Screenshots no longer include the Calipers toolbar, cursor, or notifications',
+        'Raval redraws only while something is happening, and the cursor and labels move without forcing layout',
+        'Screenshots no longer include the Raval toolbar, cursor, or notifications',
       ],
       Fixed: [
-        'Clicking the extension icon now works in tabs that were open before Calipers was installed or updated',
+        'Clicking the extension icon now works in tabs that were open before Raval was installed or updated',
         'Number-key mode shortcuts now update the toolbar',
         'Guides no longer appear on other sites or pages',
-        'Guides cleared with right-click, Del/Backspace, or Clear all now stay deleted after reopening Calipers',
+        'Guides cleared with right-click, Del/Backspace, or Clear all now stay deleted after reopening Raval',
       ],
     },
   },
@@ -158,7 +159,7 @@ export default function ChangelogPage(): JSX.Element {
             maxWidth: '60ch',
           }}
         >
-          All notable changes to Calipers. Follows{' '}
+          All notable changes to Raval. Follows{' '}
           <Link
             href="https://keepachangelog.com"
             target="_blank"

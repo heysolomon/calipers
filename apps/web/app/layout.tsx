@@ -23,8 +23,8 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   keywords: SEO_KEYWORDS,
-  authors: [{ name: 'Calipers Contributors' }],
-  creator: 'Calipers',
+  authors: [{ name: 'Raval Contributors' }],
+  creator: 'Raval',
   applicationName: SITE_NAME,
   category: 'design tools',
   openGraph: {

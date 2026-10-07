@@ -2,7 +2,7 @@
  * Shared motion for hover highlights — a spring-driven box that slides and
  * resizes between targets instead of snapping, so every mode moves the same way.
  */
-import type { Rect } from '@calipers/shared';
+import type { Rect } from '@raval/shared';
 import { markActive } from './frame';
 
 export interface SpringTuning {

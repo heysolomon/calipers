@@ -20,7 +20,7 @@ export function createPersistLayer(root: HTMLDivElement): void {
   if (persistCanvas) return;
 
   persistCanvas = document.createElement('canvas');
-  persistCanvas.id = 'calipers-persist-canvas';
+  persistCanvas.id = 'raval-persist-canvas';
   Object.assign(persistCanvas.style, {
     position: 'absolute',
     inset: '0',
@@ -30,7 +30,7 @@ export function createPersistLayer(root: HTMLDivElement): void {
   });
 
   persistLabels = document.createElement('div');
-  persistLabels.id = 'calipers-persist-labels';
+  persistLabels.id = 'raval-persist-labels';
   Object.assign(persistLabels.style, {
     position: 'absolute',
     inset: '0',

@@ -6,8 +6,8 @@
  * Persistent layers (guides, measurements, annotations) stay visible across
  * mode switches until the user explicitly clears them.
  */
-import type { Message, Mode, ExtensionState } from '@calipers/shared';
-import { DEFAULT_STATE } from '@calipers/shared';
+import type { Message, Mode, ExtensionState } from '@raval/shared';
+import { DEFAULT_STATE } from '@raval/shared';
 import {
   createOverlay, removeOverlay, getOverlay,
   resizeCanvas, disablePointerEvents, HIDE_CURSOR_CLASS,
@@ -38,7 +38,7 @@ import { markActive } from './frame';
 import { withChromeHidden } from './capture-chrome';
 import { loadSettings, saveSetting } from './storage';
 import { initCursor, destroyCursor } from './cursor';
-import { isCalipersElement } from './utils';
+import { isRavalElement } from './utils';
 import { showErrorReport, showToast } from './labels';
 
 // ─── Local state ──────────────────────────────────────────────────────────────
@@ -50,7 +50,7 @@ let activeMode: Mode | null = null;
 
 function onGlobalInterceptClick(e: MouseEvent): void {
   if (retireIfOrphaned()) return;
-  if (isCalipersElement(e.target as Element)) return;
+  if (isRavalElement(e.target as Element)) return;
   if (isRegionCaptureActive()) return;
   e.preventDefault();
   e.stopPropagation();
@@ -111,7 +111,7 @@ async function activate(mode: Mode): Promise<void> {
     void import('./dev-dials').then((m) => m.mountDevDials());
   }
   document.addEventListener('click',   onGlobalInterceptClick, true);
-  // On window, so Calipers sees a key before the page's own document-level shortcuts do.
+  // On window, so Raval sees a key before the page's own document-level shortcuts do.
   window.addEventListener('keydown', onKeyDown, true);
   window.addEventListener('resize', onResize);
 }
@@ -170,7 +170,7 @@ function toggleRulersFromKey(): void {
   showToast(`Rulers ${value ? 'on' : 'off'}`);
 }
 
-/** Esc closes the most recently opened thing; only when nothing is open does it close Calipers. */
+/** Esc closes the most recently opened thing; only when nothing is open does it close Raval. */
 function dismissTopmost(): void {
   if (isShortcutsPanelOpen()) { hideShortcutsPanel(); return; }
   if (closeTransientPanelUi()) return;
@@ -195,7 +195,7 @@ function requestScreenshot(): void {
 }
 
 /**
- * Take a key for Calipers. Many sites have their own single-key shortcuts
+ * Take a key for Raval. Many sites have their own single-key shortcuts
  * ("?" for help, digits, "s", "d"…); without this both would react.
  */
 function claim(e: KeyboardEvent): void {
@@ -301,7 +301,8 @@ function onResize(): void {
 // When the extension updates (or rebuilds in development) the previous copy of
 // this script is cut off from the extension but its UI can still be in the
 // page. Clear that out so a fresh start is not drawn on top of a dead one.
-document.querySelectorAll('[id^="calipers-"]').forEach((el) => el.remove());
+// The old prefix is included for a page that still holds UI from before the rename.
+document.querySelectorAll('[id^="raval-"], [id^="calipers-"]').forEach((el) => el.remove());
 document.documentElement.classList.remove(HIDE_CURSOR_CLASS);
 
 /** False once this copy of the script has been orphaned by an extension update. */

@@ -12,7 +12,7 @@ const LINKS = [
 export function Footer() {
   return (
     <footer className="site-footer">
-      <span>©{new Date().getFullYear()} Calipers</span>
+      <span>©{new Date().getFullYear()} Raval</span>
 
       <span className="site-footer-meta">
         <span className="site-footer-dot" aria-hidden="true" />

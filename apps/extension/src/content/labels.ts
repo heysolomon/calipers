@@ -65,7 +65,7 @@ export function setLabel(
     const el = document.createElement('div');
     el.id = uid();
     el.setAttribute('style', LABEL_STYLE);
-    el.setAttribute('data-calipers-label', name);
+    el.setAttribute('data-raval-label', name);
     container.appendChild(el);
 
     el.addEventListener('click', async () => {
@@ -144,7 +144,7 @@ function dismissErrorReport(): void {
 export function formatCaptureErrorReport(action: string, error: string): string {
   const manifest = chrome.runtime.getManifest();
   return [
-    'Calipers capture error (paste this in chat)',
+    'Raval capture error (paste this in chat)',
     `action: ${action}`,
     `error: ${error}`,
     `url: ${location.href}`,
@@ -165,8 +165,8 @@ export function showErrorReport(action: string, error: string): void {
   const report = formatCaptureErrorReport(action, error);
 
   // Always dump to console so the user can copy from DevTools
-  console.error(`[Calipers] ${action} failed\n${report}`);
-  console.error('[Calipers] error object:', { action, error, report });
+  console.error(`[Raval] ${action} failed\n${report}`);
+  console.error('[Raval] error object:', { action, error, report });
 
   showToast(`${action} failed — see Console`, { type: 'error', duration: 4000 });
 
@@ -188,7 +188,7 @@ export function showErrorReport(action: string, error: string): void {
   title.textContent = `${action} failed`;
   const hint = document.createElement('div');
   hint.style.cssText = 'font-size:11px;color:#737373;margin-top:4px;letter-spacing:-0.01em;line-height:1.4;';
-  hint.innerHTML = 'Open DevTools (<kbd style="font:inherit;font-size:10px;background:#f5f5f5;border:1px solid #ddd;border-bottom-width:2px;border-radius:3px;padding:0 4px;">F12</kbd> / Console), copy the red <code style="font:inherit;font-size:10px;background:#f5f5f5;padding:0 3px;border-radius:3px;">[Calipers]</code> error, and paste it here.';
+  hint.innerHTML = 'Open DevTools (<kbd style="font:inherit;font-size:10px;background:#f5f5f5;border:1px solid #ddd;border-bottom-width:2px;border-radius:3px;padding:0 4px;">F12</kbd> / Console), copy the red <code style="font:inherit;font-size:10px;background:#f5f5f5;padding:0 3px;border-radius:3px;">[Raval]</code> error, and paste it here.';
   titleWrap.appendChild(title);
   titleWrap.appendChild(hint);
 

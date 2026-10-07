@@ -1,13 +1,13 @@
 {
   "manifest_version": 2,
-  "name": "Calipers — Measure & Inspect Web Pages",
+  "name": "Raval — Measure & Inspect Web Pages",
   "version": "0.2.0",
   "description": "Measure pixel distances, inspect element sizes, and check alignment on any webpage. Free, open source.",
-  "author": "Calipers Contributors",
+  "author": "Raval Contributors",
 
   "browser_specific_settings": {
     "gecko": {
-      "id": "calipers@calipers.dev",
+      "id": "raval@solomonakuson.com",
       "strict_min_version": "109.0"
     }
   },
@@ -26,7 +26,7 @@
       "48":  "assets/icons/icon-48.png",
       "128": "assets/icons/icon-128.png"
     },
-    "default_title": "Calipers"
+    "default_title": "Raval"
   },
 
   "background": {
@@ -53,12 +53,12 @@
   ],
 
   "commands": {
-    "toggle-calipers": {
+    "toggle-raval": {
       "suggested_key": {
-        "default": "Ctrl+Shift+M",
-        "mac": "Command+Shift+M"
+        "default": "Alt+Shift+C",
+        "mac": "Alt+Shift+C"
       },
-      "description": "Toggle Calipers on/off"
+      "description": "Toggle Raval on/off"
     }
   },
 

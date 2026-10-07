@@ -33,7 +33,7 @@ export function OpenSourceCallout() {
               Open source, forever.
             </h2>
             <p className="text-sm leading-relaxed mb-4" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              Calipers is MIT-licensed and built transparently on GitHub. All skill levels are
+              Raval is MIT-licensed and built transparently on GitHub. All skill levels are
               welcome — whether you want to file a bug, suggest a feature, or send a pull request.
             </p>
             <a

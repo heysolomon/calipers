@@ -1,9 +1,9 @@
-export const SITE_URL = 'https://calipers.solomonakuson.com';
+export const SITE_URL = 'https://raval.solomonakuson.com';
 export const GITHUB_URL = 'https://github.com/heysolomon/calipers';
 export const CHROME_STORE_URL =
-  'https://chromewebstore.google.com/detail/calipers/anocimjcbeijomifkdcdkafdjphcdale';
+  'https://chromewebstore.google.com/detail/raval/anocimjcbeijomifkdcdkafdjphcdale';
 
-export const SITE_NAME = 'Calipers';
+export const SITE_NAME = 'Raval';
 export const SITE_TAGLINE = 'Precision measurement for the web';
 export const SITE_DESCRIPTION =
   'Free, open-source Chrome extension to measure pixel distances, inspect element dimensions, check alignment, and verify spacing on any webpage.';

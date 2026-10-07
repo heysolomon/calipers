@@ -53,18 +53,18 @@ export type DocPage = {
 export const DOC_PAGES: Record<string, DocPage> = {
   'getting-started/installation': {
     title: 'Installation',
-    description: 'Install Calipers from the Chrome Web Store or build from source.',
+    description: 'Install Raval from the Chrome Web Store or build from source.',
     content: `
 # Installation
 
-Calipers is available as a Chrome extension from the Web Store, or you can build it from source for Chrome and Firefox.
+Raval is available as a Chrome extension from the Web Store, or you can build it from source for Chrome and Firefox.
 
 ## Chrome Web Store
 
-1. Visit the [Calipers listing on the Chrome Web Store](${CHROME_STORE_URL}).
+1. Visit the [Raval listing on the Chrome Web Store](${CHROME_STORE_URL}).
 2. Click **Add to Chrome**.
 3. Confirm the permissions prompt.
-4. Activate Calipers with **Cmd+Shift+M** (Mac) or **Ctrl+Shift+M** (Windows/Linux), or click the extension icon in your toolbar.
+4. Activate Raval with **Option+Shift+C** (Mac) or **Alt+Shift+C** (Windows/Linux), or click the extension icon in your toolbar.
 
 ## Build from source
 
@@ -72,7 +72,7 @@ Calipers is available as a Chrome extension from the Web Store, or you can build
 git clone ${GITHUB_URL}.git
 cd calipers
 pnpm install
-pnpm build --filter=@calipers/extension
+pnpm build --filter=@raval/extension
 \`\`\`
 
 Then load the extension in your browser:
@@ -84,7 +84,7 @@ Then load the extension in your browser:
 For Firefox, use the dedicated build:
 
 \`\`\`bash
-pnpm build --filter=@calipers/extension -- --config vite.config.firefox.ts
+pnpm build --filter=@raval/extension -- --config vite.config.firefox.ts
 \`\`\`
 
 ## Browser support
@@ -98,10 +98,10 @@ pnpm build --filter=@calipers/extension -- --config vite.config.firefox.ts
 
 ## Permissions
 
-Calipers requests only what it needs:
+Raval requests only what it needs:
 
 - **activeTab** — inject the overlay on the page you are viewing
-- **scripting** — run measurement tools when you activate Calipers
+- **scripting** — run measurement tools when you activate Raval
 - **storage** — save guides and preferences locally
 - **tabs** — capture screenshots when you press S
 
@@ -111,24 +111,24 @@ No data is collected or transmitted. See the [privacy policy](/privacy) for deta
 
   'getting-started/shortcuts': {
     title: 'Keyboard Shortcuts',
-    description: 'Every Calipers action has a keyboard shortcut for a fast, mouse-free workflow.',
+    description: 'Every Raval action has a keyboard shortcut for a fast, mouse-free workflow.',
     content: `
 # Keyboard Shortcuts
 
-Calipers is keyboard-first. Press **?** while Calipers is active to open the in-page shortcuts panel.
+Raval is keyboard-first. Press **?** while Raval is active to open the in-page shortcuts panel.
 
 ## Global
 
 | Shortcut | Action |
 |---|---|
-| \`Cmd+Shift+M\` / \`Ctrl+Shift+M\` | Toggle Calipers on/off |
+| \`Option+Shift+C\` / \`Alt+Shift+C\` | Toggle Raval on/off |
 | \`1\` – \`4\` | Switch mode: Inspect, Measure, Guides, Annotate |
 | \`R\` | Toggle rulers |
 | \`D\` | Open design token panel |
 | \`S\` | Capture screenshot |
 | \`Cmd+Z\` / \`Ctrl+Z\` | Undo the last change in Measure, Guides, or Annotate |
 | \`?\` | Show / hide shortcuts panel |
-| \`Esc\` | Close whatever is open; when nothing is, close Calipers |
+| \`Esc\` | Close whatever is open; when nothing is, close Raval |
 
 ## Inspect mode
 
@@ -173,11 +173,11 @@ Calipers is keyboard-first. Press **?** while Calipers is active to open the in-
     content: `
 # Inspect Mode
 
-Inspect mode is the default when you activate Calipers. Hover to see what is under the cursor, click to see everything about it — without opening DevTools.
+Inspect mode is the default when you activate Raval. Hover to see what is under the cursor, click to see everything about it — without opening DevTools.
 
 ## How it works
 
-1. Activate Calipers (\`Cmd+Shift+M\`).
+1. Activate Raval (\`Option+Shift+C\` on Mac, \`Alt+Shift+C\` elsewhere).
 2. Hover over the page. Elements are outlined and labelled with \`width × height\`; words of text are highlighted.
 3. Click an element or a word to open its details.
 4. Click it again, click empty space, or press \`Esc\` to close the details.
@@ -216,7 +216,7 @@ Measure mode lets you click elements to see the pixel distance between their clo
 
 ## Smart edge detection
 
-Calipers automatically finds the closest edges between two elements:
+Raval automatically finds the closest edges between two elements:
 
 - Side-by-side elements → horizontal gap (right edge to left edge)
 - Stacked elements → vertical gap (bottom edge to top edge)
@@ -261,7 +261,7 @@ Hover a guide and the cursor changes to a delete mark.
 
 ## Persistence
 
-Guides belong to the page they were placed on. Each page (site and path) keeps its own guides in \`chrome.storage.local\`, so guides from one site or page never appear on another. They survive mode switches and reopening Calipers.
+Guides belong to the page they were placed on. Each page (site and path) keeps its own guides in \`chrome.storage.local\`, so guides from one site or page never appear on another. They survive mode switches and reopening Raval.
 
 Toggle **Show guides** in the options card to hide guides without deleting them.
     `.trim(),
@@ -387,7 +387,7 @@ The design token panel reads all CSS custom properties (\`--*\` variables) defin
 
 ## Opening the panel
 
-Press \`D\` while Calipers is active, or click **Tokens** in the control panel.
+Press \`D\` while Raval is active, or click **Tokens** in the control panel.
 
 ## What it shows
 
@@ -413,17 +413,17 @@ Click any individual token row to copy that single \`name: value\` pair.
     content: `
 # Screenshot Export
 
-Export the current viewport as a PNG with all Calipers measurements, guides, and overlays baked in.
+Export the current viewport as a PNG with all Raval measurements, guides, and overlays baked in.
 
 ## How to export
 
-Press \`S\` while Calipers is active. The extension captures the visible tab via \`chrome.tabs.captureVisibleTab()\` and triggers a download.
+Press \`S\` while Raval is active. The extension captures the visible tab via \`chrome.tabs.captureVisibleTab()\` and triggers a download.
 
-The file is saved as \`calipers-{timestamp}.png\`.
+The file is saved as \`raval-{timestamp}.png\`.
 
 ## What is included
 
-The screenshot includes what you have drawn — dimension labels, measurement lines, guides, annotations, and rulers. The Calipers toolbar, cursor, and notifications are hidden while the capture is taken.
+The screenshot includes what you have drawn — dimension labels, measurement lines, guides, annotations, and rulers. The Raval toolbar, cursor, and notifications are hidden while the capture is taken.
 
 ## Tips
 
@@ -434,9 +434,9 @@ The screenshot includes what you have drawn — dimension labels, measurement li
 
   contributing: {
     title: 'Contributing',
-    description: 'Set up the dev environment and contribute to Calipers.',
+    description: 'Set up the dev environment and contribute to Raval.',
     content: `
-# Contributing to Calipers
+# Contributing to Raval
 
 All contributions are welcome — code, documentation, bug reports, feature requests, and design feedback.
 
@@ -446,7 +446,7 @@ All contributions are welcome — code, documentation, bug reports, feature requ
 git clone ${GITHUB_URL}.git
 cd calipers
 pnpm install
-pnpm dev --filter=@calipers/extension
+pnpm dev --filter=@raval/extension
 \`\`\`
 
 Load \`apps/extension/dist/\` as an unpacked extension in Chrome. The dev server rebuilds on save.
@@ -454,7 +454,7 @@ Load \`apps/extension/dist/\` as an unpacked extension in Chrome. The dev server
 To run the companion website locally:
 
 \`\`\`bash
-pnpm dev --filter=@calipers/web
+pnpm dev --filter=@raval/web
 \`\`\`
 
 ## Project structure
