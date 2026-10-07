@@ -32,18 +32,24 @@ function loadManifest(): ManifestV3Export {
  * Patch at every emit stage so captureVisibleTab + downloads always work.
  */
 function ensureManifestPermissions(): Plugin {
-  const applyPatch = (m: {
+  type Patchable = {
     version?: string;
     permissions?: string[];
     host_permissions?: string[];
-  }) => {
+    action?: { default_title?: string };
+    [key: string]: unknown;
+  };
+  const applyPatch = (m: Patchable) => {
     try {
-      const src = JSON.parse(readFileSync(sourceManifestPath, 'utf8')) as {
-        version?: string;
-        permissions?: string[];
-        host_permissions?: string[];
-      };
+      const src = JSON.parse(readFileSync(sourceManifestPath, 'utf8')) as Patchable;
       if (src.version) m.version = src.version;
+      // `crx({ manifest })` below reads the manifest once, when Vite starts. A watcher that has
+      // been running since before an edit would otherwise keep emitting the old name, summary
+      // and titles, so copy the fields a person sees from the file as it is now.
+      for (const key of ['name', 'short_name', 'description', 'author', 'commands'] as const) {
+        if (src[key] !== undefined) m[key] = src[key];
+      }
+      if (src.action?.default_title && m.action) m.action.default_title = src.action.default_title;
     } catch {
       // source unreadable — still enforce required fields
     }
@@ -67,11 +73,7 @@ function ensureManifestPermissions(): Plugin {
     }
     // Watch rebuilds can briefly leave an empty / half-written file.
     if (!raw || raw[0] !== '{') return false;
-    let parsed: {
-      version?: string;
-      permissions?: string[];
-      host_permissions?: string[];
-    };
+    let parsed: Patchable;
     try {
       parsed = JSON.parse(raw);
     } catch {

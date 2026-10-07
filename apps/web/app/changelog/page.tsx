@@ -26,7 +26,7 @@ const SECTION_ORDER: SectionName[] = ['Added', 'Changed', 'Fixed', 'Removed'];
 
 const entries: ChangelogEntry[] = [
   {
-    version: '0.3.0',
+    version: '0.3.1',
     date: null,
     preRelease: true,
     sections: {
