@@ -53,6 +53,8 @@ export function setNoteSize(px: number): void {
   if (state.noteDraft) {
     state.noteDraft.size = px;
     state.noteDraft.el.style.fontSize = `${px}px`;
+    // Let the field re-fit its height to the new size.
+    state.noteDraft.el.dispatchEvent(new Event('input'));
   }
 }
 
@@ -113,6 +115,10 @@ interface AnnotateState {
 }
 
 const NOTE_FONT = `"Segoe Print", "Bradley Hand", "Comic Sans MS", "Apple Chancery", cursive`;
+/** Shared by a saved note and the one being typed, so saving does not shift or restyle the text. */
+const NOTE_MAX_WIDTH = 240;
+const NOTE_TEXT_SHADOW = '0 1px 0 rgba(255,255,255,0.85)';
+const NOTE_TILT = 'rotate(-1.5deg)';
 const DEFAULT_COLOR = ANNOTATE_COLORS[0].hex; // design-system accent
 
 const state: AnnotateState = {
@@ -167,8 +173,7 @@ export function setAnnotateColor(hex: string): void {
   if (state.noteDraft) {
     state.noteDraft.color = hex;
     state.noteDraft.el.style.color = hex;
-    state.noteDraft.el.style.borderColor = hex;
-    state.noteDraft.el.style.boxShadow = `0 8px 24px ${hexToRgba(hex, 0.18)}`;
+    state.noteDraft.el.style.caretColor = hex;
   }
 }
 
@@ -604,12 +609,13 @@ function createNoteEl(note: NoteAnn): HTMLDivElement {
     fontSize: `${note.size ?? DEFAULT_NOTE_SIZE}px`,
     fontWeight: '600',
     lineHeight: '1.25',
-    maxWidth: '240px',
+    maxWidth: `${NOTE_MAX_WIDTH}px`,
     whiteSpace: 'pre-wrap',
     wordBreak: 'break-word',
     pointerEvents: 'none',
-    textShadow: '0 1px 0 rgba(255,255,255,0.85)',
-    transform: 'rotate(-1.5deg)',
+    textShadow: NOTE_TEXT_SHADOW,
+    transform: NOTE_TILT,
+    transformOrigin: '0 0',
   });
   return el;
 }
@@ -655,27 +661,44 @@ function startNoteAt(clientX: number, clientY: number): void {
   const color = state.color;
   const ta = document.createElement('textarea');
   ta.placeholder = 'Write a note…';
+  ta.rows = 1;
+  ta.spellcheck = false;
+  // No box: the note is written straight onto the page and looks, while it is
+  // being typed, exactly as it will once saved.
   Object.assign(ta.style, {
     position: 'absolute',
     left: `${clientX}px`,
     top: `${clientY}px`,
-    width: '220px',
-    minHeight: '48px',
-    resize: 'both',
+    width: `${NOTE_MAX_WIDTH}px`,
+    margin: '0',
+    padding: '0',
+    resize: 'none',
+    overflow: 'hidden',
     color,
+    caretColor: color,
     fontFamily: NOTE_FONT,
     fontSize: `${noteSize}px`,
     fontWeight: '600',
     lineHeight: '1.25',
-    background: 'rgba(255,255,255,0.92)',
-    border: `1.5px solid ${color}`,
-    borderRadius: '8px',
-    padding: '8px 10px',
+    whiteSpace: 'pre-wrap',
+    wordBreak: 'break-word',
+    background: 'transparent',
+    border: 'none',
+    borderRadius: '0',
     outline: 'none',
+    boxShadow: 'none',
+    textShadow: NOTE_TEXT_SHADOW,
+    transform: NOTE_TILT,
+    transformOrigin: '0 0',
     pointerEvents: 'all',
-    boxShadow: `0 8px 24px ${hexToRgba(color, 0.18)}`,
     zIndex: '5',
   });
+  // Grows with the text instead of scrolling inside a fixed box.
+  const fit = (): void => {
+    ta.style.height = 'auto';
+    ta.style.height = `${ta.scrollHeight}px`;
+  };
+  ta.addEventListener('input', fit);
   noteLayer.style.pointerEvents = 'none';
   noteLayer.appendChild(ta);
   state.noteDraft = { x, y, el: ta, color, size: noteSize };
@@ -685,7 +708,7 @@ function startNoteAt(clientX: number, clientY: number): void {
     showToast('Enter to save · Esc to cancel', 3500);
   }
   ta.style.pointerEvents = 'all';
-  requestAnimationFrame(() => ta.focus());
+  requestAnimationFrame(() => { fit(); ta.focus(); });
 
   ta.addEventListener('keydown', (e) => {
     e.stopPropagation();

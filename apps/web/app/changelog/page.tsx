@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import type { JSX } from 'react';
 import Link from 'next/link';
-import { Navbar } from '../../components/navbar';
+import { SiteHeader } from '../../components/site-header';
 import { Footer } from '../../components/footer';
 import { buildPageMetadata } from '../../components/content-page';
 import { GITHUB_URL } from '../../lib/site';
@@ -97,14 +97,12 @@ function SectionLabel({ label }: { label: string }): JSX.Element {
   return (
     <h3
       style={{
-        fontSize: '10px',
-        fontWeight: 600,
-        letterSpacing: '0.1em',
-        textTransform: 'uppercase',
-        color: '#C4C4C4',
-        marginBottom: '8px',
+        fontSize: '16px',
+        fontWeight: 500,
+        color: '#060606',
+        marginBottom: '4px',
         marginTop: '20px',
-        scrollMarginTop: '5rem',
+        scrollMarginTop: '2rem',
       }}
     >
       {label}
@@ -116,13 +114,13 @@ function VersionBadge(): JSX.Element {
   return (
     <span
       style={{
-        fontSize: '10px',
+        fontSize: '12px',
         fontWeight: 500,
         padding: '2px 8px',
         borderRadius: '999px',
         background: 'rgba(0,0,0,0.04)',
         border: '1px solid rgba(0,0,0,0.08)',
-        color: '#737373',
+        color: '#121212',
         letterSpacing: '-0.01em',
       }}
     >
@@ -134,34 +132,27 @@ function VersionBadge(): JSX.Element {
 export default function ChangelogPage(): JSX.Element {
   return (
     <main style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Navbar />
+      <SiteHeader nav />
 
       <div
         style={{
           width: '100%',
-          maxWidth: '640px',
+          maxWidth: '744px',
           margin: '0 auto',
-          padding: '80px 24px 120px',
+          padding: '56px 20px 96px',
         }}
       >
-        <h1
-          style={{
-            fontSize: '1.75rem',
-            fontWeight: 500,
-            letterSpacing: '-0.02em',
-            color: '#000',
-            marginBottom: '6px',
-          }}
-        >
+        <h1 className="page-title">
           Changelog
         </h1>
         <p
           style={{
-            fontSize: '13px',
-            color: '#737373',
-            lineHeight: 1.75,
+            fontSize: '16px',
+            color: '#121212',
+            lineHeight: '25.6px',
             letterSpacing: '-0.01em',
             marginBottom: '48px',
+            maxWidth: '60ch',
           }}
         >
           All notable changes to Calipers. Follows{' '}
@@ -169,7 +160,7 @@ export default function ChangelogPage(): JSX.Element {
             href="https://keepachangelog.com"
             target="_blank"
             rel="noopener noreferrer"
-            style={{ color: '#000', textDecoration: 'underline', textDecorationStyle: 'dotted' }}
+            className="lp-link"
           >
             Keep a Changelog
           </Link>{' '}
@@ -178,7 +169,7 @@ export default function ChangelogPage(): JSX.Element {
             href={`${GITHUB_URL}/blob/main/ROADMAP.md`}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ color: '#000', textDecoration: 'underline', textDecorationStyle: 'dotted' }}
+            className="lp-link"
           >
             roadmap
           </Link>
@@ -196,14 +187,16 @@ export default function ChangelogPage(): JSX.Element {
                   flexWrap: 'wrap',
                   marginBottom: '4px',
                   paddingBottom: '12px',
-                  borderBottom: '1px solid rgba(0,0,0,0.06)',
+                  borderBottom: '1px solid #dedede',
                 }}
               >
                 <h2
                   style={{
-                    fontSize: '15px',
-                    fontWeight: 600,
-                    letterSpacing: '-0.02em',
+                    fontFamily: '"Ashbury", Georgia, "Times New Roman", serif',
+                    fontSize: '22px',
+                    fontWeight: 500,
+                    lineHeight: '29.7px',
+                    letterSpacing: '-0.01em',
                     color: '#000',
                   }}
                 >
@@ -212,7 +205,7 @@ export default function ChangelogPage(): JSX.Element {
                 {entry.date && (
                   <time
                     dateTime={entry.date}
-                    style={{ fontSize: '12px', color: '#D4D4D4', letterSpacing: '-0.01em' }}
+                    style={{ fontSize: '14px', color: '#636363' }}
                   >
                     {new Date(`${entry.date}T00:00:00`).toLocaleDateString('en-US', {
                       year: 'numeric',
@@ -239,20 +232,20 @@ export default function ChangelogPage(): JSX.Element {
                             display: 'flex',
                             alignItems: 'flex-start',
                             gap: '10px',
-                            fontSize: '13px',
-                            color: '#737373',
-                            lineHeight: 1.75,
+                            fontSize: '16px',
+                            color: '#121212',
+                            lineHeight: '25.6px',
                             letterSpacing: '-0.01em',
-                            marginBottom: '6px',
+                            marginBottom: '2px',
                           }}
                         >
                           <span
                             style={{
-                              marginTop: '9px',
+                              marginTop: '11px',
                               width: '4px',
                               height: '4px',
                               borderRadius: '50%',
-                              background: '#D4D4D4',
+                              background: '#808080',
                               flexShrink: 0,
                             }}
                           />

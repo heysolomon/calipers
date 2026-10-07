@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import type { JSX } from 'react';
-import Link from 'next/link';
-import { Navbar } from '../../components/navbar';
+import { Footer } from '../../components/footer';
+import { SiteHeader } from '../../components/site-header';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
@@ -11,14 +11,15 @@ function SectionLabel({ label }: { label: string }): JSX.Element {
   return (
     <h2
       style={{
-        fontSize: '10px',
-        fontWeight: 600,
-        letterSpacing: '0.1em',
-        textTransform: 'uppercase',
-        color: '#C4C4C4',
+        fontFamily: '"Ashbury", Georgia, "Times New Roman", serif',
+        fontSize: '22px',
+        fontWeight: 500,
+        lineHeight: '29.7px',
+        letterSpacing: '-0.01em',
+        color: '#000',
         marginBottom: '8px',
-        marginTop: '28px',
-        scrollMarginTop: '5rem',
+        marginTop: '40px',
+        scrollMarginTop: '2rem',
       }}
     >
       {label}
@@ -36,48 +37,40 @@ const PERMISSIONS = [
 export default function PrivacyPage(): JSX.Element {
   return (
     <main style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Navbar />
+      <SiteHeader nav />
 
       <div
         style={{
           width: '100%',
-          maxWidth: '640px',
+          maxWidth: '744px',
           margin: '0 auto',
-          padding: '80px 24px 120px',
+          padding: '56px 20px 96px',
         }}
       >
-        <h1
-          style={{
-            fontSize: '1.75rem',
-            fontWeight: 500,
-            letterSpacing: '-0.02em',
-            color: '#000',
-            marginBottom: '6px',
-          }}
-        >
+        <h1 className="page-title">
           Privacy Policy
         </h1>
-        <p style={{ fontSize: '12px', color: '#D4D4D4', marginBottom: '48px', letterSpacing: '-0.01em' }}>
+        <p style={{ fontSize: '14px', color: '#636363', marginBottom: '8px' }}>
           Last updated: June 2026
         </p>
 
         {/* Overview */}
         <SectionLabel label="Overview" />
-        <p style={{ fontSize: '13px', color: '#737373', lineHeight: 1.75, letterSpacing: '-0.01em' }}>
+        <p style={{ fontSize: '16px', color: '#121212', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
           Calipers is a free, open-source browser extension. This policy explains what data we collect,
           store, and transmit — which is as little as possible.
         </p>
 
         {/* Data we collect */}
         <SectionLabel label="Data we collect" />
-        <p style={{ fontSize: '13px', color: '#737373', lineHeight: 1.75, letterSpacing: '-0.01em' }}>
+        <p style={{ fontSize: '16px', color: '#121212', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
           We collect nothing. Calipers does not collect, store, or transmit any personally identifiable
           information, browsing history, or usage data.
         </p>
 
         {/* Local storage */}
         <SectionLabel label="Local storage" />
-        <p style={{ fontSize: '13px', color: '#737373', lineHeight: 1.75, letterSpacing: '-0.01em' }}>
+        <p style={{ fontSize: '16px', color: '#121212', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
           Calipers stores your preferences locally in your browser using{' '}
           <code
             style={{
@@ -97,7 +90,7 @@ export default function PrivacyPage(): JSX.Element {
 
         {/* Permissions */}
         <SectionLabel label="Permissions" />
-        <p style={{ fontSize: '13px', color: '#737373', lineHeight: 1.75, letterSpacing: '-0.01em', marginBottom: '12px' }}>
+        <p style={{ fontSize: '16px', color: '#121212', lineHeight: '25.6px', letterSpacing: '-0.01em', marginBottom: '12px' }}>
           Calipers requests certain browser permissions solely to deliver its core functionality.
           No permission is used to collect or transmit data.
         </p>
@@ -107,7 +100,7 @@ export default function PrivacyPage(): JSX.Element {
               <code
                 style={{
                   flexShrink: 0,
-                  fontSize: '11px',
+                  fontSize: '13px',
                   fontFamily: "'JetBrains Mono', monospace",
                   color: '#000',
                   background: 'rgba(0,0,0,0.04)',
@@ -118,7 +111,7 @@ export default function PrivacyPage(): JSX.Element {
               >
                 {permission}
               </code>
-              <span style={{ fontSize: '13px', color: '#737373', lineHeight: 1.6, letterSpacing: '-0.01em' }}>
+              <span style={{ fontSize: '16px', color: '#121212', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
                 {description}
               </span>
             </div>
@@ -127,20 +120,20 @@ export default function PrivacyPage(): JSX.Element {
 
         {/* Third parties */}
         <SectionLabel label="Third parties" />
-        <p style={{ fontSize: '13px', color: '#737373', lineHeight: 1.75, letterSpacing: '-0.01em' }}>
+        <p style={{ fontSize: '16px', color: '#121212', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
           Calipers does not share data with any third party. There are no analytics, no tracking
           scripts, and no external services.
         </p>
 
         {/* Open source */}
         <SectionLabel label="Open source" />
-        <p style={{ fontSize: '13px', color: '#737373', lineHeight: 1.75, letterSpacing: '-0.01em' }}>
+        <p style={{ fontSize: '16px', color: '#121212', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
           Calipers is fully open source. You can inspect every line of code at{' '}
           <a
             href="https://github.com/heysolomon/calipers"
             target="_blank"
             rel="noopener noreferrer"
-            style={{ color: '#000', textDecoration: 'underline', textDecorationStyle: 'dotted' }}
+            className="lp-link"
           >
             github.com/heysolomon/calipers
           </a>{' '}
@@ -149,20 +142,20 @@ export default function PrivacyPage(): JSX.Element {
 
         {/* Contact */}
         <SectionLabel label="Contact" />
-        <p style={{ fontSize: '13px', color: '#737373', lineHeight: 1.75, letterSpacing: '-0.01em' }}>
+        <p style={{ fontSize: '16px', color: '#121212', lineHeight: '25.6px', letterSpacing: '-0.01em' }}>
           If you have questions about this policy, open an issue on{' '}
           <a
             href="https://github.com/heysolomon/calipers/issues"
             target="_blank"
             rel="noopener noreferrer"
-            style={{ color: '#000', textDecoration: 'underline', textDecorationStyle: 'dotted' }}
+            className="lp-link"
           >
             GitHub
           </a>{' '}
           or reach out at{' '}
           <a
             href="mailto:akusonsolomon15@gmail.com"
-            style={{ color: '#000', textDecoration: 'underline', textDecorationStyle: 'dotted' }}
+            className="lp-link"
           >
             akusonsolomon15@gmail.com
           </a>
@@ -170,45 +163,7 @@ export default function PrivacyPage(): JSX.Element {
         </p>
       </div>
 
-      {/* Footer */}
-      <footer
-        style={{
-          height: '36px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 16px',
-          background: '#F7F7F7',
-          borderTop: '1px solid rgba(0,0,0,0.06)',
-          fontSize: '11px',
-          color: '#D4D4D4',
-          letterSpacing: '-0.01em',
-          marginTop: 'auto',
-        }}
-      >
-        <span>MIT License · Free forever</span>
-
-        <nav style={{ display: 'flex', gap: '16px' }}>
-          {[
-            { label: 'Docs',      href: '/docs' },
-            { label: 'Changelog', href: '/changelog' },
-            { label: 'Privacy',   href: '/privacy' },
-            { label: 'GitHub',    href: 'https://github.com/heysolomon/calipers' },
-          ].map(({ label, href }) => (
-            <Link
-              key={label}
-              href={href}
-              style={{ color: '#737373', textDecoration: 'none', fontSize: '11px' }}
-              target={href.startsWith('http') ? '_blank' : undefined}
-              rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
-            >
-              {label}
-            </Link>
-          ))}
-        </nav>
-
-        <span>v0.1.0</span>
-      </footer>
+      <Footer />
     </main>
   );
 }

@@ -7,6 +7,7 @@ const TOOLS: { key: DemoKey; label: string }[] = [
   { key: 'inspect', label: 'Inspect' },
   { key: 'measure', label: 'Measure' },
   { key: 'guides',  label: 'Guides'  },
+  { key: 'annotate', label: 'Annotate' },
 ];
 
 function ToggleSwitch({
@@ -87,7 +88,7 @@ export function DemoToolbar() {
         width={16}
         height={16}
         aria-hidden="true"
-        style={{ filter: 'brightness(0) invert(1)', opacity: 0.5 }}
+        style={{ filter: 'brightness(0) invert(1)' }}
       />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
@@ -119,30 +120,6 @@ export function DemoToolbar() {
           );
         })}
       </div>
-
-      <button
-        type="button"
-        onClick={demo.close}
-        aria-label="Close demo tools"
-        className="site-link-dark"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: '22px',
-          height: '22px',
-          background: 'transparent',
-          border: 'none',
-          borderRadius: '5px',
-          color: 'rgba(255,255,255,0.4)',
-          fontSize: '13px',
-          lineHeight: 1,
-          cursor: 'pointer',
-          padding: 0,
-        }}
-      >
-        <span aria-hidden="true">×</span>
-      </button>
     </div>
   );
 }

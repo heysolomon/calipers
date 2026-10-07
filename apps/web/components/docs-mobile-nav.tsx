@@ -11,7 +11,7 @@ export function DocsMobileNav() {
   return (
     <nav
       aria-label="Documentation"
-      className="md:hidden sticky top-[44px] z-10 overflow-x-auto px-4 py-3"
+      className="md:hidden sticky top-0 z-10 overflow-x-auto px-4 py-3"
       style={{
         background: '#F7F7F7',
         borderBottom: '1px solid rgba(0,0,0,0.06)',
@@ -28,8 +28,8 @@ export function DocsMobileNav() {
               href={item.href}
               className="site-link"
               style={{
-                fontSize: '11px',
-                padding: '4px 10px',
+                fontSize: '13px',
+                padding: '5px 12px',
                 borderRadius: '999px',
                 whiteSpace: 'nowrap',
                 color: active ? '#000' : '#737373',

@@ -1,13 +1,13 @@
 import { DocsSidebar } from '../../components/docs-sidebar';
 import { DocsMobileNav } from '../../components/docs-mobile-nav';
 import { Footer } from '../../components/footer';
-import { Navbar } from '../../components/navbar';
+import { SiteHeader } from '../../components/site-header';
 import type { ReactNode } from 'react';
 
 export default function DocsLayout({ children }: { children: ReactNode }) {
   return (
     <>
-      <Navbar />
+      <SiteHeader nav />
       <div className="docs-layout">
         <DocsMobileNav />
         <div className="docs-shell">

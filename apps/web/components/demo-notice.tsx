@@ -31,7 +31,7 @@ export function DemoNotice() {
         textAlign: 'center',
       }}
     >
-      Demo mode active — page clicks may be captured by the selected tool. Press Close in the toolbar to exit.
+      Demo mode is on. Clicks on the page go to the selected tool.
     </div>
   );
 }

@@ -80,7 +80,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <JsonLd />
         <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-friendly site summary" />
       </head>
-      <body>
+      {/* Browser extensions (Grammarly and others) add attributes to <body> before React loads. */}
+      <body suppressHydrationWarning>
         <SkipLink />
         <DemoProvider>
           <CustomCursor />

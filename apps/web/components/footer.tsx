@@ -11,31 +11,23 @@ const LINKS = [
 
 export function Footer() {
   return (
-    <footer
-      style={{
-        borderTop: '1px solid rgba(0,0,0,0.06)',
-        padding: '12px 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '8px 16px',
-        fontSize: '11px',
-        color: '#D4D4D4',
-        letterSpacing: '-0.01em',
-      }}
-    >
-      <span>MIT License</span>
+    <footer className="site-footer">
+      <span>©2026 Calipers</span>
 
-      <nav aria-label="Footer" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+      <span className="site-footer-meta">
+        <span className="site-footer-dot" aria-hidden="true" />
+        MIT License
+        <span>v0.2.0</span>
+      </span>
+
+      <nav aria-label="Footer" className="site-footer-links">
         {LINKS.map(({ label, href, ...rest }) => {
           const external = 'external' in rest && rest.external;
           return (
             <Link
               key={label}
               href={href}
-              className="site-link"
-              style={{ color: '#737373' }}
+              className="lp-link"
               target={external ? '_blank' : undefined}
               rel={external ? 'noopener noreferrer' : undefined}
             >
@@ -45,8 +37,6 @@ export function Footer() {
           );
         })}
       </nav>
-
-      <span>v0.1.0</span>
     </footer>
   );
 }

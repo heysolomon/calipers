@@ -5,9 +5,14 @@ import { useDemo, type DemoCursor } from './demo-provider';
 
 const ARROWS = 'M0 -8.5V8.5M-3.5 -5L0 -8.5L3.5 -5M-3.5 5L0 8.5L3.5 5';
 
-const GLYPH_OF: Record<DemoCursor, 'crosshair' | 'delete' | 'remove' | 'move' | null> = {
-  crosshair: 'crosshair', text: null, delete: 'delete', remove: 'remove', 'move-x': 'move', 'move-y': 'move',
+type Glyph = 'crosshair' | 'delete' | 'remove' | 'move' | 'pen' | 'grab';
+
+const GLYPH_OF: Record<DemoCursor, Glyph | null> = {
+  crosshair: 'crosshair', text: null, delete: 'delete', remove: 'remove', 'move-x': 'move', 'move-y': 'move', pen: 'pen', grab: 'grab',
 };
+
+/** A pen whose tip is the hot spot, for placing notes. */
+const PEN = 'M0 0L1.3 -4.4L10.2 -13.3a1.9 1.9 0 0 1 2.7 0l0.4 0.4a1.9 1.9 0 0 1 0 2.7L4.4 -1.3Z';
 
 /**
  * The demo's cursor, matching the extension: a crosshair that pops into a
@@ -38,7 +43,7 @@ export function CustomCursor() {
 
   if (!enabled) return null;
 
-  const layer = (name: 'crosshair' | 'delete' | 'remove' | 'move', turn = ''): React.CSSProperties => ({
+  const layer = (name: Glyph, turn = ''): React.CSSProperties => ({
     position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
     opacity: glyph === name ? 1 : 0,
     transform: `scale(${glyph === name ? 1 : 0.6})${turn}`,
@@ -79,6 +84,18 @@ export function CustomCursor() {
           <svg width="22" height="22" viewBox="-11 -11 22 22" style={{ display: 'block', overflow: 'visible', flexShrink: 0 }}>
             <circle r="9.5" fill="#FF4500" stroke="#fff" strokeWidth="1.5" />
             <path d="M-4.25 0H4.25" stroke="#fff" strokeWidth="1.75" strokeLinecap="round" />
+          </svg>
+        </div>
+        <div style={layer('pen')}>
+          <svg width="18" height="18" viewBox="-9 -9 18 18" strokeLinejoin="round" strokeLinecap="round" style={{ display: 'block', overflow: 'visible', flexShrink: 0 }}>
+            <path d={PEN} fill="#fff" stroke="#fff" strokeWidth="4" />
+            <path d={PEN} fill="#fff" stroke="#FF4500" strokeWidth="1.5" />
+          </svg>
+        </div>
+        <div style={layer('grab')}>
+          <svg width="18" height="18" viewBox="-9 -9 18 18" style={{ display: 'block', overflow: 'visible', flexShrink: 0 }}>
+            <circle r="6.5" fill="#fff" />
+            <circle r="5" fill="#fff" stroke="#FF4500" strokeWidth="1.75" />
           </svg>
         </div>
         <div style={layer('move', cursor === 'move-x' ? ' rotate(90deg)' : '')}>

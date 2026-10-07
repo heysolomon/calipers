@@ -2,16 +2,17 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
 /** Same modes as the extension. Colours and box values live inside Inspect. */
-export type DemoKey = 'inspect' | 'measure' | 'guides';
+export type DemoKey = 'inspect' | 'measure' | 'guides' | 'annotate';
 
 /** What the demo cursor should look like, set by the active tool. */
-export type DemoCursor = 'crosshair' | 'text' | 'delete' | 'remove' | 'move-x' | 'move-y';
+export type DemoCursor = 'crosshair' | 'text' | 'delete' | 'remove' | 'move-x' | 'move-y' | 'pen' | 'grab';
 
 interface DemoCtx {
   isOpen:    boolean;
   inspect:   boolean;
   measure:   boolean;
   guides:    boolean;
+  annotate:  boolean;
   anyTool:   boolean;
   cursor:    DemoCursor;
   setCursor: (c: DemoCursor) => void;
@@ -22,7 +23,7 @@ interface DemoCtx {
 }
 
 const Ctx = createContext<DemoCtx | null>(null);
-const OFF = { inspect: false, measure: false, guides: false };
+const OFF = { inspect: false, measure: false, guides: false, annotate: false };
 
 export function DemoProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -35,7 +36,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   const value = useMemo<DemoCtx>(() => ({
     isOpen,
     ...tools,
-    anyTool: tools.inspect || tools.measure || tools.guides,
+    anyTool: tools.inspect || tools.measure || tools.guides || tools.annotate,
     cursor,
     setCursor,
     open:   () => setIsOpen(true),

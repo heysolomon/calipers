@@ -100,7 +100,9 @@ function ElementHighlight({ box, selected = false, outline = false, z = 8900 }: 
         position: 'fixed', left: 0, top: 0, boxSizing: 'border-box',
         background: `rgba(255,69,0,${fill})`,
         border: `${selected || outline ? 1.5 : 1}px solid rgba(255,69,0,${stroke})`,
-        borderRadius: outline ? 3 : 2,
+        // The extension strokes a 2px-radius path on canvas, half the line outside it. A CSS
+        // border sits fully inside, so it needs a larger radius to read as the same corner.
+        borderRadius: outline ? 4 : 3,
         pointerEvents: 'none', zIndex: z,
       }}
     />
@@ -864,6 +866,545 @@ function GuidesOverlay({ setCursor }: { setCursor: (c: DemoCursor) => void }) {
   );
 }
 
+// ─── 4. Annotate ──────────────────────────────────────────────────────────────
+// The extension's Annotate mode: a size callout, notes, arrows and a pen on one
+// options card. Arrows can be reshaped, notes moved and deleted, anything
+// removed with a right-click, and every change undone. Marks are stored in
+// page coordinates so they scroll with the content.
+
+type AnnoTool = 'size' | 'note' | 'arrow' | 'pen';
+const ANNO_TOOLS: { id: AnnoTool; label: string }[] = [
+  { id: 'size', label: 'Size' }, { id: 'note', label: 'Note' }, { id: 'arrow', label: 'Arrow' }, { id: 'pen', label: 'Pen' },
+];
+const ANNO_KEYS: Record<string, AnnoTool> = { m: 'size', n: 'note', a: 'arrow', p: 'pen' };
+const ANNO_COLORS: { hex: string; label: string }[] = [
+  { hex: '#FF4500', label: 'Accent' }, { hex: '#FF2D85', label: 'Pink' }, { hex: '#2563EB', label: 'Blue' }, { hex: '#16A34A', label: 'Green' },
+  { hex: '#7C3AED', label: 'Purple' }, { hex: '#D97706', label: 'Amber' }, { hex: '#111111', label: 'Black' }, { hex: '#FFFFFF', label: 'White' },
+];
+const NOTE_SIZES: { id: string; label: string }[] = [{ id: '14', label: 'S' }, { id: '18', label: 'M' }, { id: '24', label: 'L' }, { id: '32', label: 'XL' }];
+const NOTE_FONT = `'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Apple Chancery', cursive`;
+const NOTE_STYLE: CSSProperties = {
+  fontFamily: NOTE_FONT, fontWeight: 600, lineHeight: 1.25, letterSpacing: 'normal',
+  textShadow: '0 1px 0 rgba(255,255,255,0.85)', transform: 'rotate(-1.5deg)', transformOrigin: '0 0',
+};
+const ANNO_HINT: Record<AnnoTool, string> = {
+  size: 'Click an element to mark its size',
+  note: 'Click to write · Drag a note to move it',
+  arrow: 'Drag to draw · Drag a handle to reshape',
+  pen: 'Drag to draw freehand',
+};
+
+const HANDLE_HIT = 9;
+const HIT_SLOP = 8;
+/** A bend this close to the straight line snaps back to straight. */
+const STRAIGHTEN_WITHIN = 6;
+const ANGLE_STEP = Math.PI / 12;
+const NOTE_DELETE_R = 8;
+
+interface Pt { x: number; y: number }
+type ArrowMark = { id: number; color: string; kind: 'arrow'; from: Pt; to: Pt; bend: Pt | null };
+type NoteMark = { id: number; color: string; kind: 'note'; at: Pt; text: string; size: number };
+type Mark =
+  | { id: number; color: string; kind: 'size'; box: Box }
+  | { id: number; color: string; kind: 'pen'; points: Pt[] }
+  | ArrowMark
+  | NoteMark;
+type ArrowPart = 'start' | 'end' | 'bend' | 'body';
+
+const chordMid = (a: Pt, b: Pt): Pt => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+
+/** Control point of the quadratic curve that passes through `bend` at its midpoint. */
+function controlPoint(a: Pt, b: Pt, bend: Pt | null): Pt {
+  const m = chordMid(a, b);
+  return bend ? { x: 2 * bend.x - m.x, y: 2 * bend.y - m.y } : m;
+}
+
+function distToSegment(p: Pt, a: Pt, b: Pt): number {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len2 = dx * dx + dy * dy;
+  const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2));
+  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+}
+
+function distToPath(p: Pt, points: Pt[]): number {
+  let best = Infinity;
+  for (let i = 1; i < points.length; i++) best = Math.min(best, distToSegment(p, points[i - 1]!, points[i]!));
+  return best;
+}
+
+function arrowPoints(m: ArrowMark): Pt[] {
+  if (!m.bend) return [m.from, m.to];
+  const c = controlPoint(m.from, m.to, m.bend);
+  return Array.from({ length: 21 }, (_, i) => {
+    const t = i / 20;
+    const u = 1 - t;
+    return { x: u * u * m.from.x + 2 * u * t * c.x + t * t * m.to.x, y: u * u * m.from.y + 2 * u * t * c.y + t * t * m.to.y };
+  });
+}
+
+/** Which part of an arrow a point is on, if any. Handles win over the body. */
+function arrowPartAt(m: ArrowMark, p: Pt): ArrowPart | null {
+  const near = (q: Pt): boolean => Math.hypot(q.x - p.x, q.y - p.y) <= HANDLE_HIT;
+  if (near(m.to)) return 'end';
+  if (near(m.from)) return 'start';
+  if (near(m.bend ?? chordMid(m.from, m.to))) return 'bend';
+  return distToPath(p, arrowPoints(m)) <= HIT_SLOP ? 'body' : null;
+}
+
+/** Keep the distance, round the direction to the nearest 15°. */
+function lockAngle(from: Pt, to: Pt): Pt {
+  const len = Math.hypot(to.x - from.x, to.y - from.y);
+  const angle = Math.round(Math.atan2(to.y - from.y, to.x - from.x) / ANGLE_STEP) * ANGLE_STEP;
+  return { x: from.x + Math.cos(angle) * len, y: from.y + Math.sin(angle) * len };
+}
+
+const shift = (p: Pt, dx: number, dy: number): Pt => ({ x: p.x + dx, y: p.y + dy });
+
+function MarkShape({ mark, handles = false }: { mark: Exclude<Mark, NoteMark>; handles?: boolean }) {
+  const c = mark.color;
+  // White marks need an edge to show on a light page.
+  const edge = c === '#FFFFFF' ? { filter: 'drop-shadow(0 0 0.75px rgba(0,0,0,0.55))' } : undefined;
+  if (mark.kind === 'size') {
+    const { x, y, w, h } = mark.box;
+    return (
+      <g stroke={c} fill="none" strokeLinecap="round" style={edge}>
+        <rect x={x} y={y} width={w} height={h} rx="3" fill={c} fillOpacity="0.12" strokeWidth="1.5" />
+        <path d={`M${x} ${y - 10}H${x + w}M${x} ${y - 14}v8M${x + w} ${y - 14}v8M${x - 10} ${y}V${y + h}M${x - 14} ${y}h8M${x - 14} ${y + h}h8`} strokeWidth="1.25" />
+        <g fill={c} stroke="none" fontFamily={UI.mono} fontSize="11" fontWeight="600">
+          <text x={x + w / 2} y={y - 16} textAnchor="middle">{Math.round(w)}</text>
+          <text x={x - 16} y={y + h / 2 + 4} textAnchor="end">{Math.round(h)}</text>
+        </g>
+      </g>
+    );
+  }
+  if (mark.kind === 'pen') {
+    return <polyline points={mark.points.map((p) => `${p.x},${p.y}`).join(' ')} stroke={c} strokeWidth="2.25" fill="none" strokeLinecap="round" strokeLinejoin="round" style={edge} />;
+  }
+  const { from, to, bend } = mark;
+  const ctrl = controlPoint(from, to, bend);
+  // The head opens back along the direction the shaft arrives from, straight or curved.
+  const back = Math.atan2((bend ? ctrl.y : from.y) - to.y, (bend ? ctrl.x : from.x) - to.x);
+  const wing = (spread: number): string => `${to.x + 12 * Math.cos(back + spread)} ${to.y + 12 * Math.sin(back + spread)}`;
+  const mid = bend ?? chordMid(from, to);
+  return (
+    <g stroke={c} strokeWidth="2.25" fill="none" strokeLinecap="round" strokeLinejoin="round" style={edge}>
+      <path d={`M${from.x} ${from.y}Q${ctrl.x} ${ctrl.y} ${to.x} ${to.y}M${wing(-0.5)}L${to.x} ${to.y}L${wing(0.5)}`} />
+      {handles && (
+        <g strokeWidth="1.5">
+          <circle cx={from.x} cy={from.y} r="4.5" fill="#fff" />
+          <circle cx={to.x} cy={to.y} r="4.5" fill="#fff" />
+          {/* Filled once the arrow is bent, hollow while it is still straight */}
+          <circle cx={mid.x} cy={mid.y} r="3.5" fill={bend ? c : '#fff'} />
+        </g>
+      )}
+    </g>
+  );
+}
+
+/** A row of tabs with the pill that slides to the active one. */
+function Tabs<T extends string>({ label, items, value, onChange }: {
+  label: string; items: { id: T; label: string }[]; value: T; onChange: (id: T) => void;
+}) {
+  const reduce = useReducedMotion();
+  const n = items.length;
+  const idx = Math.max(0, items.findIndex((i) => i.id === value));
+  return (
+    <div role="group" aria-label={label} style={{ position: 'relative', display: 'grid', gridTemplateColumns: `repeat(${n}, 1fr)`, background: UI.track, borderRadius: 7, padding: 2 }}>
+      <div style={{
+        position: 'absolute', top: 2, bottom: 2, width: `calc((100% - 4px) / ${n})`, left: `calc(2px + ${idx} * ((100% - 4px) / ${n}))`,
+        background: UI.bg, borderRadius: 5, boxShadow: UI.shadowPill, pointerEvents: 'none', transition: reduce ? 'none' : `left 0.22s ${UI.easeMove}`,
+      }} />
+      {items.map((item) => (
+        <button
+          key={item.id} type="button" aria-pressed={item.id === value} onClick={() => onChange(item.id)}
+          style={{
+            position: 'relative', zIndex: 1, height: 24, padding: 0, border: 'none', borderRadius: 5, background: 'transparent', cursor: 'pointer',
+            fontFamily: 'inherit', fontSize: 10, fontWeight: 500, letterSpacing: '-0.01em',
+            color: item.id === value ? UI.textPrimary : UI.textSecondary, transition: reduce ? 'none' : `color 0.22s ${UI.easeMove}`,
+          }}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+type AnnoDrag =
+  | { kind: 'arrow'; id: number; part: ArrowPart; last: Pt; moved: boolean; before: Mark[] }
+  | { kind: 'note'; id: number; last: Pt; moved: boolean; before: Mark[] };
+
+function AnnotateOverlay({ setCursor }: { setCursor: (c: DemoCursor) => void }) {
+  useViewportTick();
+  const reduce = useReducedMotion();
+  const [tool, setTool] = useState<AnnoTool>('size');
+  const [color, setColor] = useState(ANNO_COLORS[0]!.hex);
+  const [noteSize, setNoteSize] = useState(18);
+  const [marks, setMarks] = useState<Mark[]>([]);
+  const [hover, setHover] = useState<Box | null>(null);
+  const [draft, setDraft] = useState<Exclude<Mark, NoteMark> | null>(null);
+  const [editing, setEditing] = useState<{ at: Pt; text: string } | null>(null);
+  /** The arrow or note under the pointer, which is the one a press would grab. */
+  const [activeId, setActiveId] = useState<number | null>(null);
+  const [overDelete, setOverDelete] = useState(false);
+  const nextId = useRef(0);
+  const history = useRef<Mark[][]>([]);
+  const drag = useRef<AnnoDrag | null>(null);
+  /** The click that ends a drag or a delete must not also start a new note. */
+  const swallowClick = useRef(false);
+  const noteEls = useRef(new Map<number, HTMLDivElement>());
+  // The listeners are attached once and read the latest values from here.
+  const live = useRef({ tool, color, noteSize, marks, draft, editing, activeId });
+  live.current = { tool, color, noteSize, marks, draft, editing, activeId };
+
+  useEffect(() => {
+    setCursor(tool === 'note' || tool === 'pen' ? 'pen' : 'crosshair');
+    setHover(null);
+    setActiveId(null);
+    setOverDelete(false);
+  }, [tool, setCursor]);
+
+  useEffect(() => {
+    const page = (e: MouseEvent): Pt => ({ x: e.clientX + window.scrollX, y: e.clientY + window.scrollY });
+    const onPage = (e: MouseEvent): boolean => !isOurUI(e.target as Element) && e.clientY >= TOOLBAR_H;
+    /** Every change goes through here so it can be undone. */
+    const change = (next: Mark[], before: Mark[] = live.current.marks): void => {
+      history.current = [...history.current.slice(-49), before];
+      setMarks(next);
+    };
+    const add = (mark: Mark): void => change([...live.current.marks, mark]);
+    const baseCursor = (): DemoCursor => (live.current.tool === 'note' || live.current.tool === 'pen' ? 'pen' : 'crosshair');
+
+    const noteRect = (id: number): DOMRect | null => noteEls.current.get(id)?.getBoundingClientRect() ?? null;
+    const deleteCentre = (r: DOMRect): Pt => ({ x: Math.min(r.right + 6, window.innerWidth - NOTE_DELETE_R - 2), y: Math.max(r.top - 2, TOOLBAR_H + NOTE_DELETE_R + 2) });
+    const noteAt = (x: number, y: number): NoteMark | null => {
+      const all = live.current.marks;
+      for (let i = all.length - 1; i >= 0; i--) {
+        const m = all[i]!;
+        if (m.kind !== 'note') continue;
+        const r = noteRect(m.id);
+        if (r && x >= r.left - 4 && x <= r.right + 4 && y >= r.top - 4 && y <= r.bottom + 4) return m;
+      }
+      return null;
+    };
+    const arrowAt = (p: Pt): { mark: ArrowMark; part: ArrowPart } | null => {
+      const all = live.current.marks;
+      for (let i = all.length - 1; i >= 0; i--) {
+        const m = all[i]!;
+        if (m.kind !== 'arrow') continue;
+        const part = arrowPartAt(m, p);
+        if (part) return { mark: m, part };
+      }
+      return null;
+    };
+    /** Whatever is under the pointer, of any kind — what a right-click removes. */
+    const markAt = (e: MouseEvent): Mark | null => {
+      const p = page(e);
+      const note = noteAt(e.clientX, e.clientY);
+      if (note) return note;
+      const all = live.current.marks;
+      for (let i = all.length - 1; i >= 0; i--) {
+        const m = all[i]!;
+        if (m.kind === 'arrow' && arrowPartAt(m, p)) return m;
+        if (m.kind === 'pen' && distToPath(p, m.points) <= HIT_SLOP) return m;
+        if (m.kind === 'size' && p.x >= m.box.x && p.x <= m.box.x + m.box.w && p.y >= m.box.y && p.y <= m.box.y + m.box.h) return m;
+      }
+      return null;
+    };
+    const onNoteDelete = (e: MouseEvent): boolean => {
+      const id = live.current.activeId;
+      const r = id === null ? null : noteRect(id);
+      if (!r) return false;
+      const c = deleteCentre(r);
+      return Math.hypot(e.clientX - c.x, e.clientY - c.y) <= NOTE_DELETE_R + 3;
+    };
+
+    function onMove(e: MouseEvent) {
+      const p = page(e);
+      const d = drag.current;
+      if (d) {
+        const dx = p.x - d.last.x;
+        const dy = p.y - d.last.y;
+        if (dx === 0 && dy === 0) return;
+        d.last = p;
+        d.moved = true;
+        setMarks((prev) => prev.map((m) => {
+          if (m.id !== d.id) return m;
+          if (m.kind === 'note') return { ...m, at: shift(m.at, dx, dy) };
+          if (m.kind !== 'arrow' || d.kind !== 'arrow') return m;
+          if (d.part === 'body') return { ...m, from: shift(m.from, dx, dy), to: shift(m.to, dx, dy), bend: m.bend && shift(m.bend, dx, dy) };
+          if (d.part === 'bend') {
+            const mid = chordMid(m.from, m.to);
+            return { ...m, bend: Math.hypot(p.x - mid.x, p.y - mid.y) <= STRAIGHTEN_WITHIN ? null : p };
+          }
+          // Shift keeps a straight arrow on a 15° step while an end is dragged.
+          const lock = e.shiftKey && !m.bend;
+          return d.part === 'start' ? { ...m, from: lock ? lockAngle(m.to, p) : p } : { ...m, to: lock ? lockAngle(m.from, p) : p };
+        }));
+        return;
+      }
+
+      const dr = live.current.draft;
+      if (dr?.kind === 'arrow') { setDraft({ ...dr, to: e.shiftKey ? lockAngle(dr.from, p) : p }); return; }
+      if (dr?.kind === 'pen') { setDraft({ ...dr, points: [...dr.points, p] }); return; }
+
+      const t = live.current.tool;
+      const on = onPage(e);
+      if (t === 'size') {
+        const el = on ? getTarget(e.clientX, e.clientY) : null;
+        setHover(el ? toBox(el.getBoundingClientRect()) : null);
+      } else if (t === 'arrow') {
+        const hit = on ? arrowAt(p) : null;
+        setActiveId(hit?.mark.id ?? null);
+        setCursor(hit ? 'grab' : 'crosshair');
+      } else if (t === 'note') {
+        // The delete button sits outside the note's box, so check it first to keep the note active.
+        const del = on && onNoteDelete(e);
+        const id = del ? live.current.activeId : on ? noteAt(e.clientX, e.clientY)?.id ?? null : null;
+        setActiveId(id);
+        setOverDelete(del);
+        setCursor(del ? 'delete' : id !== null ? 'grab' : 'pen');
+      }
+    }
+
+    function onDown(e: MouseEvent) {
+      swallowClick.current = false;
+      if (e.button !== 0 || !onPage(e)) return;
+      const { tool: t, color: c, marks: all } = live.current;
+      const p = page(e);
+
+      if (t === 'note') {
+        if (onNoteDelete(e)) {
+          change(all.filter((m) => m.id !== live.current.activeId));
+          setActiveId(null);
+          setOverDelete(false);
+          setCursor('pen');
+          swallowClick.current = true;
+          e.preventDefault();
+          return;
+        }
+        const note = noteAt(e.clientX, e.clientY);
+        if (note) {
+          drag.current = { kind: 'note', id: note.id, last: p, moved: false, before: all };
+          swallowClick.current = true;
+          e.preventDefault();
+        }
+        return;
+      }
+      if (t !== 'arrow' && t !== 'pen') return;
+      // Stops the drag from selecting text on the page underneath.
+      e.preventDefault();
+      const hit = t === 'arrow' ? arrowAt(p) : null;
+      if (hit) {
+        drag.current = { kind: 'arrow', id: hit.mark.id, part: hit.part, last: p, moved: false, before: all };
+        return;
+      }
+      setDraft(t === 'arrow'
+        ? { id: nextId.current++, color: c, kind: 'arrow', from: p, to: p, bend: null }
+        : { id: nextId.current++, color: c, kind: 'pen', points: [p] });
+    }
+
+    function onUp() {
+      const d = drag.current;
+      if (d) {
+        drag.current = null;
+        // One undo step for the whole drag, however far it went.
+        if (d.moved) history.current = [...history.current.slice(-49), d.before];
+        return;
+      }
+      const dr = live.current.draft;
+      if (!dr) return;
+      setDraft(null);
+      // A click without a drag leaves nothing behind.
+      if (dr.kind === 'arrow' && Math.hypot(dr.to.x - dr.from.x, dr.to.y - dr.from.y) > 6) add(dr);
+      if (dr.kind === 'pen' && dr.points.length > 2) add(dr);
+    }
+
+    function onClick(e: MouseEvent) {
+      if (!onPage(e)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (swallowClick.current) { swallowClick.current = false; return; }
+      const { tool: t, color: c } = live.current;
+      if (t === 'size') {
+        const el = getTarget(e.clientX, e.clientY);
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        add({ id: nextId.current++, color: c, kind: 'size', box: { x: r.left + window.scrollX, y: r.top + window.scrollY, w: r.width, h: r.height } });
+      } else if (t === 'note') {
+        // A note still being written is saved by its own blur before this runs.
+        setEditing({ at: page(e), text: '' });
+      }
+    }
+
+    function onContext(e: MouseEvent) {
+      if (!onPage(e)) return;
+      const hit = markAt(e);
+      if (!hit) return;
+      e.preventDefault();
+      e.stopPropagation();
+      change(live.current.marks.filter((m) => m.id !== hit.id));
+      setActiveId(null);
+      setOverDelete(false);
+      setCursor(baseCursor());
+    }
+
+    function onKey(e: KeyboardEvent) {
+      const el = e.target as HTMLElement;
+      if (live.current.editing || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable) return;
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        const before = history.current.pop();
+        if (before) setMarks(before);
+        return;
+      }
+      const next = !e.metaKey && !e.ctrlKey && !e.altKey ? ANNO_KEYS[e.key.toLowerCase()] : undefined;
+      if (next) setTool(next);
+    }
+
+    window.addEventListener('mousemove', onMove, { passive: true });
+    window.addEventListener('mousedown', onDown, true);
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('click', onClick, true);
+    window.addEventListener('contextmenu', onContext, true);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mousedown', onDown, true);
+      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('click', onClick, true);
+      window.removeEventListener('contextmenu', onContext, true);
+      window.removeEventListener('keydown', onKey);
+      setCursor('crosshair');
+    };
+  }, [setCursor]);
+
+  const finishNote = (keep: boolean): void => {
+    const text = editing?.text.trim();
+    if (keep && editing && text) {
+      history.current = [...history.current.slice(-49), marks];
+      setMarks([...marks, { id: nextId.current++, color, kind: 'note', at: editing.at, text, size: noteSize }]);
+    }
+    setEditing(null);
+  };
+
+  const swatchMove = reduce ? 'none' : 'opacity 0.2s ease, transform 0.2s ease';
+  const swatchLayer: CSSProperties = { position: 'absolute', inset: 0, borderRadius: '50%', pointerEvents: 'none', boxShadow: 'inset 0 0 0 1px rgba(0, 0, 0, 0.1)' };
+  const sx = window.scrollX;
+  const sy = window.scrollY;
+  // Read after layout so the outline sits on the note where it is now, including mid-drag.
+  const activeNote = tool === 'note' && activeId !== null ? noteEls.current.get(activeId)?.getBoundingClientRect() : undefined;
+  const whiteEdge = (c: string): string | undefined => (c === '#FFFFFF' ? 'drop-shadow(0 0 0.75px rgba(0,0,0,0.6))' : undefined);
+
+  return (
+    <>
+      {/* Options card: the same tabs, sizes and swatches as the extension */}
+      <motion.div
+        data-demo-ui="true"
+        initial={reduce ? false : { opacity: 0, y: -4, x: '-50%' }} animate={{ opacity: 1, y: 0, x: '-50%' }} transition={{ duration: 0.16, ease: 'easeOut' }}
+        style={{
+          position: 'fixed', left: '50%', top: TOOLBAR_H + 12, width: 244, boxSizing: 'border-box', padding: 10, zIndex: 9000,
+          background: UI.bg, border: `1px solid ${UI.border}`, borderRadius: 14, boxShadow: UI.shadow,
+          fontFamily: UI.font, lineHeight: 1.3, letterSpacing: 'normal', userSelect: 'none',
+        }}
+      >
+        <Tabs label="Annotation tool" items={ANNO_TOOLS} value={tool} onChange={setTool} />
+
+        {/* Note size appears only for the tool it applies to */}
+        <div style={{ display: 'grid', gridTemplateRows: tool === 'note' ? '1fr' : '0fr', transition: reduce ? 'none' : `grid-template-rows 0.2s ${UI.easeOut}` }}>
+          <div style={{ overflow: 'hidden', minHeight: 0 }}>
+            <div style={{ paddingTop: 8 }}>
+              <Tabs label="Note size" items={NOTE_SIZES} value={String(noteSize)} onChange={(id) => setNoteSize(Number(id))} />
+            </div>
+          </div>
+        </div>
+
+        <div role="group" aria-label="Annotation colour" style={{ display: 'flex', justifyContent: 'space-between', padding: '0 3px', marginTop: 10 }}>
+          {ANNO_COLORS.map(({ hex, label }) => {
+            const on = hex === color;
+            return (
+              <button
+                key={hex} type="button" aria-label={label} aria-pressed={on} title={label} onClick={() => setColor(hex)}
+                style={{ position: 'relative', width: 20, height: 20, padding: 0, border: 'none', borderRadius: '50%', background: 'transparent', cursor: 'pointer', flexShrink: 0 }}
+              >
+                <span style={{ ...swatchLayer, background: hex, transform: 'scale(1.2)', opacity: on ? 1 : 0, transition: swatchMove }} />
+                <span style={{ ...swatchLayer, background: UI.bg, boxShadow: 'none' }} />
+                <span style={{ ...swatchLayer, background: hex, transform: `scale(${on ? 0.8 : 1})`, transition: swatchMove }} />
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{ marginTop: 10, fontSize: 10, color: UI.textMuted, letterSpacing: '-0.01em' }}>
+          <div style={{ color: UI.textSecondary }}>{ANNO_HINT[tool]}</div>
+          <div>Right-click deletes · ⌘Z undoes</div>
+        </div>
+      </motion.div>
+
+      {/* Everything drawn so far, plus the stroke in progress */}
+      <svg
+        data-demo-ui="true" aria-hidden="true"
+        style={{ position: 'fixed', left: 0, top: 0, width: '100vw', height: '100vh', overflow: 'visible', pointerEvents: 'none', zIndex: 8850 }}
+      >
+        <g transform={`translate(${-sx} ${-sy})`}>
+          {marks.map((m) => (m.kind === 'note' ? null : <MarkShape key={m.id} mark={m} handles={tool === 'arrow' && m.id === activeId} />))}
+          {draft && <MarkShape mark={draft} />}
+        </g>
+      </svg>
+
+      {/* Notes are text on the page, with no box around them */}
+      {marks.map((m) => (m.kind !== 'note' ? null : (
+        <div
+          key={m.id} data-demo-ui="true"
+          ref={(el) => { if (el) noteEls.current.set(m.id, el); else noteEls.current.delete(m.id); }}
+          style={{
+            ...NOTE_STYLE, position: 'fixed', left: m.at.x - sx, top: m.at.y - sy, zIndex: 8860, maxWidth: 240,
+            whiteSpace: 'pre-wrap', wordBreak: 'break-word', pointerEvents: 'none', color: m.color, fontSize: m.size, filter: whiteEdge(m.color),
+          }}
+        >
+          {m.text}
+        </div>
+      )))}
+
+      {/* The note you would move: outlined, with its delete button on the corner */}
+      {activeNote && (
+        <svg data-demo-ui="true" aria-hidden="true" style={{ position: 'fixed', left: 0, top: 0, width: '100vw', height: '100vh', overflow: 'visible', pointerEvents: 'none', zIndex: 8870 }}>
+          <rect x={activeNote.left - 4} y={activeNote.top - 4} width={activeNote.width + 8} height={activeNote.height + 8} rx="4" fill="none" stroke="rgba(255,69,0,0.6)" strokeDasharray="4 3" />
+          <g transform={`translate(${Math.min(activeNote.right + 6, window.innerWidth - NOTE_DELETE_R - 2)} ${Math.max(activeNote.top - 2, TOOLBAR_H + NOTE_DELETE_R + 2)})`}>
+            <circle r={overDelete ? NOTE_DELETE_R + 1 : NOTE_DELETE_R} fill={UI.accent} stroke="#fff" strokeWidth="1.5" />
+            <path d="M-2.75 -2.75L2.75 2.75M2.75 -2.75L-2.75 2.75" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
+          </g>
+        </svg>
+      )}
+
+      {tool === 'size' && hover && (
+        <>
+          <ElementHighlight box={hover} />
+          <Chip x={hover.x} y={Math.max(TOOLBAR_H + 4, hover.y - 26)}>{dims({ width: hover.w, height: hover.h })}</Chip>
+        </>
+      )}
+
+      {editing && (
+        <input
+          data-demo-ui="true" autoFocus aria-label="Note text" value={editing.text} spellCheck={false} placeholder="Write a note…"
+          size={Math.max(12, editing.text.length + 1)}
+          onChange={(e) => setEditing({ at: editing.at, text: e.target.value })}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') finishNote(true);
+            else if (e.key === 'Escape') finishNote(false);
+          }}
+          onBlur={() => finishNote(true)}
+          style={{
+            ...NOTE_STYLE, position: 'fixed', left: editing.at.x - sx, top: editing.at.y - sy, zIndex: 8900,
+            margin: 0, padding: 0, border: 'none', outline: 'none', background: 'transparent', color, caretColor: color, fontSize: noteSize,
+          }}
+        />
+      )}
+    </>
+  );
+}
+
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
 export function DemoOverlay() {
@@ -879,6 +1420,7 @@ export function DemoOverlay() {
       {demo.inspect && <InspectOverlay setCursor={demo.setCursor} />}
       {demo.measure && <MeasureOverlay setCursor={demo.setCursor} />}
       {demo.guides  && <GuidesOverlay setCursor={demo.setCursor} />}
+      {demo.annotate && <AnnotateOverlay setCursor={demo.setCursor} />}
     </>
   );
 }

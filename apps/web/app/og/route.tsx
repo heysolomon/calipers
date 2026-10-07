@@ -56,8 +56,8 @@ export function GET(req: NextRequest) {
               width: '10px',
               height: '10px',
               borderRadius: '50%',
-              background: '#4A9EFF',
-              boxShadow: '0 0 12px rgba(74,158,255,0.6)',
+              background: '#FF4500',
+              boxShadow: '0 0 12px rgba(255,69,0,0.6)',
             }}
           />
           <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '18px', fontWeight: 500 }}>
