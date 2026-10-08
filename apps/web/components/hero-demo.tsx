@@ -56,9 +56,12 @@ type Mode = 'inspect' | 'measure' | 'guides' | 'annotate';
 const MODES: Mode[] = ['inspect', 'measure', 'guides', 'annotate'];
 /** Centres of things on the mock toolbar. */
 const MODE_BTN: Record<Mode, { x: number; y: number }> = {
-  inspect: { x: 267, y: 56 }, measure: { x: 293, y: 56 }, guides: { x: 319, y: 56 }, annotate: { x: 345, y: 56 },
+  inspect: { x: 254, y: 56 }, measure: { x: 280, y: 56 }, guides: { x: 306, y: 56 }, annotate: { x: 332, y: 56 },
 };
-const CAMERA_BTN = { x: 378, y: 56 };
+/** Capture a region: next to the whole-view camera on the toolbar. */
+const REGION_BTN = { x: 389, y: 56 };
+/** What the demo captures: the marked-up card, its arrow and the note. */
+const REGION: Box = { x: 236, y: 170, w: 372, h: 222 };
 
 // Details panel geometry, so the script can click its "Colours" header.
 const PANEL = { x: WORD.x - 24, y: WORD.y + WORD.h + 8, w: 168 };
@@ -97,7 +100,8 @@ interface Frame {
   panel: false | 'type' | 'colours';
   pins: Pin[];
   lines: Line[];
-  preview: { x: number; y: number; snapped: boolean; dur: number } | null;
+  /** The placement preview follows the cursor; `at` holds it on an edge while it is snapped. */
+  preview: { snapped: boolean; at?: { x: number; y: number } } | null;
   guideV: number | null;
   guideH: { y: number; dur: number; strong: boolean } | null;
   hint: string | null;
@@ -109,6 +113,10 @@ interface Frame {
   sizeMark: boolean;
   toast: { text: string; ok: boolean } | null;
   flash: number;
+  /** Region capture is switched on (its toolbar button is lit). */
+  capturing: boolean;
+  /** The rectangle being dragged out, with how long the current step of the drag takes. */
+  region: (Box & { dur: number }) | null;
   fading: boolean;
 }
 
@@ -120,7 +128,7 @@ const START: Frame = {
   pins: [], lines: [],
   preview: null, guideV: null, guideH: null, hint: null,
   tool: 'size', colour: ACCENT, arrow: false, arrowHandles: false, note: '', sizeMark: false,
-  toast: null, flash: 0,
+  toast: null, flash: 0, capturing: false, region: null,
   fading: false,
 };
 
@@ -213,12 +221,12 @@ const MODE_ICON: Record<Mode, ReactNode> = {
   annotate: <svg {...ICON}><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>,
 };
 
-function Toolbar({ mode }: { mode: Mode }) {
+function Toolbar({ mode, capturing }: { mode: Mode; capturing: boolean }) {
   const slot: CSSProperties = { width: 24, height: 24, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 };
   const rule = <span style={{ width: 1, height: 12, background: BORDER, margin: '0 3px' }} />;
   return (
     <div style={{
-      position: 'absolute', left: 222, top: 40, height: 32, padding: '0 5px', display: 'flex', alignItems: 'center',
+      position: 'absolute', left: 210, top: 40, height: 32, padding: '0 5px', display: 'flex', alignItems: 'center',
       background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 16, boxShadow: SHADOW, color: '#737373',
     }}>
       <span style={{ ...slot, width: 20, color: '#000' }}>
@@ -236,6 +244,9 @@ function Toolbar({ mode }: { mode: Mode }) {
       ))}
       {rule}
       <span style={slot}><svg {...ICON}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg></span>
+      <span style={{ ...slot, background: capturing ? 'rgba(255,69,0,0.12)' : 'transparent', color: capturing ? ACCENT : '#737373', transition: 'background 0.15s ease, color 0.15s ease' }}>
+        <svg {...ICON}><path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" /><path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" /><rect x="7" y="7" width="10" height="10" rx="1" /></svg>
+      </span>
       <span style={slot}><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="5.5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="18.5" cy="12" r="1.6" /></svg></span>
     </div>
   );
@@ -364,13 +375,18 @@ function BrowserBar({ width }: { width: number }) {
 
 class Cancelled extends Error {}
 
-export function HeroDemo() {
+export type DemoScene = 'inspect' | 'measure' | 'guides' | 'annotate' | 'screenshot';
+const ALL_SCENES: DemoScene[] = ['inspect', 'measure', 'guides', 'annotate', 'screenshot'];
+
+/** `scenes` plays only part of the script, in the usual order; the homepage plays all of it. */
+export function HeroDemo({ scenes = ALL_SCENES }: { scenes?: DemoScene[] }) {
   const reduce = useReducedMotion();
   const wrap = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(W);
   // Where the window sits on the stage when it is too narrow to show all of it.
   const pan = useRef(0);
   const [f, setF] = useState<Frame>(START);
+  const sceneKey = scenes.join(',');
   // Colours follow the theme through CSS variables; this is only for the colour value the Inspect panel prints.
   const [dark, setDark] = useState(false);
   // Only play while it can be seen: in the viewport and in a visible tab.
@@ -425,21 +441,27 @@ export function HeroDemo() {
       await wait(260);
     };
     /** Go up to the toolbar and pick a mode. On the controls the mode goes quiet, as in the extension. */
-    const pick = async (mode: Mode): Promise<void> => {
+    const pick = async (mode: Mode, settle = 260): Promise<void> => {
       patch({ hover: null, wordHover: false, preview: null, hint: null });
       await move(MODE_BTN[mode].x, MODE_BTN[mode].y, 0.5, 'pointer');
       await wait(100);
       await click();
       patch({ mode, wordSelected: false, panel: false });
-      await wait(260);
+      await wait(settle);
     };
 
+    const want = (scene: DemoScene): boolean => sceneKey.split(',').includes(scene);
+
     const run = async (): Promise<void> => {
+      let loops = 0;
       for (;;) {
+        // Counts the loops on the element, so a recording can start and stop on a loop boundary.
+        wrap.current?.setAttribute('data-loop', String(++loops));
         setF(START);
         await wait(500);
 
         // ── Inspect ────────────────────────────────────────────────────────────
+        if (want('inspect')) {
         // Roam: the highlight glides from element to element, each with its size.
         await hoverOn(CARD_C, 0.5);
         await wait(300);
@@ -447,10 +469,15 @@ export function HeroDemo() {
         await wait(250);
         await hoverOn(HEADING, 0.5, { x: 60, y: 18 });
         await wait(450);
-        // Over text the cursor becomes an I-beam and the word takes the accent.
-        await move(WORD.x + 16, WORD.y + 9, 0.4, 'text');
-        patch({ hover: null, wordHover: true });
-        await wait(380);
+        // Down to a word. The highlight stays on the heading until the pointer is on the word,
+        // then glides to it and shrinks to fit, and the word takes the accent as it lands.
+        await move(WORD.x + 16, WORD.y + 9, 0.45, 'text');
+        patch({ hover: WORD });
+        await wait(230);
+        patch({ wordHover: true });
+        await wait(120);
+        patch({ hover: null });
+        await wait(300);
         await click();
         patch({ wordSelected: true, panel: 'type' });
         await wait(1500);
@@ -462,7 +489,9 @@ export function HeroDemo() {
         patch({ panel: 'colours' });
         await wait(1500);
 
+        }
         // ── Measure ────────────────────────────────────────────────────────────
+        if (want('measure')) {
         await pick('measure');
         await hoverOn(CARD_A, 0.5);
         await click();
@@ -489,24 +518,24 @@ export function HeroDemo() {
         look('crosshair');
         await wait(900);
 
+        }
         // ── Guides ─────────────────────────────────────────────────────────────
-        await pick('guides');
-        patch({ pins: [], lines: [], preview: { x: 300, y: 130, snapped: false, dur: 0 } });
-        await move(300, 130, 0.4);
-        patch({ preview: { x: 110, y: 176, snapped: false, dur: 0.6 * PACE } });
-        await move(110, 176, 0.6);
-        // Within reach of the card's corner: both lines settle onto its edges.
-        patch({ preview: { x: CARD_A.x, y: CARD_A.y, snapped: true, dur: 0.22 * PACE } });
-        await move(60, 195, 0.22);
+        if (want('guides')) {
+        await pick('guides', 90);
+        // Straight from the toolbar to the card's corner in one motion. The preview lines are the
+        // cursor's own crosshair extended, so they stay exactly on it the whole way.
+        patch({ pins: [], lines: [], preview: { snapped: false } });
+        await move(CARD_A.x, CARD_A.y, 0.95);
+        // On the corner the lines lock to the card's edges and brighten.
+        patch({ preview: { snapped: true } });
         await wait(550);
         await click();
         patch({ guideV: CARD_A.x, guideH: { y: CARD_A.y, dur: 0, strong: false }, preview: null });
         await wait(300);
         // Move off, then return to the guide: delete cursor, and a hint about what a click or a drag does.
-        patch({ preview: { x: 330, y: 150, snapped: false, dur: 0.45 * PACE } });
+        patch({ preview: { snapped: false } });
         await move(330, 150, 0.45);
         await wait(150);
-        patch({ preview: { x: 330, y: CARD_A.y, snapped: false, dur: 0.35 * PACE } });
         await move(330, CARD_A.y, 0.35);
         patch({ preview: null, hint: 'Click to delete · Drag to move', guideH: { y: CARD_A.y, dur: 0, strong: true } });
         look('delete');
@@ -516,13 +545,15 @@ export function HeroDemo() {
         patch({ hint: null, guideH: { y: bottom - 14, dur: 0.6 * PACE, strong: true } });
         await move(330, bottom - 14, 0.6, 'move');
         patch({ guideH: { y: bottom, dur: 0.2 * PACE, strong: true } });
-        await move(330, bottom - 4, 0.2, 'move');
+        await move(330, bottom, 0.2, 'move');
         await wait(500);
         patch({ guideH: { y: bottom, dur: 0, strong: false } });
         look('delete');
         await wait(500);
 
+        }
         // ── Annotate ───────────────────────────────────────────────────────────
+        if (want('annotate')) {
         await pick('annotate');
         await wait(250);
         // Size callout on a card
@@ -564,13 +595,27 @@ export function HeroDemo() {
         }
         await wait(500);
 
-        // ── Screenshot ─────────────────────────────────────────────────────────
-        await move(CAMERA_BTN.x, CAMERA_BTN.y, 0.5, 'pointer');
+        }
+        // ── Screenshot: drag out a region ───────────────────────────────────────
+        if (want('screenshot')) {
+        await move(REGION_BTN.x, REGION_BTN.y, 0.5, 'pointer');
         await click();
-        setF((prev) => ({ ...prev, flash: prev.flash + 1 }));
+        patch({ capturing: true });
+        await wait(250);
+        await move(REGION.x, REGION.y, 0.55);
+        await wait(150);
+        // Press, then drag to the opposite corner; the box grows with the cursor.
+        patch({ region: { x: REGION.x, y: REGION.y, w: 0, h: 0, dur: 0 } });
+        await wait(60);
+        patch({ region: { ...REGION, dur: 0.75 * PACE } });
+        await move(REGION.x + REGION.w, REGION.y + REGION.h, 0.75);
+        await wait(380);
+        // Released: that area is captured, and selection mode ends.
+        setF((prev) => ({ ...prev, flash: prev.flash + 1, region: null, capturing: false }));
         await wait(250);
         toast('Screenshot saved', true);
         await wait(2200);
+        }
 
         patch({ fading: true });
         await wait(420);
@@ -579,7 +624,7 @@ export function HeroDemo() {
 
     run().catch((err) => { if (!(err instanceof Cancelled)) throw err; });
     return () => { cancelled = true; };
-  }, [reduce]);
+  }, [reduce, sceneKey]);
 
   const onControls = f.cursor.y < 80 || (f.mode === 'annotate' && f.cursor.y < TRAY.y + TRAY.h && f.cursor.x > TRAY.x && f.cursor.x < TRAY.x + TRAY.w);
   // The curve's control point: on the line while straight, pulled out so the curve passes through the bend handle.
@@ -593,6 +638,9 @@ export function HeroDemo() {
     position: 'absolute', background: ACCENT, opacity: strong ? 0.85 : 0.5, transition: 'opacity 0.15s ease',
     ...(axis === 'h' ? { left: 0, right: 0, top: at, height: 1 } : { top: 28, bottom: 0, left: at, width: 1 }),
   });
+  const previewAt = f.preview?.at ?? { x: f.cursor.x, y: f.cursor.y };
+  // Hidden over the toolbar, as in the extension, and whenever nothing is being placed.
+  const previewOpacity = f.preview && !onControls ? (f.preview.snapped ? 0.85 : 0.5) : 0;
   const hoverIsPinned = !!f.hover && f.pins.some((p) => BOXES[p] === f.hover);
   const textColour = dark ? '#a3a3a3' : '#5c5c5c';
 
@@ -610,7 +658,7 @@ export function HeroDemo() {
     <div
       ref={wrap}
       role="img"
-      aria-label="Animated simulation of Raval in a browser window: inspecting elements and a word, reading its typography and colours, measuring gaps between cards and unpinning one, placing a guide that snaps to edges and dragging it, annotating with a size callout, an arrow and a note, and taking a screenshot."
+      aria-label="Animated simulation of Raval in a browser window: inspecting elements and a word, reading its typography and colours, measuring gaps between cards and unpinning one, placing a guide that snaps to edges and dragging it, annotating with a size callout, an arrow and a note, and dragging out a region to save as a screenshot."
       // The interactive demo should not treat this picture as part of the page.
       data-demo-ui="true"
       style={{
@@ -644,6 +692,7 @@ export function HeroDemo() {
               position: 'absolute', left: WORD.x - 56, top: 0, width: WORD.w, height: WORD.h, textAlign: 'center',
               background: f.wordHover || f.wordSelected ? ACCENT : 'transparent', color: f.wordHover || f.wordSelected ? '#fff' : 'inherit',
               boxShadow: f.wordHover || f.wordSelected ? `0 0 0 1.5px ${ACCENT}` : 'none', borderRadius: 3,
+              transition: 'background 0.14s ease, color 0.14s ease, box-shadow 0.14s ease',
             }}>
               team
             </span>
@@ -666,12 +715,10 @@ export function HeroDemo() {
           {f.guideH && (
             <motion.div initial={false} animate={{ y: f.guideH.y }} transition={{ duration: f.guideH.dur, ease: EASE }} style={guideLine('h', f.guideH.strong) as MotionStyle} />
           )}
-          {f.preview && (
-            <>
-              <motion.div initial={false} animate={{ y: f.preview.y }} transition={{ duration: f.preview.dur, ease: EASE }} style={guideLine('h', f.preview.snapped) as MotionStyle} />
-              <motion.div initial={false} animate={{ x: f.preview.x }} transition={{ duration: f.preview.dur, ease: EASE }} style={guideLine('v', f.preview.snapped) as MotionStyle} />
-            </>
-          )}
+          {/* Always mounted and always tracking the cursor, only shown while placing: a preview
+              that was created at its destination would sit there waiting for the cursor to arrive. */}
+          <motion.div initial={false} animate={{ y: previewAt.y }} transition={{ duration: f.cursor.dur, ease: EASE }} style={{ ...guideLine('h', !!f.preview?.snapped), opacity: previewOpacity } as MotionStyle} />
+          <motion.div initial={false} animate={{ x: previewAt.x }} transition={{ duration: f.cursor.dur, ease: EASE }} style={{ ...guideLine('v', !!f.preview?.snapped), opacity: previewOpacity } as MotionStyle} />
           {f.hint && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }} style={{ ...chip, fontFamily: SANS, color: '#737373', left: f.cursor.x + 14, top: f.cursor.y + 14 } as MotionStyle}>
               {f.hint}
@@ -693,7 +740,8 @@ export function HeroDemo() {
           <AnimatePresence>
             {f.hover && !hoverIsPinned && <Highlight key="hover" box={f.hover} />}
           </AnimatePresence>
-          {f.hover && <div style={{ ...chip, left: f.hover.x + (hoverIsPinned ? 12 : 0), top: f.hover.y - 22 }}>{f.hover.w} × {f.hover.h}</div>}
+          {/* A word has no size label of its own; the details panel reports its paragraph. */}
+          {f.hover && f.hover !== WORD && <div style={{ ...chip, left: f.hover.x + (hoverIsPinned ? 12 : 0), top: f.hover.y - 22 }}>{f.hover.w} × {f.hover.h}</div>}
 
           {/* Annotate */}
           {f.sizeMark && (
@@ -751,7 +799,7 @@ export function HeroDemo() {
             )}
           </AnimatePresence>
 
-          <Toolbar mode={f.mode} />
+          <Toolbar mode={f.mode} capturing={f.capturing} />
           <AnimatePresence>{f.mode === 'annotate' && <Tray key="tray" tool={f.tool} colour={f.colour} />}</AnimatePresence>
 
           {/* Toast */}
@@ -768,9 +816,22 @@ export function HeroDemo() {
             )}
           </AnimatePresence>
 
-          {/* Screenshot flash */}
+          {/* Region capture: everything outside the box is dimmed while it is dragged out */}
+          {f.region && (
+            <motion.div
+              initial={false} animate={{ width: f.region.w, height: f.region.h }} transition={{ duration: f.region.dur, ease: EASE }}
+              style={{ position: 'absolute', left: f.region.x, top: f.region.y, boxSizing: 'border-box', border: `1.5px solid ${ACCENT}`, boxShadow: '0 0 0 2000px rgba(0,0,0,0.32)' }}
+            >
+              {/* The size is shown once the drag has reached its corner, when the number is true */}
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: f.region.w > 0 ? 1 : 0 }} transition={{ duration: 0.12, delay: f.region.dur }} style={{ ...chip, right: 0, top: '100%', marginTop: 6 } as MotionStyle}>
+                {REGION.w} × {REGION.h}
+              </motion.div>
+            </motion.div>
+          )}
+
+          {/* The captured area flashes */}
           {f.flash > 0 && (
-            <motion.div key={f.flash} initial={{ opacity: 0.7 }} animate={{ opacity: 0 }} transition={{ duration: 0.45, ease: 'easeOut' }} style={{ position: 'absolute', inset: '28px 0 0 0', background: '#fff' }} />
+            <motion.div key={f.flash} initial={{ opacity: 0.8 }} animate={{ opacity: 0 }} transition={{ duration: 0.45, ease: 'easeOut' }} style={{ position: 'absolute', left: REGION.x, top: REGION.y, width: REGION.w, height: REGION.h, background: '#fff' }} />
           )}
 
           {/* The cursor, with a ring on each click */}
