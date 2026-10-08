@@ -1,10 +1,11 @@
 {
   "name": "@raval/extension",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "private": true,
   "description": "Raval Chrome extension",
   "scripts": {
     "dev": "vite build --watch --mode development",
+    "dev:dials": "VITE_DIALS=1 vite build --watch --mode development",
     "build": "vite build",
     "build:firefox": "vite build --config vite.config.firefox.ts",
     "package": "node scripts-package.mjs",

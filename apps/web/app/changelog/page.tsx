@@ -26,9 +26,18 @@ const SECTION_ORDER: SectionName[] = ['Added', 'Changed', 'Fixed', 'Removed'];
 
 const entries: ChangelogEntry[] = [
   {
-    version: '0.3.1',
+    version: '0.3.2',
     date: null,
     preRelease: true,
+    sections: {
+      Fixed: [
+        'A motion tuning panel meant only for development was included in 0.3.1 by mistake. It is removed',
+      ],
+    },
+  },
+  {
+    version: '0.3.1',
+    date: '2026-10-08',
     sections: {
       Added: [
         'A welcome page opens after installing, with the three steps to get started and something to practise on',

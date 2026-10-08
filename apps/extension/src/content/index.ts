@@ -41,6 +41,14 @@ import { initCursor, destroyCursor } from './cursor';
 import { isRavalElement } from './utils';
 import { showErrorReport, showToast } from './labels';
 
+/**
+ * The motion tuning panel (DialKit) is a tool for whoever is working on Raval, never for
+ * users. It needs two things: a development build AND an explicit `pnpm dev:dials`. A plain
+ * `pnpm dev` build does not show it, so a development build that gets loaded or uploaded by
+ * mistake still has no panel. Production builds drop the code entirely.
+ */
+const DEV_DIALS = import.meta.env.MODE === 'development' && import.meta.env.VITE_DIALS === '1';
+
 // ─── Local state ──────────────────────────────────────────────────────────────
 
 let state: ExtensionState = { ...DEFAULT_STATE };
@@ -107,7 +115,7 @@ async function activate(mode: Mode): Promise<void> {
   setShowRulers(state.showRulers);
   activateMode(mode);
   initCursor();
-  if (import.meta.env.MODE === 'development') {
+  if (DEV_DIALS) {
     void import('./dev-dials').then((m) => m.mountDevDials());
   }
   document.addEventListener('click',   onGlobalInterceptClick, true);
@@ -126,7 +134,7 @@ function deactivate(): void {
   stopPersistLayer();
   destroyPersistLayer();
   destroyCursor();
-  if (import.meta.env.MODE === 'development') {
+  if (DEV_DIALS) {
     void import('./dev-dials').then((m) => m.unmountDevDials());
   }
   removeOverlay();

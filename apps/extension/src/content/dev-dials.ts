@@ -1,6 +1,6 @@
 /**
- * Dev-only DialKit panel for tuning motion live. Loaded via a dynamic import
- * gated on the build mode, so none of this ships in the production bundle.
+ * Dev-only DialKit panel for tuning motion live. Loaded only by `pnpm dev:dials`
+ * (see DEV_DIALS in index.ts); a plain dev build and every production build leave it out.
  */
 import { createDialKit, createDialRoot } from 'dialkit/vanilla';
 import dialCss from 'dialkit/vanilla/styles.css?inline';
