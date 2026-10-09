@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { SiteHeader } from '../../components/site-header';
 import { Footer } from '../../components/footer';
 import { buildPageMetadata } from '../../components/content-page';
-import { GITHUB_URL } from '../../lib/site';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'Changelog',
@@ -191,16 +190,7 @@ export default function ChangelogPage(): JSX.Element {
           >
             Keep a Changelog
           </Link>{' '}
-          format. Track upcoming work on the{' '}
-          <Link
-            href={`${GITHUB_URL}/blob/main/ROADMAP.md`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="lp-link"
-          >
-            roadmap
-          </Link>
-          .
+          format.
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '48px' }}>

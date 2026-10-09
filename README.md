@@ -128,7 +128,7 @@ Good first issues are labelled [`good first issue`](https://github.com/heysolomo
 
 ## Roadmap
 
-See [ROADMAP.md](ROADMAP.md) for planned features, or track progress on the [GitHub Projects board](https://github.com/heysolomon/raval/projects).
+Track planned work and progress on the [GitHub Projects board](https://github.com/heysolomon/raval/projects).
 
 ---
 
