@@ -187,8 +187,15 @@
 
 html {
   color-scheme: light;
-  background: var(--frame);
+  /* The colour behind the page. On a phone it shows when the page is pulled past its top or
+     bottom, so it has to match the page. It only turns dark while the demo frame is open. */
+  background: var(--bg);
   scroll-behavior: smooth;
+}
+
+html[data-demo='open'],
+html[data-demo='open'] body {
+  background: var(--frame);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -206,7 +213,7 @@ html {
 }
 
 body {
-  background: var(--frame);
+  background: var(--bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;

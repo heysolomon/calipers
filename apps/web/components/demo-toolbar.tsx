@@ -79,8 +79,13 @@ export function DemoToolbar() {
         padding: '0 20px',
         userSelect: 'none',
         transform: demo.isOpen ? 'translateY(0)' : 'translateY(-100%)',
-        transition: reduceMotion ? 'none' : 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
-        willChange: reduceMotion ? 'auto' : 'transform',
+        // Truly hidden while closed (after it has slid away): it cannot peek in when a phone
+        // overscrolls, and its switches are out of the tab order and unseen by screen readers.
+        visibility: demo.isOpen ? 'visible' : 'hidden',
+        transition: reduceMotion ? 'none' : `transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear ${demo.isOpen ? '0s' : '0.35s'}`,
+        // The four switches are wider than a small phone; let the bar scroll sideways there.
+        overflowX: 'auto',
+        scrollbarWidth: 'none',
       }}
     >
       <img

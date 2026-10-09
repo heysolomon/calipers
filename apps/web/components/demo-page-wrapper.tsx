@@ -1,7 +1,7 @@
 'use client';
 import { useDemo } from './demo-provider';
 import { useReducedMotion } from 'framer-motion';
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 
 const EASE = 'cubic-bezier(0.4, 0, 0.2, 1)';
 const RADIUS = 12;
@@ -9,6 +9,14 @@ const RADIUS = 12;
 export function DemoPageWrapper({ children }: { children: ReactNode }) {
   const { isOpen } = useDemo();
   const reduceMotion = useReducedMotion();
+
+  // The dark frame colour belongs behind the page only while the demo is open (see globals.css).
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isOpen) root.dataset['demo'] = 'open';
+    else delete root.dataset['demo'];
+    return () => { delete root.dataset['demo']; };
+  }, [isOpen]);
 
   const transition = reduceMotion
     ? 'none'
@@ -24,7 +32,7 @@ export function DemoPageWrapper({ children }: { children: ReactNode }) {
   return (
     <div
       style={{
-        background: 'var(--frame)',
+        background: isOpen ? 'var(--frame)' : 'var(--bg)',
         paddingTop: isOpen ? '44px' : '0',
         transition: reduceMotion ? 'none' : `background 0.3s ease, padding-top 0.44s ${EASE}`,
         minHeight: '100vh',
