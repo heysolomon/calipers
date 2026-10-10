@@ -5,6 +5,7 @@
 
 /** While this class is on <html>, the page's own cursors are hidden in favour of the Raval mark. */
 export const HIDE_CURSOR_CLASS = 'raval-hide-cursor';
+export const TEXT_CURSOR_CLASS = 'raval-text-cursor';
 
 export interface OverlayElements {
   root: HTMLDivElement;
@@ -64,6 +65,10 @@ export function createOverlay(): OverlayElements {
       /* Links and buttons set their own cursor, which would show next to the crosshair. */
       html.${HIDE_CURSOR_CLASS}, html.${HIDE_CURSOR_CLASS} * {
         cursor: none !important;
+      }
+      /* Placing a note: the I-beam everywhere, not only where the page has text. */
+      html.${TEXT_CURSOR_CLASS}, html.${TEXT_CURSOR_CLASS} * {
+        cursor: text !important;
       }
     `;
     document.head.appendChild(base);

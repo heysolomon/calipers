@@ -1064,7 +1064,7 @@ function AnnotateOverlay({ setCursor }: { setCursor: (c: DemoCursor) => void }) 
   live.current = { tool, color, noteSize, marks, draft, editing, activeId };
 
   useEffect(() => {
-    setCursor(tool === 'note' || tool === 'pen' ? 'pen' : 'crosshair');
+    setCursor(tool === 'note' ? 'ibeam' : tool === 'pen' ? 'pen' : 'crosshair');
     setHover(null);
     setActiveId(null);
     setOverDelete(false);
@@ -1079,7 +1079,7 @@ function AnnotateOverlay({ setCursor }: { setCursor: (c: DemoCursor) => void }) 
       setMarks(next);
     };
     const add = (mark: Mark): void => change([...live.current.marks, mark]);
-    const baseCursor = (): DemoCursor => (live.current.tool === 'note' || live.current.tool === 'pen' ? 'pen' : 'crosshair');
+    const baseCursor = (): DemoCursor => (live.current.tool === 'note' ? 'ibeam' : live.current.tool === 'pen' ? 'pen' : 'crosshair');
 
     const noteRect = (id: number): DOMRect | null => noteEls.current.get(id)?.getBoundingClientRect() ?? null;
     const deleteCentre = (r: DOMRect): Pt => ({ x: Math.min(r.right + 6, window.innerWidth - NOTE_DELETE_R - 2), y: Math.max(r.top - 2, TOOLBAR_H + NOTE_DELETE_R + 2) });
@@ -1169,7 +1169,7 @@ function AnnotateOverlay({ setCursor }: { setCursor: (c: DemoCursor) => void }) 
         const id = del ? live.current.activeId : on ? noteAt(e.clientX, e.clientY)?.id ?? null : null;
         setActiveId(id);
         setOverDelete(del);
-        setCursor(del ? 'delete' : id !== null ? 'grab' : 'pen');
+        setCursor(del ? 'delete' : id !== null ? 'grab' : 'ibeam');
       }
     }
 
@@ -1184,7 +1184,7 @@ function AnnotateOverlay({ setCursor }: { setCursor: (c: DemoCursor) => void }) 
           change(all.filter((m) => m.id !== live.current.activeId));
           setActiveId(null);
           setOverDelete(false);
-          setCursor('pen');
+          setCursor('ibeam');
           swallowClick.current = true;
           e.preventDefault();
           return;

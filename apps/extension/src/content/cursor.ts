@@ -3,7 +3,7 @@
  * Minimal mark only (no live X/Y readout) so the page stays readable.
  */
 import { isRavalElement } from './utils';
-import { HIDE_CURSOR_CLASS } from './overlay';
+import { HIDE_CURSOR_CLASS, TEXT_CURSOR_CLASS } from './overlay';
 import { trackPointerTarget } from './pointer';
 
 const CURSOR_ID = 'raval-cursor';
@@ -12,7 +12,7 @@ let cursorEl: HTMLDivElement | null = null;
 const OFFSCREEN = -200;
 
 /** What the custom cursor should look like at the current pointer position. */
-export type CursorKind = 'crosshair' | 'text' | 'delete' | 'remove' | 'pen' | 'grab' | 'move-x' | 'move-y';
+export type CursorKind = 'crosshair' | 'text' | 'ibeam' | 'delete' | 'remove' | 'pen' | 'grab' | 'move-x' | 'move-y';
 
 /**
  * Modes can override cursor appearance (e.g. colour picker shows a native
@@ -33,6 +33,15 @@ function hideNativeCursor(hide: boolean): void {
   document.documentElement.classList.toggle(HIDE_CURSOR_CLASS, hide);
 }
 
+let textForced = false;
+
+/** Ask for the native I-beam wherever the pointer is ('text' only shows it where the page has text). */
+function forceTextCursor(force: boolean): void {
+  if (textForced === force) return;
+  textForced = force;
+  document.documentElement.classList.toggle(TEXT_CURSOR_CLASS, force);
+}
+
 /** Move with a transform (no layout), written in the event itself so the mark never trails by a frame. */
 function place(x: number, y: number): void {
   if (cursorEl) cursorEl.style.transform = `translate3d(${x}px, ${y}px, 0)`;
@@ -42,7 +51,7 @@ let shownKind: CursorKind | null = null;
 let last = { x: OFFSCREEN, y: OFFSCREEN, overUI: true };
 
 const GLYPH_OF: Record<CursorKind, string | null> = {
-  crosshair: 'crosshair', text: null, delete: 'delete', remove: 'remove', pen: 'pen', grab: 'grab', 'move-x': 'move', 'move-y': 'move',
+  crosshair: 'crosshair', text: null, ibeam: null, delete: 'delete', remove: 'remove', pen: 'pen', grab: 'grab', 'move-x': 'move', 'move-y': 'move',
 };
 
 /** Swap the visible mark. Glyphs cross-fade and scale so a change of meaning is noticeable. */
@@ -62,12 +71,14 @@ function apply(): void {
   if (last.overUI) {
     place(OFFSCREEN, OFFSCREEN);
     hideNativeCursor(false);
+    forceTextCursor(false);
     return;
   }
 
   const kind = resolveCursor ? resolveCursor() : 'crosshair';
   setKind(kind);
-  if (kind === 'text') {
+  forceTextCursor(kind === 'ibeam');
+  if (kind === 'text' || kind === 'ibeam') {
     // Hide the mark and defer to the browser's native I-beam.
     place(OFFSCREEN, OFFSCREEN);
     hideNativeCursor(false);
@@ -174,4 +185,5 @@ export function destroyCursor(): void {
   resolveCursor = null;
   hideNativeCursor(false);
   nativeHidden = null;
+  forceTextCursor(false);
 }

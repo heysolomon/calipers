@@ -240,12 +240,12 @@ export function initAnnotateMode(o: OverlayElements): void {
   document.addEventListener('mouseup', onMouseUp, true);
   document.addEventListener('keydown', onKeyDown, true);
   document.addEventListener('contextmenu', onContextMenu, true);
-  // Writing tools get a pen; an arrow you can grab gets a handle; otherwise the crosshair.
+  // A note gets the text I-beam, the pen a pencil; an arrow you can grab gets a handle; otherwise the crosshair.
   setCursorResolver(() => {
     if (state.tool === 'note') {
       if (overNoteDelete) return 'delete';
       if (noteDrag || activeNoteId) return 'grab';
-      return 'pen';
+      return 'ibeam';
     }
     if (state.tool === 'pen') return 'pen';
     if (state.tool === 'arrow' && (arrowDrag || activeArrowId)) return 'grab';

@@ -77,6 +77,17 @@ const TOOLS: Tool[] = ['size', 'note', 'arrow', 'pen'];
 const TOOL_LABEL: Record<Tool, string> = { size: 'Callout', note: 'Note', arrow: 'Arrow', pen: 'Pen' };
 const TOOL_W = (TRAY.w - 16) / 4;
 const toolBtn = (t: Tool): { x: number; y: number } => ({ x: TRAY.x + 8 + TOOL_W * (TOOLS.indexOf(t) + 0.5), y: TRAY.y + 8 + 9 });
+/**
+ * Neue Plak's letters sit above the middle of its line box, so a label centred by the browser
+ * looks too high in a tab. This moves 7.5px tab text down to where its capitals are centred.
+ * It is applied as a transform: an offset in layout (`top`) snaps to whole pixels and can only
+ * land a little high or a little low.
+ */
+const TAB_NUDGE = 1.55;
+// Capitals-only labels (HEX, RGB, HSL) have no descenders to balance, so they need less.
+const CAPS_NUDGE = 1.2;
+// Flex centres a glyph by its advance width, not its ink: each badge letter gets its own optical offset.
+const BADGE_NUDGE: Record<string, [number, number]> = { A: [0, 0.98], B: [-0.26, 0.98], C: [0, 0.98] };
 const SWATCHES = [ACCENT, '#FF2D85', BLUE, '#16A34A', '#7C3AED', '#111111'];
 const swatchAt = (i: number): { x: number; y: number } => ({ x: TRAY.x + 16 + i * 23.6, y: TRAY.y + 39 });
 
@@ -148,23 +159,35 @@ const chip: CSSProperties = {
   letterSpacing: '-0.01em', padding: '2px 6px', whiteSpace: 'nowrap',
 };
 
+/** How a highlight leaves. `true` (from AnimatePresence's `custom`) means at once: something has just taken its place. */
+const LEAVE = { gone: (replaced: boolean) => ({ opacity: 0, transition: { duration: replaced ? 0 : 0.2 } }) };
+const HOVER_LOOK = { backgroundColor: 'rgba(255,69,0,0.06)', borderColor: 'rgba(255,69,0,0.75)' };
+const SELECTED_LOOK = { backgroundColor: 'rgba(255,69,0,0.14)', borderColor: 'rgba(255,69,0,1)' };
+
+/**
+ * The hover highlight fades in and glides between elements. A selected one is created by a
+ * click on something that was already highlighted, so it starts fully visible in the hover
+ * look and only deepens. Fading it in from nothing, while the hover one faded out beneath it,
+ * read as a blink, as if the click had landed twice.
+ */
 function Highlight({ box, selected }: { box: Box; selected?: boolean }) {
+  const place = { x: box.x, y: box.y, width: box.w, height: box.h };
   return (
     <motion.div
-      initial={{ opacity: 0, x: box.x, y: box.y, width: box.w, height: box.h }}
-      animate={{ opacity: 1, x: box.x, y: box.y, width: box.w, height: box.h }}
-      exit={{ opacity: 0, transition: { duration: 0.2 } }}
-      transition={{ ...SPRING, opacity: { duration: 0.12 } }}
+      initial={{ opacity: selected ? 1 : 0, ...place, ...HOVER_LOOK }}
+      animate={{ opacity: 1, ...place, ...(selected ? SELECTED_LOOK : HOVER_LOOK) }}
+      variants={LEAVE} exit="gone"
+      transition={{ ...SPRING, opacity: { duration: 0.12 }, backgroundColor: { duration: 0.18 }, borderColor: { duration: 0.18 } }}
       style={{
         position: 'absolute', left: 0, top: 0, boxSizing: 'border-box', borderRadius: 3,
-        background: `rgba(255,69,0,${selected ? 0.14 : 0.06})`,
-        border: `${selected ? 1.5 : 1}px solid rgba(255,69,0,${selected ? 1 : 0.75})`,
+        borderStyle: 'solid', borderWidth: selected ? 1.5 : 1,
       }}
     />
   );
 }
 
 function Badge({ box, letter }: { box: Box; letter: string }) {
+  const [dx, dy] = BADGE_NUDGE[letter] ?? [0, 0];
   return (
     <motion.div
       initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }} transition={{ duration: 0.16, ease: 'easeOut' }}
@@ -175,7 +198,7 @@ function Badge({ box, letter }: { box: Box; letter: string }) {
         fontFamily: SANS, fontSize: 8.5, fontWeight: 600, lineHeight: 1,
       }}
     >
-      {letter}
+      <span style={{ display: 'inline-block', transform: `translate(${dx}px, ${dy}px)` }}>{letter}</span>
     </motion.div>
   );
 }
@@ -264,7 +287,7 @@ function Tray({ tool, colour }: { tool: Tool; colour: string }) {
       <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', height: 18, background: 'rgba(0,0,0,0.05)', borderRadius: 5, padding: 1.5, boxSizing: 'border-box' }}>
         <div style={{ position: 'absolute', top: 1.5, bottom: 1.5, width: `calc((100% - 3px) / 4)`, left: `calc(1.5px + ${idx} * ((100% - 3px) / 4))`, background: '#fff', borderRadius: 4, boxShadow: '0 1px 2px rgba(0,0,0,0.08)', transition: 'left 0.22s cubic-bezier(0.4, 0, 0.2, 1)' }} />
         {TOOLS.map((t) => (
-          <span key={t} style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7.5, fontWeight: 500, color: t === tool ? '#000' : '#737373', transition: 'color 0.22s ease' }}>{TOOL_LABEL[t]}</span>
+          <span key={t} style={{ position: 'relative', transform: `translateY(${TAB_NUDGE}px)`, zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7.5, fontWeight: 500, lineHeight: 1, color: t === tool ? '#000' : '#737373', transition: 'color 0.22s ease' }}>{TOOL_LABEL[t]}</span>
         ))}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 2px', marginTop: 8 }}>
@@ -286,7 +309,7 @@ function CursorGlyph({ kind }: { kind: CursorKind }) {
     return <svg width="16" height="18" viewBox="0 0 16 18" style={{ display: 'block' }}><path d="M1.5 1.2v13.2l3.6-3.3 2.3 5.3 2.2-.95-2.3-5.25h4.9L1.5 1.2z" fill="#000" stroke="#fff" strokeWidth="1.2" strokeLinejoin="round" /></svg>;
   }
   if (kind === 'text') {
-    return <svg width="10" height="18" viewBox="-5 -9 10 18" style={{ display: 'block', marginLeft: -5, marginTop: -9 }}><path d="M-3 -8h2a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-2M3 -8h-2a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h2" stroke="#000" strokeWidth="1.3" fill="none" strokeLinecap="round" /></svg>;
+    return <svg width="10" height="18" viewBox="-5 -9 10 18" style={{ display: 'block', marginLeft: -5, marginTop: -9 }}><path d="M-3 -8h2a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-2M3 -8h-2a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h2" stroke="var(--hd-ink)" strokeWidth="1.3" fill="none" strokeLinecap="round" /></svg>;
   }
   if (kind === 'pen') {
     const d = 'M0 0L1.3 -4.4L10.2 -13.3a1.9 1.9 0 0 1 2.7 0l0.4 0.4a1.9 1.9 0 0 1 0 2.7L4.4 -1.3Z';
@@ -385,6 +408,7 @@ export function HeroDemo({ scenes = ALL_SCENES }: { scenes?: DemoScene[] }) {
   const [width, setWidth] = useState(W);
   // Where the window sits on the stage when it is too narrow to show all of it.
   const pan = useRef(0);
+  const lastHover = useRef<Box | null>(null);
   const [f, setF] = useState<Frame>(START);
   const sceneKey = scenes.join(',');
   // Colours follow the theme through CSS variables; this is only for the colour value the Inspect panel prints.
@@ -542,10 +566,9 @@ export function HeroDemo({ scenes = ALL_SCENES }: { scenes?: DemoScene[] }) {
         await wait(1000);
         // Drag it down; it catches the bottom edge of the cards.
         const bottom = CARD_A.y + CARD_A.h;
-        patch({ hint: null, guideH: { y: bottom - 14, dur: 0.6 * PACE, strong: true } });
-        await move(330, bottom - 14, 0.6, 'move');
-        patch({ guideH: { y: bottom, dur: 0.2 * PACE, strong: true } });
-        await move(330, bottom, 0.2, 'move');
+        // One continuous drag: the guide and the cursor travel together and stop on the edge.
+        patch({ hint: null, guideH: { y: bottom, dur: 0.85 * PACE, strong: true } });
+        await move(330, bottom, 0.85, 'move');
         await wait(500);
         patch({ guideH: { y: bottom, dur: 0, strong: false } });
         look('delete');
@@ -587,7 +610,7 @@ export function HeroDemo({ scenes = ALL_SCENES }: { scenes?: DemoScene[] }) {
         await click();
         patch({ colour: BLUE });
         await wait(300);
-        await move(504, 372, 0.45, 'pen');
+        await move(504, 372, 0.45, 'text');
         await click();
         for (let i = 1; i <= NOTE_TEXT.length; i++) {
           patch({ note: NOTE_TEXT.slice(0, i) });
@@ -641,6 +664,10 @@ export function HeroDemo({ scenes = ALL_SCENES }: { scenes?: DemoScene[] }) {
   const previewAt = f.preview?.at ?? { x: f.cursor.x, y: f.cursor.y };
   // Hidden over the toolbar, as in the extension, and whenever nothing is being placed.
   const previewOpacity = f.preview && !onControls ? (f.preview.snapped ? 0.85 : 0.5) : 0;
+  // When a click turns the hovered element into a pinned or marked one, the hover highlight
+  // goes at once: the new highlight is already drawn in the same place.
+  if (f.hover) lastHover.current = f.hover;
+  const hoverReplaced = !f.hover && !!lastHover.current && (f.pins.some((p) => BOXES[p] === lastHover.current) || (f.sizeMark && lastHover.current === CARD_B));
   const hoverIsPinned = !!f.hover && f.pins.some((p) => BOXES[p] === f.hover);
   const textColour = dark ? '#a3a3a3' : '#5c5c5c';
 
@@ -737,7 +764,7 @@ export function HeroDemo({ scenes = ALL_SCENES }: { scenes?: DemoScene[] }) {
           </AnimatePresence>
 
           {/* Hover highlight and the size of what is under the pointer */}
-          <AnimatePresence>
+          <AnimatePresence custom={hoverReplaced}>
             {f.hover && !hoverIsPinned && <Highlight key="hover" box={f.hover} />}
           </AnimatePresence>
           {/* A word has no size label of its own; the details panel reports its paragraph. */}
@@ -745,11 +772,14 @@ export function HeroDemo({ scenes = ALL_SCENES }: { scenes?: DemoScene[] }) {
 
           {/* Annotate */}
           {f.sizeMark && (
-            <motion.svg initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} width={W} height={H} style={{ position: 'absolute', left: 0, top: 0, overflow: 'visible' }}>
+            <svg width={W} height={H} style={{ position: 'absolute', left: 0, top: 0, overflow: 'visible' }}>
+              {/* The box is already highlighted when it is clicked, so the callout's box is there at once; only its measurement fades in. */}
               <rect x={CARD_B.x} y={CARD_B.y} width={CARD_B.w} height={CARD_B.h} rx="2" fill="rgba(255,69,0,0.12)" stroke={ACCENT} strokeWidth="1.5" />
-              <path d={`M${CARD_B.x} ${CARD_B.y - 10}H${CARD_B.x + CARD_B.w}M${CARD_B.x} ${CARD_B.y - 13}v6M${CARD_B.x + CARD_B.w} ${CARD_B.y - 13}v6`} stroke={ACCENT} strokeWidth="1.2" strokeLinecap="round" />
-              <text x={CARD_B.x + CARD_B.w / 2} y={CARD_B.y - 14} textAnchor="middle" fill={ACCENT} fontFamily={MONO} fontSize="9" fontWeight="600">{CARD_B.w}</text>
-            </motion.svg>
+              <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+                <path d={`M${CARD_B.x} ${CARD_B.y - 10}H${CARD_B.x + CARD_B.w}M${CARD_B.x} ${CARD_B.y - 13}v6M${CARD_B.x + CARD_B.w} ${CARD_B.y - 13}v6`} stroke={ACCENT} strokeWidth="1.2" strokeLinecap="round" />
+                <text x={CARD_B.x + CARD_B.w / 2} y={CARD_B.y - 14} textAnchor="middle" fill={ACCENT} fontFamily={MONO} fontSize="9" fontWeight="600">{CARD_B.w}</text>
+              </motion.g>
+            </svg>
           )}
           {f.arrow && (
             <svg width={W} height={H} style={{ position: 'absolute', left: 0, top: 0, overflow: 'visible' }} fill="none" stroke={ACCENT} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -789,7 +819,7 @@ export function HeroDemo({ scenes = ALL_SCENES }: { scenes?: DemoScene[] }) {
                 <PanelSection title="Colours" open={f.panel === 'colours'} summary={<span style={{ width: 8, height: 8, borderRadius: '50%', background: textColour, border: `1px solid ${BORDER}` }} />}>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', height: 16, background: 'rgba(0,0,0,0.05)', borderRadius: 5, padding: 1.5, boxSizing: 'border-box', marginBottom: 5, fontSize: 7.5, fontWeight: 500 }}>
                     {['HEX', 'RGB', 'HSL'].map((t, i) => (
-                      <span key={t} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, background: i === 0 ? '#fff' : 'transparent', boxShadow: i === 0 ? '0 1px 2px rgba(0,0,0,0.08)' : 'none', color: i === 0 ? '#000' : '#737373' }}>{t}</span>
+                      <span key={t} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, background: i === 0 ? '#fff' : 'transparent', boxShadow: i === 0 ? '0 1px 2px rgba(0,0,0,0.08)' : 'none', color: i === 0 ? '#000' : '#737373', lineHeight: 1 }}><span style={{ display: 'inline-block', transform: `translateY(${CAPS_NUDGE}px)` }}>{t}</span></span>
                     ))}
                   </div>
                   <PanelRow label="Color" value={textColour} swatch={textColour} />

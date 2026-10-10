@@ -8,16 +8,16 @@ const ARROWS = 'M0 -8.5V8.5M-3.5 -5L0 -8.5L3.5 -5M-3.5 5L0 8.5L3.5 5';
 type Glyph = 'crosshair' | 'delete' | 'remove' | 'move' | 'pen' | 'grab';
 
 const GLYPH_OF: Record<DemoCursor, Glyph | null> = {
-  crosshair: 'crosshair', text: null, delete: 'delete', remove: 'remove', 'move-x': 'move', 'move-y': 'move', pen: 'pen', grab: 'grab',
+  crosshair: 'crosshair', text: null, delete: 'delete', remove: 'remove', 'move-x': 'move', 'move-y': 'move', pen: 'pen', ibeam: null, grab: 'grab',
 };
 
-/** A pen whose tip is the hot spot, for placing notes. */
+/** A pen whose tip is the hot spot, for drawing freehand. */
 const PEN = 'M0 0L1.3 -4.4L10.2 -13.3a1.9 1.9 0 0 1 2.7 0l0.4 0.4a1.9 1.9 0 0 1 0 2.7L4.4 -1.3Z';
 
 /**
  * The demo's cursor, matching the extension: a crosshair that pops into a
  * delete badge over a guide and into arrows while one is dragged, and steps
- * aside for the browser's own text cursor over words.
+ * aside for the browser's own text cursor over words and while placing a note.
  */
 export function CustomCursor() {
   const { anyTool, cursor } = useDemo();
@@ -55,6 +55,8 @@ export function CustomCursor() {
     <>
       {/* Links and buttons set their own cursor, which would otherwise show next to the mark. */}
       {showMark && <style>{`body, body * { cursor: none !important; }`}</style>}
+      {/* A note can go anywhere, so the I-beam is asked for rather than left to whatever is underneath. */}
+      {cursor === 'ibeam' && !overUI && <style>{`body, body *:not([data-demo-ui="true"], [data-demo-ui="true"] *) { cursor: text !important; }`}</style>}
       <div
         ref={ref}
         data-demo-ui="true"
